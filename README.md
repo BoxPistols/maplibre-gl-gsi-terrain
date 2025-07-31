@@ -149,19 +149,28 @@ npx vercel
 
 ### サンプルデータのダウンロード
 
-サンプルデータは `example/data/` ディレクトリに格納されています：
+サンプルデータは `example/data/` ディレクトリに格納されています。代表的なデータは以下の通りです。
 
 ```bash
-# 3Dデータ
+# フライトプラン
+example/data/fuji-mountain-flight-plan.json
+example/data/osaka-castle-flight-plan.json
+example/data/sapporo-clock-tower-flight-plan.json
+example/data/sample-mission.json
+
+# ウェイポイント・軌跡データ
+example/data/noto-coast-waypoints.csv
+example/data/mock-drone-waypoints.csv
+example/data/sample-trajectory-data.csv
+example/data/mock-drone-flight-log.csv
+
+# 3D点群・メッシュデータ
 example/data/mock-3d-data.csv
 example/data/mock-mesh-data.csv
+example/data/noto-coast-3d-points.csv
+example/data/noto-coast-mesh.csv
 example/data/mock-building-inspection-points.csv
 example/data/mock-building-inspection-mesh.csv
-
-# 統一フライトデータ
-example/data/sample-flight-data.csv
-example/data/sample-trajectory-data.csv
-example/data/sample-mission-data.json
 ```
 
 ## 技術仕様
