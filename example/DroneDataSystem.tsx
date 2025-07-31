@@ -11,14 +11,7 @@ import {
     downloadFile, 
     generateSampleDroneData, 
     clearDroneData,
-    parseDroneWaypointData,
-    parseDroneFlightLogData,
-    convertWaypointToUnified,
-    convertFlightLogToUnified,
-    convertUnifiedToDroneObject,
-    type DroneObject,
-    type DroneWaypoint,
-    type DroneFlightLog
+    type DroneObject
 } from '../src/data-import-export';
 
 interface DroneDataSystemProps {
@@ -352,24 +345,14 @@ const DroneDataSystem: React.FC<DroneDataSystemProps> = ({ className = '' }) => 
                 let objects: DroneObject[] = [];
                 
                 if (file.name.endsWith('.csv')) {
-                    if (file.name.includes('waypoints')) {
-                        const waypoints: DroneWaypoint[] = parseDroneWaypointData(content);
-                        objects = waypoints.map(wp => convertUnifiedToDroneObject(convertWaypointToUnified(wp)));
-                    } else if (file.name.includes('flight-log')) {
-                        const logs: DroneFlightLog[] = parseDroneFlightLogData(content);
-                        objects = logs.map(log => convertUnifiedToDroneObject(convertFlightLogToUnified(log)));
-                    } else {
-                        objects = parseDroneCSV(content, file.name);
-                    }
+                    objects = parseDroneCSV(content, file.name);
                 } else if (file.name.endsWith('.json') || file.name.endsWith('.geojson')) {
                     objects = parseGeoJSON(content, file.name);
                 }
                 
                 // 重複チェック
                 objects.forEach(newObject => {
-                    if (!newObject) return; // nullチェック
                     const exists = [...loadedObjects, ...newObjects].some(existing => 
-                        existing &&
                         Math.abs(existing.longitude - newObject.longitude) < 0.00001 &&
                         Math.abs(existing.latitude - newObject.latitude) < 0.00001
                     );
@@ -385,7 +368,7 @@ const DroneDataSystem: React.FC<DroneDataSystemProps> = ({ className = '' }) => 
             }
         }
         
-        setLoadedObjects(prev => [...prev, ...newObjects.filter(Boolean)]); // nullを除外
+        setLoadedObjects(prev => [...prev, ...newObjects]);
         setStatus(`${files.length}ファイルの処理完了`);
     }, [loadedObjects]);
 
@@ -572,7 +555,7 @@ const DroneDataSystem: React.FC<DroneDataSystemProps> = ({ className = '' }) => 
                     }}
                 >
                     📂 3Dデータファイルをドロップ または クリックして選択<br />
-                    <small>対応形式: CSV, GeoJSON, JSON</small>
+                    <small>対応形式: CSV (汎用形式), GeoJSON, JSON</small>
                 </div>
                 <input 
                     ref={fileInputRef}
