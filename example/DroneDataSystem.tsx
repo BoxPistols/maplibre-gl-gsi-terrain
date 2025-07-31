@@ -11,7 +11,14 @@ import {
     downloadFile, 
     generateSampleDroneData, 
     clearDroneData,
-    type DroneObject
+    parseDroneWaypointData,
+    parseDroneFlightLogData,
+    convertWaypointToUnified,
+    convertFlightLogToUnified,
+    convertUnifiedToDroneObject,
+    type DroneObject,
+    type DroneWaypoint,
+    type DroneFlightLog
 } from '../src/data-import-export';
 
 interface DroneDataSystemProps {
@@ -345,14 +352,24 @@ const DroneDataSystem: React.FC<DroneDataSystemProps> = ({ className = '' }) => 
                 let objects: DroneObject[] = [];
                 
                 if (file.name.endsWith('.csv')) {
-                    objects = parseDroneCSV(content, file.name);
+                    if (file.name.includes('waypoints')) {
+                        const waypoints: DroneWaypoint[] = parseDroneWaypointData(content);
+                        objects = waypoints.map(wp => convertUnifiedToDroneObject(convertWaypointToUnified(wp)));
+                    } else if (file.name.includes('flight-log')) {
+                        const logs: DroneFlightLog[] = parseDroneFlightLogData(content);
+                        objects = logs.map(log => convertUnifiedToDroneObject(convertFlightLogToUnified(log)));
+                    } else {
+                        objects = parseDroneCSV(content, file.name);
+                    }
                 } else if (file.name.endsWith('.json') || file.name.endsWith('.geojson')) {
                     objects = parseGeoJSON(content, file.name);
                 }
                 
                 // 重複チェック
                 objects.forEach(newObject => {
+                    if (!newObject) return; // nullチェック
                     const exists = [...loadedObjects, ...newObjects].some(existing => 
+                        existing &&
                         Math.abs(existing.longitude - newObject.longitude) < 0.00001 &&
                         Math.abs(existing.latitude - newObject.latitude) < 0.00001
                     );
@@ -368,7 +385,7 @@ const DroneDataSystem: React.FC<DroneDataSystemProps> = ({ className = '' }) => 
             }
         }
         
-        setLoadedObjects(prev => [...prev, ...newObjects]);
+        setLoadedObjects(prev => [...prev, ...newObjects.filter(Boolean)]); // nullを除外
         setStatus(`${files.length}ファイルの処理完了`);
     }, [loadedObjects]);
 
@@ -389,103 +406,6 @@ const DroneDataSystem: React.FC<DroneDataSystemProps> = ({ className = '' }) => 
             handleFiles(e.dataTransfer.files);
         }
     }, [handleFiles]);
-
-    // サンプルデータ読み込み
-    const loadSampleData = useCallback(() => {
-        if (sampleDataLoaded) {
-            setStatus('サンプルデータは既に読み込み済みです');
-            return;
-        }
-        
-        const sampleData = generateSampleDroneData([138.69, 35.3]);
-        setLoadedObjects(prev => [...prev, ...sampleData]);
-        setSampleDataLoaded(true);
-        setStatus(`サンプルデータ読み込み完了: ${sampleData.length}オブジェクト`);
-    }, [sampleDataLoaded]);
-
-    // ドローンシミュレーション
-    const startDroneSimulation = useCallback(() => {
-        if (droneSimulationInterval) {
-            clearInterval(droneSimulationInterval);
-            setDroneSimulationInterval(null);
-            setStatus('ドローンシミュレーション停止');
-            return;
-        }
-        
-        const drones = loadedObjects.filter(obj => obj.type === 'drone');
-        if (drones.length === 0) {
-            setStatus('ドローンデータがありません。先にサンプルデータを読み込んでください。');
-            return;
-        }
-        
-        setStatus('ドローンシミュレーション開始');
-        const trails: { [droneId: string]: number[][] } = {};
-        
-        const interval = setInterval(() => {
-            setLoadedObjects(prevObjects => {
-                const updatedObjects = prevObjects.map(obj => {
-                    if (obj.type === 'drone') {
-                        // 軌跡保存
-                        if (!trails[obj.id]) {
-                            trails[obj.id] = [];
-                        }
-                        trails[obj.id].push([obj.longitude, obj.latitude]);
-                        
-                        // ランダム移動
-                        return {
-                            ...obj,
-                            longitude: obj.longitude + (Math.random() - 0.5) * 0.002,
-                            latitude: obj.latitude + (Math.random() - 0.5) * 0.002,
-                            altitude: Math.max(50, Math.min(300, obj.altitude + (Math.random() - 0.5) * 20))
-                        };
-                    }
-                    return obj;
-                });
-                
-                // 軌跡更新
-                if (map.current) {
-                    addDroneTrails(map.current, trails);
-                }
-                
-                return updatedObjects;
-            });
-        }, 1000);
-        
-        setDroneSimulationInterval(interval);
-    }, [droneSimulationInterval, loadedObjects]);
-
-    // データ書き出し
-    const exportCSV = useCallback(() => {
-        if (loadedObjects.length === 0) {
-            setStatus('書き出すデータがありません');
-            return;
-        }
-        
-        try {
-            const csv = exportDroneDataToCSV(loadedObjects);
-            downloadFile(csv, 'maplibre_drone_data.csv', 'text/csv');
-            setStatus('CSV書き出し完了');
-        } catch (error) {
-            console.error('CSV書き出しエラー:', error);
-            setStatus('CSV書き出しエラー');
-        }
-    }, [loadedObjects]);
-
-    const exportGeoJSON = useCallback(() => {
-        if (loadedObjects.length === 0) {
-            setStatus('書き出すデータがありません');
-            return;
-        }
-        
-        try {
-            const geojson = exportDroneDataToGeoJSON(loadedObjects);
-            downloadFile(geojson, 'maplibre_drone_data.geojson', 'application/geo+json');
-            setStatus('GeoJSON書き出し完了');
-        } catch (error) {
-            console.error('GeoJSON書き出しエラー:', error);
-            setStatus('GeoJSON書き出しエラー');
-        }
-    }, [loadedObjects]);
 
     // データクリア
     const clearAllData = useCallback(() => {
