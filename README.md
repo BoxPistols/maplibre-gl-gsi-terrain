@@ -1,21 +1,21 @@
 ![GitHub Release](https://badge.fury.io/js/maplibre-gl-gsi-terrain.svg) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mug-jp/maplibre-gl-gsi-terrain/test.yml?label=test) [![codecov](https://codecov.io/gh/mug-jp/maplibre-gl-gsi-terrain/graph/badge.svg?token=U9WGZANPZ9)](https://codecov.io/gh/mug-jp/maplibre-gl-gsi-terrain)
 
-# MapFlight シミュレーター - MapLibre GL JS + 地理院地形
+# ドローン点検システム - MapLibre GL JS + 地理院地形
 
 ![](./screenshot.png)
 
 ## 概要
 
-このプロジェクトは、MapLibre GL JS と地理院地形データを使用した 3D ドローン点検などをシミュレーションしたシステムです。
-東京タワー、富士山、大阪城、札幌、能登半島など、日本の主要な地点でのドローン点検シミュレーションを提供します。
+このプロジェクトは、MapLibre GL JS と地理院地形データを使用した 3D ドローン点検シミュレーションシステムです。
+東京タワー周辺でのドローン点検シミュレーションを提供し、リアルタイムでのフライトプラン実行とデータ管理機能を備えています。
 
 ## 主な機能
 
 ### 🚁 フライトプラン管理
 
--   **動的フライトプラン**: 複数の地点に対応したフライトプランの読み込み・実行
 -   **リアルタイム実行**: フライトプランの段階的実行とリアルタイムログ
 -   **インポート/エクスポート**: JSON 形式でのフライトプランの保存・読み込み
+-   **一時停止/再開**: 実行中のフライトプランの制御
 
 ### 📊 3D データ可視化
 
@@ -63,24 +63,24 @@ pnpm dev
 
 ブラウザで `http://localhost:5173` にアクセスしてください。
 
+### 3. Vercelデプロイ
+
+```bash
+# ビルド
+npm run build:example
+
+# Vercelにデプロイ
+npx vercel
+```
+
 ## 使用方法
-
-### キーボードショートカット
-
-| ショートカット | 機能 | 説明 |
-| --- | --- | --- |
-| `Ctrl + T` | 東京タワー フライトプラン読込 | 東京タワー点検フライトプランを読み込み（デフォルト） |
-| `Ctrl + N` | 能登半島エリア | 能登半島エリアの 3D データとフライトプランを読み込み |
-| `Ctrl + F` | 富士山 | 富士山点検フライトプランを読み込み |
-| `Ctrl + O` | 大阪エリア | 大阪エリア点検フライトプランを読み込み |
-| `Ctrl + S` | 札幌エリア | 札幌エリア点検フライトプランを読み込み |
 
 ### フライトプランの実行
 
 1. **フライトプランの読み込み**
 
-    - キーボードショートカットを使用
-    - または「インポート」ボタンで JSON ファイルを選択
+    - 「インポート」ボタンで JSON ファイルを選択
+    - またはデフォルトの東京タワーフライトプランを使用
 
 2. **フライトプランの開始**
 
@@ -136,10 +136,6 @@ pnpm dev
 #### フライトプラン
 
 -   **東京タワー点検フライトプラン** (デフォルト)
--   **富士山点検フライトプラン** (`Ctrl + F`)
--   **大阪エリア点検フライトプラン** (`Ctrl + O`)
--   **札幌エリア点検フライトプラン** (`Ctrl + S`)
--   **能登半島エリア点検フライトプラン** (`Ctrl + N`)
 
 #### 3D データ
 
@@ -157,12 +153,6 @@ pnpm dev
 サンプルデータは `example/data/` ディレクトリに格納されています：
 
 ```bash
-# フライトプラン
-example/data/fuji-mountain-flight-plan.json
-example/data/osaka-castle-flight-plan.json
-example/data/sapporo-clock-tower-flight-plan.json
-example/data/noto-coast-waypoints.csv
-
 # 3Dデータ
 example/data/mock-3d-data.csv
 example/data/mock-mesh-data.csv
@@ -245,7 +235,7 @@ npm install
 npm run dev
 
 # ビルド
-npm run build
+npm run build:example
 
 # テストの実行
 npm run test
@@ -263,28 +253,34 @@ npm run test
     }
     ```
 
-2. **TypeScript ファイルに読み込み関数を追加**
-
-    ```typescript
-    const loadNewFlightPlan = async () => {
-        const response = await fetch('./data/new-flight-plan.json')
-        const flightPlanData: FlightPlanData = await response.json()
-        // 処理...
-    }
-    ```
-
-3. **キーボードショートカットの追加**
-    ```typescript
-    if (e.ctrlKey && e.key === 'x') {
-        loadNewFlightPlan()
-    }
-    ```
+2. **ユーザーがインポート機能を使用**
+    - 「インポート」ボタンでJSONファイルをアップロード
 
 ### カスタマイズ
 
 -   **地形データの変更**: `src/terrain.ts`で地形ソースを変更
 -   **UI のカスタマイズ**: `example/index.html`で UI を変更
 -   **データ形式の拡張**: `src/data-import-export.ts`で新しいデータ形式を追加
+
+## デプロイ
+
+### Vercelデプロイ
+
+このプロジェクトはVercelに最適化されています：
+
+```bash
+# ビルド
+npm run build:example
+
+# Vercelにデプロイ
+npx vercel
+```
+
+### 制限事項
+
+- ローカルファイルアクセス機能は削除済み（セキュリティ上の理由）
+- キーボードショートカット機能は削除済み
+- データインポートはユーザーアップロードのみ対応
 
 ## ライセンス
 
@@ -300,6 +296,7 @@ npm run test
 
 ## 更新履歴
 
+-   **v2.2.2**: Vercelデプロイ対応、不要機能削除
 -   **v2.1.0**: ドローン点検システムの追加
 -   **v2.0.0**: MapLibre GL JS v4 対応
 -   **v1.0.0**: 初回リリース

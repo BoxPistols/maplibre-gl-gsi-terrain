@@ -1715,33 +1715,7 @@ const setupEventHandlers = () => {
         }
     });
 
-    // 能登半島山間部データ読み込み
-    document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey && e.key === 'n') {
-            e.preventDefault();
-            loadNotoCoastData();
-        }
-        // 富士山フライトプラン読み込み
-        if (e.ctrlKey && e.key === 'f') {
-            e.preventDefault();
-            loadFujiMountainFlightPlan();
-        }
-        // 大阪エリアフライトプラン読み込み
-        if (e.ctrlKey && e.key === 'o') {
-            e.preventDefault();
-            loadOsakaCastleFlightPlan();
-        }
-        // 札幌エリアフライトプラン読み込み
-        if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-            loadSapporoClockTowerFlightPlan();
-        }
-        // 東京タワーフライトプラン読み込み（デフォルトに戻す）
-        if (e.ctrlKey && e.key === 't') {
-            e.preventDefault();
-            loadTokyoTowerFlightPlan();
-        }
-    });
+    // キーボードショートカット機能を削除（Vercelデプロイではファイルアクセスが制限されるため）
 };
 
 // フライトプラン管理機能
@@ -1902,173 +1876,15 @@ const importFlightPlan = () => {
 
 // エッフェル塔関連の関数・ショートカットは削除
 
-// 富士山フライトプラン読み込み
-const loadFujiMountainFlightPlan = async () => {
-    try {
-        const response = await fetch('./data/fuji-mountain-flight-plan.json');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const flightPlanData: FlightPlanData = await response.json();
-        currentFlightPlan = flightPlanData.phases;
-        currentFlightPlanName = flightPlanData.name;
-        currentFlightPlanDescription = flightPlanData.description;
-        
-        addFlightLog('システム', '富士山フライトプラン', '富士山点検フライトプランを読み込みました', 'success');
-        showToast('富士山フライトプランを読み込みました', 'success');
-        
-        // 地図を富士山の位置に移動
-        map.flyTo({
-            center: [138.7275, 35.3606],
-            zoom: 14,
-            duration: 2000
-        });
-    } catch (error) {
-        console.error('富士山フライトプラン読み込みエラー:', error);
-        addFlightLog('エラー', '富士山フライトプラン', 'フライトプランの読み込みに失敗しました', 'error');
-        showToast('富士山フライトプランの読み込みに失敗しました', 'error');
-    }
-};
+// ファイル読み込み機能を削除（Vercelデプロイではファイルアクセスが制限されるため）
 
-// 大阪エリアフライトプラン読み込み
-const loadOsakaCastleFlightPlan = async () => {
-    try {
-        const response = await fetch('./data/osaka-castle-flight-plan.json');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const flightPlanData: FlightPlanData = await response.json();
-        currentFlightPlan = flightPlanData.phases;
-        currentFlightPlanName = flightPlanData.name;
-        currentFlightPlanDescription = flightPlanData.description;
-        
-        addFlightLog('システム', '大阪エリアフライトプラン', '大阪エリア点検フライトプランを読み込みました', 'success');
-        showToast('大阪エリアフライトプランを読み込みました', 'success');
-        
-        // 地図を大阪エリアの位置に移動
-        map.flyTo({
-            center: [135.5022, 34.6873],
-            zoom: 16,
-            duration: 2000
-        });
-    } catch (error) {
-        console.error('大阪エリアフライトプラン読み込みエラー:', error);
-        addFlightLog('エラー', '大阪エリアフライトプラン', 'フライトプランの読み込みに失敗しました', 'error');
-        showToast('大阪エリアフライトプランの読み込みに失敗しました', 'error');
-    }
-};
 
-// 札幌エリアフライトプラン読み込み
-const loadSapporoClockTowerFlightPlan = async () => {
-    try {
-        const response = await fetch('./data/sapporo-clock-tower-flight-plan.json');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-        const flightPlanData: FlightPlanData = await response.json();
-        currentFlightPlan = flightPlanData.phases;
-        currentFlightPlanName = flightPlanData.name;
-        currentFlightPlanDescription = flightPlanData.description;
-        
-        addFlightLog('システム', '札幌エリアフライトプラン', '札幌エリア点検フライトプランを読み込みました', 'success');
-        showToast('札幌エリアフライトプランを読み込みました', 'success');
-        
-        // 地図を札幌エリアの位置に移動
-        map.flyTo({
-            center: [141.3515, 43.0594],
-            zoom: 16,
-            duration: 2000
-        });
-    } catch (error) {
-        console.error('札幌エリアフライトプラン読み込みエラー:', error);
-        addFlightLog('エラー', '札幌エリアフライトプラン', 'フライトプランの読み込みに失敗しました', 'error');
-        showToast('札幌エリアフライトプランの読み込みに失敗しました', 'error');
-    }
-};
 
-// 東京タワーフライトプラン読み込み（デフォルトに戻す）
-const loadTokyoTowerFlightPlan = async () => {
-    try {
-        // デフォルトの東京タワーフライトプランを設定
-        currentFlightPlan = defaultFlightPlan;
-        currentFlightPlanName = '東京タワー点検フライトプラン';
-        currentFlightPlanDescription = '東京タワー周辺の包括的点検フライトプラン';
-        
-        addFlightLog('システム', '東京タワーフライトプラン', '東京タワー点検フライトプランを読み込みました', 'success');
-        showToast('東京タワーフライトプランを読み込みました', 'success');
-        
-        // 地図を東京タワーの位置に移動
-        map.flyTo({
-            center: [139.7454, 35.6586],
-            zoom: 15,
-            duration: 2000
-        });
-    } catch (error) {
-        console.error('東京タワーフライトプラン読み込みエラー:', error);
-        addFlightLog('エラー', '東京タワーフライトプラン', 'フライトプランの読み込みに失敗しました', 'error');
-        showToast('東京タワーフライトプランの読み込みに失敗しました', 'error');
-    }
-};
 
-// 能登半島山間部データ読み込み
-const loadNotoCoastData = async () => {
-    try {
-        // 3Dポイントデータ読み込み
-        const pointsResponse = await fetch('./data/noto-coast-3d-points.csv');
-        if (!pointsResponse.ok) throw new Error(`HTTP error! status: ${pointsResponse.status}`);
-        
-        const pointsContent = await pointsResponse.text();
-        const pointsBlob = new Blob([pointsContent], { type: 'text/csv' });
-        const pointsFile = new File([pointsBlob], 'noto-coast-points.csv', { type: 'text/csv' });
-        await importDataFromFile(pointsFile, map, 'points');
-        
-        // メッシュデータ読み込み
-        const meshResponse = await fetch('./data/noto-coast-mesh.csv');
-        if (!meshResponse.ok) throw new Error(`HTTP error! status: ${meshResponse.status}`);
-        
-        const meshContent = await meshResponse.text();
-        const meshBlob = new Blob([meshContent], { type: 'text/csv' });
-        const meshFile = new File([meshBlob], 'noto-coast-mesh.csv', { type: 'text/csv' });
-        await importDataFromFile(meshFile, map, 'mesh');
-        
-        // ウェイポイントデータ読み込み
-        const waypointsResponse = await fetch('./data/noto-coast-waypoints.csv');
-        if (!waypointsResponse.ok) throw new Error(`HTTP error! status: ${waypointsResponse.status}`);
-        
-        const waypointsContent = await waypointsResponse.text();
-        const waypointsBlob = new Blob([waypointsContent], { type: 'text/csv' });
-        const waypointsFile = new File([waypointsBlob], 'noto-coast-waypoints.csv', { type: 'text/csv' });
-        await importDataFromFile(waypointsFile, map, 'waypoints');
-        
-        // 能登半島用のフライトプランを設定
-        currentFlightPlan = [
-            { phase: '離陸', action: '輪島港から離陸開始', duration: 3000, position: [137.27, 37.495, 10] },
-            { phase: '外側旋回1', action: '北防波堤へ移動・ホバリング', duration: 4000, position: [137.275, 37.498, 15] },
-            { phase: '外側旋回2', action: '東防波堤へ移動・ホバリング', duration: 4000, position: [137.265, 37.497, 12] },
-            { phase: '外側旋回3', action: '南防波堤へ移動・ホバリング', duration: 4000, position: [137.268, 37.492, 14] },
-            { phase: '外側旋回4', action: '西防波堤へ移動・ホバリング', duration: 4000, position: [137.272, 37.493, 13] },
-            { phase: '内側旋回1', action: '内側北東へ移動・詳細撮影', duration: 3000, position: [137.273, 37.496, 11] },
-            { phase: '内側旋回2', action: '内側北西へ移動・詳細撮影', duration: 3000, position: [137.267, 37.496, 11] },
-            { phase: '内側旋回3', action: '内側南西へ移動・詳細撮影', duration: 3000, position: [137.269, 37.494, 12] },
-            { phase: '内側旋回4', action: '内側南東へ移動・詳細撮影', duration: 3000, position: [137.271, 37.494, 12] },
-            { phase: '中心部撮影', action: '輪島港中心部で詳細撮影', duration: 5000, position: [137.27, 37.495, 20] },
-            { phase: '着陸', action: '離陸地点に戻って着陸', duration: 3000, position: [137.27, 37.495, 0] }
-        ];
-        currentFlightPlanName = '能登半島山間部点検フライトプラン';
-        currentFlightPlanDescription = '能登半島山間部の包括的点検フライトプラン';
-        
-        addFlightLog('システム', '能登半島山間部データ', '能登半島山間部の3Dデータを読み込みました', 'success');
-        showToast('能登半島山間部データを読み込みました', 'success');
-        
-        // 地図を能登半島山間部の位置に移動
-        map.flyTo({
-            center: [137.27, 37.495],
-            zoom: 16,
-            duration: 2000
-        });
-    } catch (error) {
-        console.error('能登半島山間部データ読み込みエラー:', error);
-        addFlightLog('エラー', '能登半島山間部データ', '3Dデータの読み込みに失敗しました', 'error');
-        showToast('能登半島山間部データの読み込みに失敗しました', 'error');
-    }
-};
+
+
+
+
 
 // 地図のクリックイベント
 map.on('click', (e) => {
