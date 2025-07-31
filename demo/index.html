@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>東京タワー周辺 ドローン点検システム</title>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./assets/index.css">
     <style>
         body {
             margin: 0;
@@ -109,16 +109,6 @@
             background: rgba(245, 158, 11, 0.4);
         }
 
-        button.danger {
-            background: rgba(239, 68, 68, 0.3);
-            border-color: rgba(239, 68, 68, 0.6);
-            color: #991b1b;
-        }
-
-        button.danger:hover {
-            background: rgba(239, 68, 68, 0.4);
-        }
-
         .button-group {
             display: flex;
             flex-wrap: wrap;
@@ -126,78 +116,44 @@
         }
 
         #status {
+            margin-top: 12px;
             font-size: 11px;
             color: rgba(0, 0, 0, 0.7);
-            margin-top: 8px;
             padding: 4px 8px;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.7);
             border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .info-panel {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            padding: 16px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            padding: 16px;
             border-radius: 16px;
             z-index: 1000;
-            max-width: 300px;
+            max-width: 280px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         .info-title {
             font-weight: 700;
-            margin-bottom: 8px;
+            /* margin-bottom: 2px; */
             color: rgba(0, 0, 0, 0.8);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 13px;
         }
 
         .info-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            font-size: 11px;
+            font-size: 13px;
             color: rgba(0, 0, 0, 0.7);
+            line-height: 1.5;
         }
 
         .info-list li {
-            margin-bottom: 4px;
-            padding: 2px 0;
-        }
-
-        .flight-plan-export {
-            position: absolute;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            padding: 16px 20px;
-            border-radius: 16px;
-            z-index: 1000;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-
-        .flight-plan-title {
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: rgba(0, 0, 0, 0.8);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .flight-plan-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            margin-bottom: 6px;
         }
 
         .footer {
@@ -205,153 +161,204 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 11px;
+            max-height: 180px;
+            overflow-y: auto;
             z-index: 1000;
-            max-height: 200px;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .footer.collapsed {
-            max-height: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            /* 初期状態は表示 */
         }
 
         .footer-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 16px;
-            background: rgba(0, 0, 0, 0.9);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 8px;
         }
 
         .footer-title {
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            color: #22c55e;
             font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .footer-controls {
             display: flex;
-            gap: 4px;
+            gap: 8px;
         }
 
         .footer-controls button {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 2px 6px;
-            border-radius: 3px;
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 4px 8px;
             font-size: 10px;
-            font-weight: 600;
-            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 6px;
         }
 
         .footer-controls button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .flight-log {
-            padding: 8px 16px;
-            max-height: 150px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            transition: all 0.3s ease;
+            display: none;
+            /* 初期状態は非表示 */
+        }
+
+        .flight-log.hidden {
+            display: none;
+        }
+
+        .flight-log.visible {
+            display: flex;
         }
 
         .log-entry {
             display: flex;
-            gap: 8px;
-            margin-bottom: 2px;
-            padding: 2px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 12px;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 10px;
         }
 
         .log-timestamp {
             color: rgba(255, 255, 255, 0.6);
-            min-width: 60px;
+            min-width: 70px;
         }
 
         .log-phase {
-            color: rgba(59, 130, 246, 0.8);
+            color: #22c55e;
             font-weight: 600;
-            min-width: 80px;
+            min-width: 90px;
         }
 
         .log-action {
-            color: rgba(34, 197, 94, 0.8);
-            font-weight: 600;
-            min-width: 100px;
+            color: #fbbf24;
         }
 
         .log-details {
             color: rgba(255, 255, 255, 0.8);
-            flex: 1;
         }
 
-        .maplibregl-popup-content {
-            background: rgba(255, 255, 255, 0.9);
+        .log-error {
+            color: #ef4444;
+        }
+
+        .log-success {
+            color: #22c55e;
+        }
+
+        .flight-plan-export {
+            position: absolute;
+            bottom: 200px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 8px;
-            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            padding: 16px;
+            border-radius: 12px;
+            z-index: 1000;
+            max-width: 260px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
-        .maplibregl-popup-close-button {
-            color: rgba(0, 0, 0, 0.6);
-            font-size: 16px;
+        .flight-plan-title {
             font-weight: 700;
+            margin-bottom: 8px;
+            color: rgba(0, 0, 0, 0.8);
+            font-size: 13px;
         }
 
-        .maplibregl-popup-close-button:hover {
+        .flight-plan-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .flight-plan-buttons button {
+            background: rgba(255, 255, 255, 0.3);
             color: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .flight-plan-buttons button:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .flight-plan-buttons button.success {
+            background: rgba(34, 197, 94, 0.3);
+            border-color: rgba(34, 197, 94, 0.6);
+            color: #166534;
+        }
+
+        .flight-plan-buttons button.danger {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.6);
+            color: #991b1b;
+        }
+
+        .flight-plan-buttons button.warning {
+            background: rgba(245, 158, 11, 0.3);
+            border-color: rgba(245, 158, 11, 0.6);
+            color: #92400e;
+        }
+
+        .flight-plan-buttons button.info {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.6);
+            color: #1e40af;
         }
     </style>
+  <script type="module" crossorigin src="/assets/index.js"></script>
+  <link rel="stylesheet" href="/assets/index.css">
 </head>
 
 <body>
     <div id="map"></div>
 
-    <!-- コントロールパネル -->
+    <!-- メインコントロールパネル -->
     <div id="controls">
-        <!-- フライトプランセクション -->
+        <h3 style="margin: 0 0 16px 0; color: rgba(55, 55, 55, 0.9); font-size: 14px; font-weight: 600;">東京タワー点検システム
+        </h3>
+
+        <!-- サンプルデータセクション -->
         <div class="control-section">
-            <div class="section-title">フライトプラン</div>
+            <div class="section-title">サンプルデータ</div>
             <div class="button-group">
-                <button id="loadTokyoTower" class="success" title="東京タワー点検フライトプランを読み込みます（デフォルト）">東京タワー</button>
-                <button id="loadNotoCoast" class="success" title="能登半島エリアの3Dデータとフライトプランを読み込みます">能登半島</button>
-                <button id="loadFujiMountain" class="success" title="富士山点検フライトプランを読み込みます">富士山</button>
-                <button id="loadOsakaCastle" class="success" title="大阪エリア点検フライトプランを読み込みます">大阪城</button>
-                <button id="loadSapporoClock" class="success" title="札幌エリア点検フライトプランを読み込みます">札幌時計台</button>
+                <button id="loadPoints" class="success" title="3Dポイントデータのサンプルを読み込みます">ポイント</button>
+                <button id="loadMesh" class="info" title="3Dメッシュデータのサンプルを読み込みます">メッシュ</button>
+                <button id="loadBuilding" class="warning" title="建物点検データ（ポイント・メッシュ）のサンプルを読み込みます">建物点検</button>
+                <button id="toggle3D" class="info" title="2D/3D表示を切り替えます">2D/3D</button>
             </div>
         </div>
 
-        <!-- 3Dデータセクション -->
+        <!-- ドローン点検セクション -->
         <div class="control-section">
-            <div class="section-title">3Dデータ</div>
+            <div class="section-title">ドローン点検</div>
             <div class="button-group">
-                <button id="loadSample3D" class="success" title="サンプル3Dポイントデータを読み込みます">3Dポイント</button>
-                <button id="loadSampleMesh" class="success" title="サンプルメッシュデータを読み込みます">メッシュ</button>
-                <button id="loadSampleWaypoints" class="success" title="サンプルウェイポイントデータを読み込みます">ウェイポイント</button>
-                <button id="toggle3D" class="info" title="3D表示モードを切り替えます">3D切替</button>
-                <button id="toggleTerrain" class="info" title="地形表示を切り替えます">地形切替</button>
-            </div>
-        </div>
-
-        <!-- インタラクティブ機能セクション -->
-        <div class="control-section">
-            <div class="section-title">インタラクティブ</div>
-            <div class="button-group">
-                <button id="addDrone" class="success" title="マップ上にドローンを配置します">ドローン配置</button>
-                <button id="drawPolygon" class="info" title="点検エリアの多角形を描画します">エリア描画</button>
+                <button id="loadDroneData" class="success" title="東京タワー周辺に点検ドローンを配置します">配置</button>
+                <button id="startSimulation" class="info" title="ドローンのランダム移動シミュレーションを開始/停止します">シミュレーション</button>
+                <button id="toggleDrawMode" class="warning" title="マップ上でクリックして点検ポイントを追加するモードを切り替えます">ポイント作成</button>
+                <button id="togglePolygonMode" class="warning" title="マップ上でクリックして多角形エリアを描画するモードを切り替えます">多角形作成</button>
                 <button id="toggleEditMode" class="info" title="オブジェクトの選択・移動・削除ができる編集モードを切り替えます">オブジェクト編集</button>
             </div>
         </div>
@@ -448,7 +455,7 @@
         </div>
     </div>
 
-    <script type="module" src="./assets/index.js"></script>
+    
 </body>
 
 </html>
