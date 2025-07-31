@@ -684,10 +684,6 @@ const DroneDataSystem: React.FC<DroneDataSystemProps> = ({ className = '' }) => 
                 
                 {/* コントロールボタン */}
                 <div style={{ marginBottom: '15px' }}>
-                    <button onClick={loadSampleData} style={buttonStyle}>🎯 サンプルデータ読み込み</button>
-                    <button onClick={startDroneSimulation} style={buttonStyle}>🚁 飛行シミュレーション</button>
-                    <button onClick={exportCSV} disabled={loadedObjects.length === 0} style={buttonStyle}>📊 CSV書き出し</button>
-                    <button onClick={exportGeoJSON} disabled={loadedObjects.length === 0} style={buttonStyle}>🗺️ GeoJSON書き出し</button>
                     <button onClick={clearAllData} style={buttonStyle}>🗑️ データクリア</button>
                     <button onClick={toggle3D} style={buttonStyle}>🔄 2D/3D切り替え</button>
                     <button onClick={enableDrawMode} style={buttonStyle}>✏️ 描画モード</button>
