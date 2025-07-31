@@ -1,12 +1,13 @@
 ![GitHub Release](https://badge.fury.io/js/maplibre-gl-gsi-terrain.svg) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mug-jp/maplibre-gl-gsi-terrain/test.yml?label=test) [![codecov](https://codecov.io/gh/mug-jp/maplibre-gl-gsi-terrain/graph/badge.svg?token=U9WGZANPZ9)](https://codecov.io/gh/mug-jp/maplibre-gl-gsi-terrain)
 
-# ドローン点検システム - MapLibre GL JS + 地理院地形
+# MapFlight シミュレーター - MapLibre GL JS + 地理院地形
 
 ![](./screenshot.png)
 
 ## 概要
 
-このプロジェクトは、MapLibre GL JS と地理院地形データを使用した 3D ドローン点検シミュレーションシステムです。東京タワー、富士山、大阪城、札幌時計台、能登半島など、日本の主要な地点でのドローン点検シミュレーションを提供します。
+このプロジェクトは、MapLibre GL JS と地理院地形データを使用した 3D ドローン点検などをシミュレーションしたシステムです。
+東京タワー、富士山、大阪城、札幌、能登半島など、日本の主要な地点でのドローン点検シミュレーションを提供します。
 
 ## 主な機能
 
