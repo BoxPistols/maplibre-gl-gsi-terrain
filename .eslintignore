@@ -1,4 +1,0 @@
-# マークダウンファイルをlintから除外
-*.md
-docs/**/*.md
-README.md 

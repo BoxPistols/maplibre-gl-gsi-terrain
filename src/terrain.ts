@@ -1,100 +1,100 @@
 import type {
-	AddProtocolAction,
-	RasterDEMSourceSpecification,
-} from 'maplibre-gl';
-import maplibregl from 'maplibre-gl';
-import { workerCode } from './worker';
+  AddProtocolAction,
+  RasterDEMSourceSpecification,
+} from "maplibre-gl";
+import maplibregl from "maplibre-gl";
+import { workerCode } from "./worker";
 
 const loadImage = async (
-	src: string,
-	signal: AbortSignal,
+  src: string,
+  signal: AbortSignal,
 ): Promise<ImageBitmap | null> => {
-	let response: Response;
-	try {
-		response = await fetch(src, { signal });
-	} catch (e) {
-		if (!signal.aborted) {
-			console.error(`Failed to fetch image: ${e}`);
-		}
-		return null;
-	}
-	if (!response.ok) {
-		return null;
-	}
-	return await createImageBitmap(await response.blob());
+  let response: Response;
+  try {
+    response = await fetch(src, { signal });
+  } catch (e) {
+    if (!signal.aborted) {
+      console.error(`Failed to fetch image: ${e}`);
+    }
+    return null;
+  }
+  if (!response.ok) {
+    return null;
+  }
+  return await createImageBitmap(await response.blob());
 };
 class WorkerProtocol {
-	private worker: Worker;
-	private pendingRequests: Map<
-		string,
-		{
-			resolve: (
-				value: { data: Uint8Array } | PromiseLike<{ data: Uint8Array }>,
-			) => void;
-			reject: (reason?: Error) => void;
-			controller: AbortController;
-		}
-	>;
+  private worker: Worker;
+  private pendingRequests: Map<
+    string,
+    {
+      resolve: (
+        value: { data: Uint8Array } | PromiseLike<{ data: Uint8Array }>,
+      ) => void;
+      reject: (reason?: Error) => void;
+      controller: AbortController;
+    }
+  >;
 
-	constructor(worker: Worker) {
-		this.worker = worker;
-		this.pendingRequests = new Map();
-		this.worker.addEventListener('message', this.handleMessage);
-		this.worker.addEventListener('error', this.handleError);
-	}
+  constructor(worker: Worker) {
+    this.worker = worker;
+    this.pendingRequests = new Map();
+    this.worker.addEventListener("message", this.handleMessage);
+    this.worker.addEventListener("error", this.handleError);
+  }
 
-	async request(
-		url: string,
-		controller: AbortController,
-	): Promise<{ data: Uint8Array }> {
-		const image = await loadImage(url, controller.signal);
+  async request(
+    url: string,
+    controller: AbortController,
+  ): Promise<{ data: Uint8Array }> {
+    const image = await loadImage(url, controller.signal);
 
-		if (!image) {
-			return Promise.reject(new Error('Failed to load image'));
-		}
+    if (!image) {
+      return Promise.reject(new Error("Failed to load image"));
+    }
 
-		return new Promise((resolve, reject) => {
-			this.pendingRequests.set(url, { resolve, reject, controller });
-			this.worker.postMessage({ image, url });
+    return new Promise((resolve, reject) => {
+      this.pendingRequests.set(url, { resolve, reject, controller });
+      this.worker.postMessage({ image, url });
 
-			controller.signal.onabort = () => {
-				this.pendingRequests.delete(url);
-				reject(new Error('Request aborted'));
-			};
-		});
-	}
+      controller.signal.onabort = () => {
+        this.pendingRequests.delete(url);
+        reject(new Error("Request aborted"));
+      };
+    });
+  }
 
-	private handleMessage = (e: MessageEvent) => {
-		const { url, buffer, error } = e.data;
-		if (error) {
-			console.error(`Error processing tile ${url}:`, error);
-		} else {
-			const request = this.pendingRequests.get(url);
-			if (request) {
-				request.resolve({ data: new Uint8Array(buffer) });
-				this.pendingRequests.delete(url);
-			}
-		}
-	};
+  private handleMessage = (e: MessageEvent) => {
+    const { url, buffer, error } = e.data;
+    if (error) {
+      console.error(`Error processing tile ${url}:`, error);
+    } else {
+      const request = this.pendingRequests.get(url);
+      if (request) {
+        request.resolve({ data: new Uint8Array(buffer) });
+        this.pendingRequests.delete(url);
+      }
+    }
+  };
 
-	private handleError = (e: ErrorEvent) => {
-		console.error('Worker error:', e);
-		this.pendingRequests.forEach((request) => {
-			request.reject(new Error('Worker error occurred'));
-		});
-		this.pendingRequests.clear();
-	};
+  private handleError = (e: ErrorEvent) => {
+    console.error("Worker error:", e);
+    this.pendingRequests.forEach((request) => {
+      request.reject(new Error("Worker error occurred"));
+    });
+    this.pendingRequests.clear();
+  };
 }
 
-const blob = new Blob([workerCode], { type: 'application/javascript' });
+const blob = new Blob([workerCode], { type: "application/javascript" });
 const worker = new Worker(URL.createObjectURL(blob));
 const workerProtocol = new WorkerProtocol(worker);
 
 type Options = {
-	attribution?: string;
-	maxzoom?: number;
-	minzoom?: number;
-	tileUrl?: string;
+  attribution?: string;
+  maxzoom?: number;
+  minzoom?: number;
+  tileUrl?: string;
 };
 
 /**
@@ -126,28 +126,28 @@ type Options = {
  * });
  */
 export const useGsiTerrainSource = (
-	addProtocol: typeof maplibregl.addProtocol,
-	options: Options = {},
+  addProtocol: typeof maplibregl.addProtocol,
+  options: Options = {},
 ): RasterDEMSourceSpecification => {
-	const protocolName = 'gsidem';
-	const protocolAction = getGsiDemProtocolAction(protocolName);
-	addProtocol(protocolName, protocolAction);
+  const protocolName = "gsidem";
+  const protocolAction = getGsiDemProtocolAction(protocolName);
+  addProtocol(protocolName, protocolAction);
 
-	const tileUrl =
-		options.tileUrl ??
-		`https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png`;
+  const tileUrl =
+    options.tileUrl ??
+    "https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png";
 
-	return {
-		type: 'raster-dem',
-		tiles: [`gsidem://${tileUrl}`],
-		tileSize: 256,
-		encoding: 'terrarium',
-		minzoom: options.minzoom ?? 1,
-		maxzoom: options.maxzoom ?? 14,
-		attribution:
-			options.attribution ??
-			'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
-	};
+  return {
+    type: "raster-dem",
+    tiles: [`gsidem://${tileUrl}`],
+    tileSize: 256,
+    encoding: "terrarium",
+    minzoom: options.minzoom ?? 1,
+    maxzoom: options.maxzoom ?? 14,
+    attribution:
+      options.attribution ??
+      "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>",
+  };
 };
 
 /**
@@ -168,10 +168,10 @@ export const useGsiTerrainSource = (
  * const map = new Map({container: 'app', style: {sources: {terrain: gsiTerrainSource}}});
  */
 export const getGsiDemProtocolAction = (
-	customProtocol: string,
+  customProtocol: string,
 ): AddProtocolAction => {
-	return (params, abortController) => {
-		const urlWithoutProtocol = params.url.replace(customProtocol + '://', '');
-		return workerProtocol.request(urlWithoutProtocol, abortController);
-	};
+  return (params, abortController) => {
+    const urlWithoutProtocol = params.url.replace(customProtocol + "://", "");
+    return workerProtocol.request(urlWithoutProtocol, abortController);
+  };
 };
