@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Test
+        run: pnpm test:ci
+
+      - name: Build
+        run: pnpm ci:build
