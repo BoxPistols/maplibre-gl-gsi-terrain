@@ -7,7 +7,7 @@ var Pl = (K, J, se) => (Bf(K, typeof J != "symbol" ? J + "" : J, se), se);
 (function () {
   const J = document.createElement("link").relList;
   if (J && J.supports && J.supports("modulepreload")) return;
-  for (const U of document.querySelectorAll("link[rel=\"modulepreload\"]")) le(U);
+  for (const U of document.querySelectorAll('link[rel="modulepreload"]')) le(U);
   new MutationObserver((U) => {
     for (const X of U)
       if (X.type === "childList")
@@ -3330,7 +3330,7 @@ var Kd = { exports: {} };
               const x = t[1];
               if (typeof x != "string" || !(x in Sn) || x === "object")
                 return r.error(
-                  "The item type argument of \"array\" must be one of string, number, boolean",
+                  'The item type argument of "array" must be one of string, number, boolean',
                   1,
                 );
               ((m = Sn[x]), l++);
@@ -3343,7 +3343,7 @@ var Kd = { exports: {} };
                   t[2] !== Math.floor(t[2]))
               )
                 return r.error(
-                  "The length argument to \"array\" must be a positive integer literal",
+                  'The length argument to "array" must be a positive integer literal',
                   2,
                 );
               ((_ = t[2]), l++);
@@ -3649,7 +3649,7 @@ var Kd = { exports: {} };
           ) {
             if (t.length === 0)
               return this.error(
-                "Expected an array with at least one element. If you wanted a literal array, use [\"literal\", []].",
+                'Expected an array with at least one element. If you wanted a literal array, use ["literal", []].',
               );
             const l = t[0];
             if (typeof l != "string")
@@ -3725,7 +3725,7 @@ var Kd = { exports: {} };
             t === void 0
               ? "'undefined' value invalid. Use null instead."
               : typeof t == "object"
-                ? "Bare objects invalid. Use [\"literal\", {...}] instead."
+                ? 'Bare objects invalid. Use ["literal", {...}] instead.'
                 : `Expected an array, but found ${typeof t} instead.`,
           );
         }
@@ -4158,12 +4158,12 @@ var Kd = { exports: {} };
               b = p + 1;
             if (typeof m != "number")
               return r.error(
-                "Input/output pairs for \"step\" expressions must be defined using literal numeric values (not computed expressions) for the input values.",
+                'Input/output pairs for "step" expressions must be defined using literal numeric values (not computed expressions) for the input values.',
                 x,
               );
             if (l.length && l[l.length - 1][0] >= m)
               return r.error(
-                "Input/output pairs for \"step\" expressions must be arranged with input values in strictly ascending order.",
+                'Input/output pairs for "step" expressions must be arranged with input values in strictly ascending order.',
                 x,
               );
             const w = r.parse(_, b, d);
@@ -4329,12 +4329,12 @@ var Kd = { exports: {} };
               S = x + 4;
             if (typeof b != "number")
               return r.error(
-                "Input/output pairs for \"interpolate\" expressions must be defined using literal numeric values (not computed expressions) for the input values.",
+                'Input/output pairs for "interpolate" expressions must be defined using literal numeric values (not computed expressions) for the input values.',
                 F,
               );
             if (m.length && m[m.length - 1][0] >= b)
               return r.error(
-                "Input/output pairs for \"interpolate\" expressions must be arranged with input values in strictly ascending order.",
+                'Input/output pairs for "interpolate" expressions must be arranged with input values in strictly ascending order.',
                 F,
               );
             const D = r.parse(w, S, _);
@@ -6345,7 +6345,7 @@ var Kd = { exports: {} };
               ? io([
                   new Ie(
                     "",
-                    "\"interpolate\" expressions cannot be used with this property",
+                    '"interpolate" expressions cannot be used with this property',
                   ),
                 ])
               : Ql(
@@ -6361,7 +6361,7 @@ var Kd = { exports: {} };
           : io([
               new Ie(
                 "",
-                "\"zoom\" expression may only be used as input to a top-level \"step\" or \"interpolate\" expression.",
+                '"zoom" expression may only be used as input to a top-level "step" or "interpolate" expression.',
               ),
             ]);
       }
@@ -6400,14 +6400,14 @@ var Kd = { exports: {} };
                 : !t && o
                   ? (t = new Ie(
                       "",
-                      "\"zoom\" expression may only be used as input to a top-level \"step\" or \"interpolate\" expression.",
+                      '"zoom" expression may only be used as input to a top-level "step" or "interpolate" expression.',
                     ))
                   : t &&
                     o &&
                     t !== o &&
                     (t = new Ie(
                       "",
-                      "Only one zoom-based \"step\" or \"interpolate\" subexpression may be used in an expression.",
+                      'Only one zoom-based "step" or "interpolate" subexpression may be used in an expression.',
                     ));
             }),
           t
@@ -6733,7 +6733,7 @@ var Kd = { exports: {} };
                     new oe(
                       S.key,
                       S.value,
-                      "identity function may not have a \"stops\" property",
+                      'identity function may not have a "stops" property',
                     ),
                   ];
                 let D = [];
@@ -6774,11 +6774,11 @@ var Kd = { exports: {} };
           r === "identity" &&
             m &&
             b.push(
-              new oe(n.key, n.value, "missing required property \"property\""),
+              new oe(n.key, n.value, 'missing required property "property"'),
             ),
           r === "identity" ||
             n.value.stops ||
-            b.push(new oe(n.key, n.value, "missing required property \"stops\"")),
+            b.push(new oe(n.key, n.value, 'missing required property "stops"')),
           r === "exponential" &&
             n.valueSpec.expression &&
             !Ra(n.valueSpec) &&
@@ -6795,7 +6795,7 @@ var Kd = { exports: {} };
                 b.push(new oe(n.key, n.value, "zoom functions not supported"))),
           (r !== "categorical" && !x) ||
             n.value.property !== void 0 ||
-            b.push(new oe(n.key, n.value, "\"property\" property is required")),
+            b.push(new oe(n.key, n.value, '"property" property is required')),
           b
         );
         function w(S) {
@@ -6897,7 +6897,7 @@ var Kd = { exports: {} };
               ro(t) &&
                 r === void 0 &&
                 (ne +=
-                  "\nIf you intended to use a categorical function, specify `\"type\": \"categorical\"`."),
+                  '\nIf you intended to use a categorical function, specify `"type": "categorical"`.'),
               [new oe(S.key, Z, ne)]
             );
           }
@@ -6950,7 +6950,7 @@ var Kd = { exports: {} };
             new oe(
               n.key,
               n.value,
-              "\"feature-state\" data expressions are not supported with layout properties.",
+              '"feature-state" data expressions are not supported with layout properties.',
             ),
           ];
         if (n.expressionContext === "filter" && !zo(r))
@@ -6958,7 +6958,7 @@ var Kd = { exports: {} };
             new oe(
               n.key,
               n.value,
-              "\"feature-state\" data expressions are not supported with filters.",
+              '"feature-state" data expressions are not supported with filters.',
             ),
           ];
         if (
@@ -6970,7 +6970,7 @@ var Kd = { exports: {} };
               new oe(
                 n.key,
                 n.value,
-                "\"zoom\" and \"feature-state\" expressions are not supported with cluster properties.",
+                '"zoom" and "feature-state" expressions are not supported with cluster properties.',
               ),
             ];
           if (n.expressionContext === "cluster-initial" && !Ds(r))
@@ -7166,14 +7166,14 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
                 new oe(
                   r,
                   p,
-                  "use of \"text-field\" requires a style \"glyphs\" property",
+                  'use of "text-field" requires a style "glyphs" property',
                 ),
               ),
             m === "text-font" &&
               Is(Ln(p)) &&
               Ot(p.type) === "identity" &&
               F.push(
-                new oe(r, p, "\"text-font\" does not support identity functions"),
+                new oe(r, p, '"text-font" does not support identity functions'),
               )),
           F.concat(
             o({
@@ -7203,7 +7203,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
           d = n.styleSpec;
         r.type ||
           r.ref ||
-          t.push(new oe(o, r, "either \"type\" or \"ref\" is required"));
+          t.push(new oe(o, r, 'either "type" or "ref" is required'));
         let p = Ot(r.type);
         const m = Ot(r.ref);
         if (r.id) {
@@ -7295,7 +7295,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
                           ),
                         )
               : t.push(new oe(o, r.source, `source "${r.source}" not found`));
-          } else t.push(new oe(o, r, "missing required property \"source\""));
+          } else t.push(new oe(o, r, 'missing required property "source"'));
         return (
           (t = t.concat(
             cr({
@@ -7373,7 +7373,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
           o = n.styleSpec,
           l = n.style,
           d = n.validateSpec;
-        if (!t.type) return [new oe(r, t, "\"type\" is required")];
+        if (!t.type) return [new oe(r, t, '"type" is required')];
         const p = Ot(t.type);
         let m;
         switch (p) {
@@ -7844,11 +7844,11 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
           o.length ||
             (t.indexOf("{fontstack}") === -1 &&
               o.push(
-                new oe(r, t, "\"glyphs\" url must include a \"{fontstack}\" token"),
+                new oe(r, t, '"glyphs" url must include a "{fontstack}" token'),
               ),
             t.indexOf("{range}") === -1 &&
               o.push(
-                new oe(r, t, "\"glyphs\" url must include a \"{range}\" token"),
+                new oe(r, t, '"glyphs" url must include a "{range}" token'),
               )),
           o
         );
@@ -25222,7 +25222,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
                       new u.$(
                         `sources.${e}`,
                         null,
-                        "\"coordinates\" property must be an array of 4 longitude/latitude array pairs",
+                        '"coordinates" property must be an array of 4 longitude/latitude array pairs',
                       ),
                     ),
                   )
@@ -25231,7 +25231,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
                       new u.$(
                         `sources.${e}`,
                         null,
-                        "missing required property \"coordinates\"",
+                        'missing required property "coordinates"',
                       ),
                     ),
                   ),
@@ -25242,7 +25242,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
                     new u.$(
                       `sources.${e}`,
                       null,
-                      "optional \"animate\" property must be a boolean value",
+                      'optional "animate" property must be a boolean value',
                     ),
                   ),
                 ),
@@ -25254,7 +25254,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
                       new u.$(
                         `sources.${e}`,
                         null,
-                        "\"canvas\" must be either a string representing the ID of the canvas element from which to read, or an HTMLCanvasElement instance",
+                        '"canvas" must be either a string representing the ID of the canvas element from which to read, or an HTMLCanvasElement instance',
                       ),
                     ),
                   )
@@ -25263,7 +25263,7 @@ Use an identity property function instead: \`{ "type": "identity", "property": $
                       new u.$(
                         `sources.${e}`,
                         null,
-                        "missing required property \"canvas\"",
+                        'missing required property "canvas"',
                       ),
                     ),
                   ),
@@ -42281,7 +42281,7 @@ ${M.shaderPreludeCode.vertexSource}`,
         const $o = {
           compact: !0,
           customAttribution:
-            "<a href=\"https://maplibre.org/\" target=\"_blank\">MapLibre</a>",
+            '<a href="https://maplibre.org/" target="_blank">MapLibre</a>',
         };
         class Ks {
           constructor(e = $o) {
@@ -48260,7 +48260,7 @@ const hm = {
     minzoom: 1,
     maxzoom: 17,
     attribution:
-      "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">\u5730\u7406\u9662\u30BF\u30A4\u30EB</a>",
+      '<a href="https://maps.gsi.go.jp/development/ichiran.html">\u5730\u7406\u9662\u30BF\u30A4\u30EB</a>',
   },
   Xe = new Jd.Map({
     container: "map",
@@ -48281,7 +48281,7 @@ const hm = {
           maxzoom: 18,
           tileSize: 256,
           attribution:
-            "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">\u5730\u7406\u9662\u30BF\u30A4\u30EB</a>",
+            '<a href="https://maps.gsi.go.jp/development/ichiran.html">\u5730\u7406\u9662\u30BF\u30A4\u30EB</a>',
         },
         terrain: hm,
         "drone-objects": {

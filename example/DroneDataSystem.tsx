@@ -2,15 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
-  addDroneObjects,
-  addDroneTrails,
   parseDroneCSV,
   parseGeoJSON,
-  exportDroneDataToCSV,
-  exportDroneDataToGeoJSON,
-  downloadFile,
-  generateSampleDroneData,
-  clearDroneData,
   type DroneObject,
 } from "../src/data-import-export";
 
@@ -35,8 +28,8 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [loadedObjects, setLoadedObjects] = useState<DroneObject[]>([]);
-  const [is3D, setIs3D] = useState(true);
-  const [drawMode, setDrawMode] = useState(false);
+  const [is3D] = useState(true);
+  const [,] = useState(false);
   const [status, setStatus] = useState("システム準備中...");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);

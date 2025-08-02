@@ -3,10 +3,12 @@ import typescriptPlugin from "@typescript-eslint/eslint-plugin";
 
 export default [
   {
-    files: ["**/*.{ts,tsx,js,jsx}"],
+    files: ["src/**/*.{ts,tsx,js,jsx}", "example/**/*.{ts,tsx,js,jsx}"],
     ignores: [
       "node_modules/**",
       "dist/**",
+      "demo/assets/**",
+      "**/*.d.ts",
       "*.md",
       "docs/**/*.md",
       "README.md",
