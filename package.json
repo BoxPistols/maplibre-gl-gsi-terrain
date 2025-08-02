@@ -1,43 +1,43 @@
 {
-  "name": "maplibre-gl-gsi-terrain",
-  "version": "2.2.2",
-  "type": "module",
-  "main": "./dist/terrain.js",
-  "types": "./dist/terrain.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "dev": "vite -c vite.config.example.ts",
-    "build:example": "vite build -c vite.config.example.ts",
-    "build": "vite build && tsc",
-    "prepare": "npm run build",
-    "test": "vitest src --coverage --coverage.provider=v8",
-    "test:ci": "vitest src --coverage --coverage.provider=v8 --reporter=verbose",
-    "lint": "eslint src example --ext .ts,.tsx,.js,.jsx",
-    "lint:fix": "eslint src example --ext .ts,.tsx,.js,.jsx --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "fix": "prettier --write . && pnpm run lint:fix",
-    "type-check": "tsc --noEmit",
-    "security:audit": "pnpm audit --audit-level moderate",
-    "security:snyk": "snyk test",
-    "ci:check": "pnpm lint && pnpm type-check && pnpm format:check && pnpm test",
-    "ci:build": "pnpm build && pnpm build:example",
-    "postinstall": "husky"
-  },
-  "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.38.0",
-    "@typescript-eslint/parser": "^8.38.0",
-    "@vitest/browser": "^2.1.8",
-    "@vitest/coverage-v8": "^2.1.8",
-    "eslint": "^9.32.0",
-    "husky": "^9.1.7",
-    "maplibre-gl": "^5.0.0",
-    "playwright": "^1.49.1",
-    "prettier": "^3.6.2",
-    "typescript": "^5.5.3",
-    "vite": "^3.2.3",
-    "vitest": "^2.1.8"
-  }
+	"name": "maplibre-gl-gsi-terrain",
+	"version": "2.2.2",
+	"type": "module",
+	"main": "./dist/terrain.js",
+	"types": "./dist/terrain.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"dev": "vite -c vite.config.example.ts",
+		"build:example": "vite build -c vite.config.example.ts",
+		"build": "vite build && tsc",
+		"prepare": "npm run build",
+		"test": "vitest src --coverage --coverage.provider=v8",
+		"test:ci": "vitest src --coverage --coverage.provider=v8 --reporter=verbose",
+		"lint": "eslint src example --ext .ts,.tsx,.js,.jsx",
+		"lint:fix": "eslint src example --ext .ts,.tsx,.js,.jsx --fix",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"fix": "prettier --write . && pnpm run lint:fix",
+		"type-check": "tsc --noEmit",
+		"security:audit": "pnpm audit --audit-level moderate",
+		"security:snyk": "snyk test",
+		"ci:check": "pnpm lint && pnpm type-check && pnpm format:check && pnpm test",
+		"ci:build": "pnpm build && pnpm build:example",
+		"postinstall": "husky"
+	},
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^8.38.0",
+		"@typescript-eslint/parser": "^8.38.0",
+		"@vitest/browser": "^2.1.8",
+		"@vitest/coverage-v8": "^2.1.8",
+		"eslint": "^9.32.0",
+		"husky": "^9.1.7",
+		"maplibre-gl": "^5.0.0",
+		"playwright": "^1.49.1",
+		"prettier": "^3.6.2",
+		"typescript": "^5.5.3",
+		"vite": "^3.2.3",
+		"vitest": "^2.1.8"
+	}
 }

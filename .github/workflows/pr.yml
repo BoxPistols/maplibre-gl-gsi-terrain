@@ -4,11 +4,11 @@ on:
   pull_request:
     branches: [main, master, develop]
     paths:
-      - "src/**"
-      - "example/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/**"
+      - 'src/**'
+      - 'example/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/**'
 
 jobs:
   # 軽量なチェック（プルリクエスト用）
@@ -22,8 +22,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
-          cache: "pnpm"
+          node-version: '22.x'
+          cache: 'pnpm'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
