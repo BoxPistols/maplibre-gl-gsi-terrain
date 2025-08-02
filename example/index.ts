@@ -704,7 +704,7 @@ const updateConnections = () => {
 	}> = []
 	Object.values(typeGroups).forEach(objects => {
 		if (objects.length >= 2) {
-			const coordinates = objects.map(obj => [obj.longitude, obj.latitude])
+			const coordinates: [number, number][] = objects.map(obj => [obj.longitude, obj.latitude])
 			connectionFeatures.push({
 				type: 'Feature',
 				geometry: {
