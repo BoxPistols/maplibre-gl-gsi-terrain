@@ -3,34 +3,24 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { getGsiDemProtocolAction } from "../src/terrain.ts";
 import {
   importDataFromFile,
-  exportDataToCSV,
   clearData,
-  addDroneObjects,
-  addDroneTrails,
   parseDroneCSV,
   parseGeoJSON,
   exportDroneDataToCSV,
   exportDroneDataToGeoJSON,
   downloadFile,
   generateSampleDroneData,
-  clearDroneData,
   convertDroneObjectToUnified,
   convertUnifiedToDroneObject,
   createFlightMission,
-  calculateMissionDistance,
-  estimateMissionDuration,
   exportUnifiedFlightDataToCSV,
   exportUnifiedFlightDataToGeoJSON,
   exportFlightMissionToKML,
   parseUnifiedFlightDataCSV,
   parseUnifiedFlightDataGeoJSON,
   parseFlightMissionJSON,
-  type Point3D,
-  type MeshVertex,
   type DroneObject,
   type UnifiedFlightData,
-  type FlightMission,
-  type FlightExecutionResult,
 } from "../src/data-import-export";
 
 // サンプルデータの定義
@@ -672,7 +662,6 @@ const updateDisplay = () => {
   };
 
   console.log("drone-objectsソースに設定するデータ:", geoJSONData);
-
   (map.getSource("drone-objects") as maplibregl.GeoJSONSource)?.setData(
     geoJSONData,
   );
@@ -736,7 +725,6 @@ const updateConnections = () => {
       });
     }
   });
-
   (map.getSource("drone-connections") as maplibregl.GeoJSONSource)?.setData({
     type: "FeatureCollection",
     features: connectionFeatures,
@@ -1148,7 +1136,9 @@ const setupEventHandlers = () => {
 
       const csvContent = await response.text();
       const blob = new Blob([csvContent], { type: "text/csv" });
-      const file = new File([blob], "sample-points.csv", { type: "text/csv" });
+      const file = new File([blob], "sample-points.csv", {
+        type: "text/csv",
+      });
 
       await importDataFromFile(file, map, "points");
       showToast("ポイントデータを読み込みました", "success");
@@ -1167,7 +1157,9 @@ const setupEventHandlers = () => {
 
       const csvContent = await response.text();
       const blob = new Blob([csvContent], { type: "text/csv" });
-      const file = new File([blob], "sample-mesh.csv", { type: "text/csv" });
+      const file = new File([blob], "sample-mesh.csv", {
+        type: "text/csv",
+      });
 
       await importDataFromFile(file, map, "mesh");
       showToast("メッシュデータを読み込みました", "success");
@@ -1190,7 +1182,10 @@ const setupEventHandlers = () => {
         ]);
 
         console.log("レスポンス確認:", {
-          points: { ok: pointsResponse.ok, status: pointsResponse.status },
+          points: {
+            ok: pointsResponse.ok,
+            status: pointsResponse.status,
+          },
           mesh: { ok: meshResponse.ok, status: meshResponse.status },
         });
 
@@ -1212,7 +1207,9 @@ const setupEventHandlers = () => {
           meshPreview: meshContent.substring(0, 200),
         });
 
-        const pointsBlob = new Blob([pointsContent], { type: "text/csv" });
+        const pointsBlob = new Blob([pointsContent], {
+          type: "text/csv",
+        });
         const pointsFile = new File([pointsBlob], "building-points.csv", {
           type: "text/csv",
         });

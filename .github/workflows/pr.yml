@@ -1,19 +1,19 @@
-name: Test
+name: Pull Request Checks
 
 on:
   pull_request:
-    branches:
-      - master
-      - main
-      - develop
+    branches: [main, master, develop]
     paths:
       - "src/**"
       - "example/**"
-  workflow_dispatch:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/**"
 
 jobs:
-  test:
-    name: Test
+  # 軽量なチェック（プルリクエスト用）
+  pr-checks:
+    name: PR Checks
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
@@ -33,11 +33,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm build
+      - name: Run ESLint
+        run: pnpm lint
 
-      - name: Install playwright
-        run: pnpm exec playwright install
+      - name: Run TypeScript type check
+        run: pnpm type-check
+
+      - name: Run Prettier check
+        run: pnpm format:check
 
       - name: Run tests
         run: pnpm test
+
+      - name: Build check
+        run: pnpm ci:build

@@ -22,6 +22,9 @@ importers:
       eslint:
         specifier: ^9.32.0
         version: 9.32.0
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       maplibre-gl:
         specifier: ^5.0.0
         version: 5.0.0
@@ -1789,6 +1792,14 @@ packages:
       {
         integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==,
       }
+
+  husky@9.1.7:
+    resolution:
+      {
+        integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==,
+      }
+    engines: { node: ">=18" }
+    hasBin: true
 
   ieee754@1.2.1:
     resolution:
@@ -3861,6 +3872,8 @@ snapshots:
   headers-polyfill@4.0.3: {}
 
   html-escaper@2.0.2: {}
+
+  husky@9.1.7: {}
 
   ieee754@1.2.1: {}
 
