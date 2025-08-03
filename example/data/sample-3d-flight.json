@@ -1,0 +1,49 @@
+{
+	"name": "3D高度テストフライト",
+	"description": "Three.js 3D可視化テスト用のサンプルフライトプラン",
+	"phases": [
+		{
+			"phase": "離陸",
+			"action": "takeoff",
+			"duration": 5,
+			"position": [139.6917, 35.6895, 50]
+		},
+		{
+			"phase": "上昇",
+			"action": "move",
+			"duration": 10,
+			"position": [139.692, 35.69, 150]
+		},
+		{
+			"phase": "高高度移動",
+			"action": "move",
+			"duration": 15,
+			"position": [139.693, 35.691, 250]
+		},
+		{
+			"phase": "撮影ポイント",
+			"action": "photo",
+			"duration": 8,
+			"position": [139.6935, 35.6915, 300]
+		},
+		{
+			"phase": "低高度移動",
+			"action": "move",
+			"duration": 12,
+			"position": [139.6925, 35.6905, 100]
+		},
+		{
+			"phase": "ホバリング",
+			"action": "hover",
+			"duration": 5,
+			"position": [139.692, 35.69, 80]
+		},
+		{
+			"phase": "着陸",
+			"action": "land",
+			"duration": 8,
+			"position": [139.6917, 35.6895, 0]
+		}
+	],
+	"totalDuration": 63
+}

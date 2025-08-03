@@ -22,6 +22,11 @@ import {
 	type UnifiedFlightData,
 } from '../src/data-import-export'
 import { getGsiDemProtocolAction } from '../src/terrain.ts'
+import {
+	createThreeVisualization,
+	type ThreeLayer,
+	type DroneTrajectoryRenderer,
+} from '../src/three-layer'
 
 // サンプルデータの定義
 const SAMPLE_FLIGHT_DATA = `id,name,type,source,longitude,latitude,altitude,relativeAltitude,timestamp,duration,speed,heading,action,waypointId,sequenceNumber,batteryLevel,signalStrength,gpsAccuracy,temperature,humidity,windSpeed,windDirection,missionId,operatorId,aircraftModel,aircraftSerial,description
@@ -40,7 +45,7 @@ const protocolAction = getGsiDemProtocolAction('gsidem')
 maplibregl.addProtocol('gsidem', protocolAction)
 const gsiTerrainSource = {
 	type: 'raster-dem' as const,
-	tiles: ['gsidem://https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png'],
+	tiles: ['gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
 	tileSize: 256,
 	encoding: 'terrarium' as const,
 	minzoom: 1,
@@ -116,6 +121,11 @@ let currentPolygonPoints: [number, number][] = []
 let droneSimulationInterval: number | null = null
 let sampleDataLoaded = false
 
+// Three.js 3D可視化関連
+let enable3DVisualization = false
+let threeLayer: ThreeLayer | null = null
+let trajectoryRenderer: DroneTrajectoryRenderer | null = null
+
 // フライトログ管理
 interface FlightLogEntry {
 	timestamp: string
@@ -131,8 +141,8 @@ let currentFlightPhase = 0
 
 // 動的フライトプラン管理
 let currentFlightPlan: FlightPlanPhase[] = []
-let currentFlightPlanName = ''
-let currentFlightPlanDescription = ''
+let currentFlightPlanName = '東京タワー点検プラン'
+let currentFlightPlanDescription = 'デフォルトの東京タワー点検フライトプラン'
 
 interface FlightPlanPhase {
 	phase: string
@@ -672,6 +682,11 @@ const updateDisplay = () => {
 	// 接続線表示
 	updateConnections()
 
+	// 3D可視化が有効な場合は3D軌跡も更新
+	if (enable3DVisualization && loadedObjects.length > 0) {
+		render3DTrajectory()
+	}
+
 	console.log(`表示更新: ${loadedObjects.length}個のオブジェクト`)
 }
 
@@ -1091,6 +1106,208 @@ const addObjectAtLocation = (lngLat: maplibregl.LngLat) => {
 	showToast(`点検ポイントを追加: ${newObject.name}`, 'success')
 }
 
+// 3D可視化のセットアップ
+const setup3DVisualization = () => {
+	console.log('Setting up 3D visualization...')
+	const { layer, renderer } = createThreeVisualization()
+	threeLayer = layer
+	trajectoryRenderer = renderer
+	console.log('Three.js 3D可視化システム初期化完了', { layer, renderer })
+}
+
+// 3D表示の切り替え
+const toggle3DVisualization = () => {
+	console.log(
+		'toggle3DVisualization called, threeLayer:',
+		threeLayer,
+		'enable3DVisualization:',
+		enable3DVisualization
+	)
+	if (!threeLayer) {
+		console.error('threeLayer is null!')
+		return
+	}
+
+	if (enable3DVisualization) {
+		// 3D表示を無効化
+		if (map.getLayer(threeLayer.id)) {
+			map.removeLayer(threeLayer.id)
+		}
+		enable3DVisualization = false
+		updateStatus('3D軌跡表示を無効化しました')
+		addFlightLog('システム', '3D表示', '3D軌跡表示を無効化', 'info')
+	} else {
+		// 3D表示を有効化
+		map.addLayer(threeLayer)
+		enable3DVisualization = true
+		updateStatus('3D軌跡表示を有効化しました - Three.js動作中')
+		addFlightLog('システム', '3D表示', '3D軌跡表示を有効化', 'success')
+
+		// レイヤー追加後に少し待ってからレンダラーを初期化
+		setTimeout(() => {
+			if (trajectoryRenderer) {
+				trajectoryRenderer.initialize()
+
+				// 必ずテスト用の3Dオブジェクトを表示
+				addTest3DObjects()
+
+				// 追加で、レンダラに直接テストキューブを追加
+				trajectoryRenderer.addTestCube()
+			}
+		}, 100) // 100ms待機
+
+		// 既存のデータがあれば3D表示
+		if (loadedObjects.length > 0) {
+			render3DTrajectory()
+		}
+	}
+
+	// ボタンのテキストを更新
+	const button = document.getElementById('toggle3DTrajectory')
+	if (button) {
+		button.textContent = enable3DVisualization ? '🔴 3D軌跡ON' : '🌐 3D軌跡OFF'
+		button.title = enable3DVisualization
+			? '3D軌跡表示を無効化します'
+			: 'ドローンの軌跡を3D空間で表示します'
+		button.className = enable3DVisualization ? 'success' : 'warning'
+	}
+}
+
+// テスト用の3Dオブジェクトを追加
+const addTest3DObjects = () => {
+	console.log('addTest3DObjects called, trajectoryRenderer:', trajectoryRenderer)
+	if (!trajectoryRenderer) {
+		console.error('trajectoryRenderer is null!')
+		return
+	}
+
+	// テスト用の高度差のあるダミーデータ
+	const testFlightData: UnifiedFlightData[] = [
+		{
+			id: 'test_1',
+			name: 'テスト地点1',
+			type: 'waypoint',
+			source: 'test',
+			position: { longitude: 139.7454, latitude: 35.6586, altitude: 50 },
+			flight: { action: 'takeoff', sequenceNumber: 0 },
+		},
+		{
+			id: 'test_2',
+			name: 'テスト地点2',
+			type: 'waypoint',
+			source: 'test',
+			position: { longitude: 139.7456, latitude: 35.6588, altitude: 150 },
+			flight: { action: 'move', sequenceNumber: 1 },
+		},
+		{
+			id: 'test_3',
+			name: 'テスト地点3',
+			type: 'waypoint',
+			source: 'test',
+			position: { longitude: 139.7458, latitude: 35.659, altitude: 250 },
+			flight: { action: 'hover', sequenceNumber: 2 },
+		},
+	]
+
+	trajectoryRenderer.renderFlightPath(testFlightData)
+	console.log('テスト用3Dオブジェクト表示完了')
+}
+
+// 3D軌跡のレンダリング
+const render3DTrajectory = () => {
+	if (!trajectoryRenderer || !enable3DVisualization) return
+
+	// DroneObjectをUnifiedFlightDataに変換
+	const flightData: UnifiedFlightData[] = loadedObjects.map((obj, index) => ({
+		id: obj.id,
+		name: obj.name,
+		type: 'waypoint',
+		source: obj.source,
+		position: {
+			longitude: obj.longitude,
+			latitude: obj.latitude,
+			altitude: obj.altitude,
+		},
+		flight: {
+			action: obj.type === 'drone' ? 'waypoint' : 'hover',
+			sequenceNumber: index,
+		},
+	}))
+
+	trajectoryRenderer.renderFlightPath(flightData)
+	console.log(`3D軌跡レンダリング完了: ${flightData.length}ポイント`)
+}
+
+// 3Dサンプルフライトプランのダウンロード
+const download3DSampleFlightPlan = () => {
+	const sampleData = {
+		name: '3D高度テストフライト',
+		description: 'Three.js 3D可視化テスト用のサンプルフライトプラン',
+		phases: [
+			{
+				phase: '離陸',
+				action: 'takeoff',
+				duration: 5,
+				position: [139.6917, 35.6895, 50],
+			},
+			{
+				phase: '上昇',
+				action: 'move',
+				duration: 10,
+				position: [139.692, 35.69, 150],
+			},
+			{
+				phase: '高高度移動',
+				action: 'move',
+				duration: 15,
+				position: [139.693, 35.691, 250],
+			},
+			{
+				phase: '撮影ポイント',
+				action: 'photo',
+				duration: 8,
+				position: [139.6935, 35.6915, 300],
+			},
+			{
+				phase: '低高度移動',
+				action: 'move',
+				duration: 12,
+				position: [139.6925, 35.6905, 100],
+			},
+			{
+				phase: 'ホバリング',
+				action: 'hover',
+				duration: 5,
+				position: [139.692, 35.69, 80],
+			},
+			{
+				phase: '着陸',
+				action: 'land',
+				duration: 8,
+				position: [139.6917, 35.6895, 0],
+			},
+		],
+		totalDuration: 63,
+	}
+
+	const blob = new Blob([JSON.stringify(sampleData, null, 2)], { type: 'application/json' })
+	const url = URL.createObjectURL(blob)
+	const a = document.createElement('a')
+	a.href = url
+	a.download = 'sample-3d-flight.json'
+	document.body.appendChild(a)
+	a.click()
+	document.body.removeChild(a)
+	URL.revokeObjectURL(url)
+
+	updateStatus('3Dサンプルフライトプランをダウンロードしました')
+	addFlightLog('データ管理', '3Dサンプル', 'sample-3d-flight.jsonをダウンロード', 'success')
+	showToast(
+		'3D軌跡テスト用サンプルデータをダウンロードしました。ドラッグ&ドロップで読み込んでください。',
+		'info'
+	)
+}
+
 // 2D/3D切り替え
 const toggle3D = () => {
 	is3D = !is3D
@@ -1218,6 +1435,12 @@ const setupEventHandlers = () => {
 			sampleDataLoaded = true
 			updateStatus(`東京タワー点検データ読み込み完了: ${sampleData.length}オブジェクト`)
 			showToast('東京タワー周辺点検ドローンを配置しました', 'success')
+
+			// 自動的に3D表示を有効化
+			if (!enable3DVisualization) {
+				toggle3DVisualization()
+				showToast('3D軌跡表示も有効化されました', 'info')
+			}
 		} else {
 			showToast('点検ドローンは既に配置済みです', 'info')
 		}
@@ -1472,7 +1695,7 @@ const setupEventHandlers = () => {
 		}
 	})
 
-	// 2D/3D切り替え
+	// 2D/3D切り替え（元の機能）
 	document.getElementById('toggle3D')?.addEventListener('click', () => {
 		toggle3D()
 		const button = document.getElementById('toggle3D')
@@ -1480,6 +1703,11 @@ const setupEventHandlers = () => {
 			button.textContent = is3D ? '2D表示' : '3D表示'
 		}
 		showToast(is3D ? '3D表示に切り替えました' : '2D表示に切り替えました', 'info')
+	})
+
+	// 3D軌跡表示切り替え（新機能）
+	document.getElementById('toggle3DTrajectory')?.addEventListener('click', () => {
+		toggle3DVisualization()
 	})
 
 	// フライトログクリア
@@ -1716,6 +1944,11 @@ const setupEventHandlers = () => {
 			)
 			updateStatus('サンプルフライトデータ読み込みエラー')
 		}
+	})
+
+	// 3Dサンプルフライトプランダウンロード
+	document.getElementById('download3DSample')?.addEventListener('click', () => {
+		download3DSampleFlightPlan()
 	})
 
 	// サンプル軌跡データ読み込み
@@ -2052,22 +2285,44 @@ const startFlightPlan = () => {
 	flightPlanActive = true
 	currentFlightPhase = 0
 
+	// 自動的に3D表示を有効化
+	if (!enable3DVisualization) {
+		toggle3DVisualization()
+		addFlightLog('システム', '3D表示', 'フライトプラン実行で3D軌跡表示を有効化', 'info')
+	}
+
 	addFlightLog('システム', 'フライトプラン開始', `${currentFlightPlanName}を開始します`, 'success')
 
-	// ドローンオブジェクトを作成
-	if (loadedObjects.length === 0) {
-		const droneObject: DroneObject = {
-			id: 'inspection-drone-1',
-			name: `${currentFlightPlanName}ドローン`,
-			longitude: currentFlightPlan[0].position[0],
-			latitude: currentFlightPlan[0].position[1],
-			altitude: 0,
-			type: 'drone',
-			source: 'flight-plan',
-		}
-		loadedObjects.push(droneObject)
-		updateDisplay()
+	// フライトパス全体のウェイポイントを作成（3D可視化用）
+	const flightPathObjects: DroneObject[] = currentFlightPlan.map((phase, index) => ({
+		id: `waypoint-${index}`,
+		name: `${phase.phase}`,
+		longitude: phase.position[0],
+		latitude: phase.position[1],
+		altitude: phase.position[2],
+		type: 'waypoint',
+		source: 'flight-plan',
+	}))
+
+	// 動くドローンオブジェクトを作成
+	const droneObject: DroneObject = {
+		id: 'inspection-drone-1',
+		name: `${currentFlightPlanName}ドローン`,
+		longitude: currentFlightPlan[0].position[0],
+		latitude: currentFlightPlan[0].position[1],
+		altitude: currentFlightPlan[0].position[2],
+		type: 'drone',
+		source: 'flight-plan',
 	}
+
+	// 既存のflight-planオブジェクトをクリア
+	loadedObjects = loadedObjects.filter(obj => obj.source !== 'flight-plan')
+
+	// 新しいフライトパスと動くドローンを追加
+	loadedObjects.push(...flightPathObjects, droneObject)
+	updateDisplay()
+
+	console.log(`Created ${flightPathObjects.length} waypoints + 1 drone for 3D visualization`)
 
 	executeFlightPhase()
 }
@@ -2091,7 +2346,9 @@ const executeFlightPhase = () => {
 	drone.latitude = phase.position[1]
 	drone.altitude = phase.position[2]
 
-	addFlightLog(phase.phase, '実行中', phase.action, 'info')
+	// 座標情報付きログを追加
+	const coordinates = `座標: ${phase.position[0].toFixed(6)}, ${phase.position[1].toFixed(6)}, 高度: ${phase.position[2]}m`
+	addFlightLog(phase.phase, '実行中', `${phase.action} | ${coordinates}`, 'info')
 
 	// 地図をドローンの位置に移動
 	map.flyTo({
@@ -2307,6 +2564,7 @@ document.addEventListener('keydown', e => {
 // 地図の読み込み完了
 map.on('load', () => {
 	setupLayers()
+	setup3DVisualization()
 	setupEventHandlers()
 	updateStatus('地図読み込み完了 - 東京タワー周辺のドローン点検を開始してください')
 	console.log('システム準備完了')
@@ -2314,6 +2572,10 @@ map.on('load', () => {
 	// フライトログ初期化
 	addFlightLog('システム', '初期化', '東京タワー点検システムが起動しました', 'success')
 	addFlightLog('システム', '準備完了', 'フライトプランとリアルタイムログ機能が利用可能です', 'info')
+
+	// デフォルトフライトプランを設定
+	currentFlightPlan = [...defaultFlightPlan]
+	addFlightLog('システム', 'フライトプラン', 'デフォルトフライトプランを読み込みました', 'info')
 
 	// Footerを初期表示状態にする（より確実な処理）
 	setTimeout(() => {

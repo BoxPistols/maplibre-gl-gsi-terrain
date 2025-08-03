@@ -1,7 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { parseDroneCSV, parseGeoJSON, type DroneObject } from '../src/data-import-export'
+import {
+	parseDroneCSV,
+	parseGeoJSON,
+	type DroneObject,
+	type UnifiedFlightData,
+} from '../src/data-import-export'
+import {
+	createThreeVisualization,
+	type ThreeLayer,
+	type DroneTrajectoryRenderer,
+} from '../src/three-layer'
 
 // フライトプランの型定義
 interface FlightPlanPhase {
@@ -22,11 +32,16 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 	const mapContainer = useRef<HTMLDivElement>(null)
 	const map = useRef<maplibregl.Map | null>(null)
 	const [loadedObjects, setLoadedObjects] = useState<DroneObject[]>([])
-	const [is3D] = useState(true)
-	const [,] = useState(false)
+	const [is3D, setIs3D] = useState(true)
+	const [enable3DVisualization, setEnable3DVisualization] = useState(false)
 	const [status, setStatus] = useState('システム準備中...')
 	const [dragOver, setDragOver] = useState(false)
+	const [showControlPanel, setShowControlPanel] = useState(true)
 	const fileInputRef = useRef<HTMLInputElement>(null)
+
+	// Three.js関連のref
+	const threeLayer = useRef<ThreeLayer | null>(null)
+	const trajectoryRenderer = useRef<DroneTrajectoryRenderer | null>(null)
 
 	// フライトプラン関連のstate
 	const [flightPlan, setFlightPlan] = useState<FlightPlan | null>(null)
@@ -121,6 +136,7 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 		map.current.on('load', () => {
 			setupMapLayers()
 			setupMapEvents()
+			setup3DVisualization()
 			setStatus('システム準備完了')
 		})
 		map.current.on('error', e => {
@@ -132,19 +148,82 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 		}
 	}, [gsidem2terrainrgb])
 
+	// 3D可視化のセットアップ
+	const setup3DVisualization = useCallback(() => {
+		if (!map.current) return
+
+		const { layer, renderer } = createThreeVisualization()
+		threeLayer.current = layer
+		trajectoryRenderer.current = renderer
+
+		// マップにThree.jsレイヤーを追加
+		if (enable3DVisualization) {
+			map.current.addLayer(layer)
+		}
+	}, [enable3DVisualization])
+
+	// 3D表示の切り替え
+	const toggle3DVisualization = useCallback(() => {
+		if (!map.current || !threeLayer.current) return
+
+		if (enable3DVisualization) {
+			// 3D表示を無効化
+			if (map.current.getLayer(threeLayer.current.id)) {
+				map.current.removeLayer(threeLayer.current.id)
+			}
+			setEnable3DVisualization(false)
+		} else {
+			// 3D表示を有効化
+			map.current.addLayer(threeLayer.current)
+			setEnable3DVisualization(true)
+			// 既存のデータがあれば3D表示
+			if (loadedObjects.length > 0) {
+				render3DTrajectory()
+			}
+		}
+	}, [enable3DVisualization, loadedObjects])
+
+	// 3D軌跡のレンダリング
+	const render3DTrajectory = useCallback(() => {
+		if (!trajectoryRenderer.current || !enable3DVisualization) return
+
+		// DroneObjectをUnifiedFlightDataに変換
+		const flightData: UnifiedFlightData[] = loadedObjects.map((obj, index) => ({
+			id: obj.id,
+			name: obj.name,
+			type: 'waypoint',
+			source: obj.source,
+			position: {
+				longitude: obj.longitude,
+				latitude: obj.latitude,
+				altitude: obj.altitude,
+			},
+			flight: {
+				action: obj.type === 'drone' ? 'waypoint' : 'hover',
+				sequenceNumber: index,
+			},
+		}))
+
+		trajectoryRenderer.current.renderFlightPath(flightData)
+	}, [loadedObjects, enable3DVisualization])
+
 	// (マップレイヤー設定、イベント設定、オブジェクト表示更新は変更なし)
 	const setupMapLayers = useCallback(() => {
 		/* ... */
 	}, [])
 	const setupMapEvents = useCallback(() => {
 		/* ... */
-	}, [drawMode])
+	}, [])
 	const updateDisplay = useCallback(() => {
 		/* ... */
 	}, [loadedObjects])
 	useEffect(() => {
 		updateDisplay()
-	}, [loadedObjects, updateDisplay])
+		// 3D表示が有効な場合は3D軌跡も更新
+		if (enable3DVisualization) {
+			render3DTrajectory()
+		}
+	}, [loadedObjects, updateDisplay, enable3DVisualization, render3DTrajectory])
 	const showObjectInfo = useCallback((e: maplibregl.MapMouseEvent) => {
 		/* ... */
 	}, [])
@@ -221,6 +300,71 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 		}
 		setCurrentPhaseIndex(0)
 	}, [flightPlan, currentPhaseIndex])
+
+	// サンプルフライトプランのダウンロード
+	const downloadSampleFlightPlan = useCallback(() => {
+		const sampleData = {
+			name: '3D高度テストフライト',
+			description: 'Three.js 3D可視化テスト用のサンプルフライトプラン',
+			phases: [
+				{
+					phase: '離陸',
+					action: 'takeoff',
+					duration: 5,
+					position: [139.6917, 35.6895, 50],
+				},
+				{
+					phase: '上昇',
+					action: 'move',
+					duration: 10,
+					position: [139.692, 35.69, 150],
+				},
+				{
+					phase: '高高度移動',
+					action: 'move',
+					duration: 15,
+					position: [139.693, 35.691, 250],
+				},
+				{
+					phase: '撮影ポイント',
+					action: 'photo',
+					duration: 8,
+					position: [139.6935, 35.6915, 300],
+				},
+				{
+					phase: '低高度移動',
+					action: 'move',
+					duration: 12,
+					position: [139.6925, 35.6905, 100],
+				},
+				{
+					phase: 'ホバリング',
+					action: 'hover',
+					duration: 5,
+					position: [139.692, 35.69, 80],
+				},
+				{
+					phase: '着陸',
+					action: 'land',
+					duration: 8,
+					position: [139.6917, 35.6895, 0],
+				},
+			],
+			totalDuration: 63,
+		}
+
+		const blob = new Blob([JSON.stringify(sampleData, null, 2)], { type: 'application/json' })
+		const url = URL.createObjectURL(blob)
+		const a = document.createElement('a')
+		a.href = url
+		a.download = 'sample-3d-flight.json'
+		document.body.appendChild(a)
+		a.click()
+		document.body.removeChild(a)
+		URL.revokeObjectURL(url)
+
+		setStatus('3Dサンプルフライトプランをダウンロードしました')
+	}, [])
 
 	// 位相実行の副作用
 	useEffect(() => {
@@ -319,98 +463,291 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 	return (
 		<div
 			className={`drone-data-system ${className}`}
-			style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}
+			style={{ height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}
 		>
 			<div ref={mapContainer} style={{ flex: 1, minHeight: 0 }} />
 
+			{/* 浮動3Dコントロールパネル */}
 			<div
 				style={{
-					height: '350px',
-					overflowY: 'auto',
-					padding: '20px',
-					background: '#f5f5f5',
-					borderTop: '1px solid #ddd',
+					position: 'absolute',
+					top: '20px',
+					right: '20px',
+					background: 'rgba(255, 255, 255, 0.95)',
+					padding: '15px',
+					borderRadius: '10px',
+					boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+					zIndex: 1000,
+					minWidth: '200px',
 				}}
 			>
-				<h3>✈️ フライトプランナー</h3>
-
-				<div
-					style={{
-						margin: '10px 0',
-						padding: '10px',
-						background: '#e8f4f8',
-						borderRadius: '5px',
-						fontSize: '14px',
-					}}
-				>
-					{status}
+				<div style={{ marginBottom: '10px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
+					🌐 3D表示コントロール
 				</div>
-
-				<div
-					onDragOver={handleDragOver}
-					onDragLeave={handleDragLeave}
-					onDrop={handleDrop}
-					onClick={() => fileInputRef.current?.click()}
+				<button
+					onClick={toggle3DVisualization}
 					style={{
-						border: `2px dashed ${dragOver ? '#007cba' : '#ccc'}`,
-						background: dragOver ? '#e3f2fd' : 'transparent',
-						padding: '20px',
-						textAlign: 'center',
-						margin: '10px 0',
+						width: '100%',
+						padding: '12px 20px',
+						background: enable3DVisualization ? '#4CAF50' : '#FF9800',
+						color: 'white',
+						border: 'none',
+						borderRadius: '6px',
 						cursor: 'pointer',
-						transition: 'all 0.3s',
-						borderRadius: '5px',
+						fontSize: '14px',
+						fontWeight: 'bold',
+						boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+						transition: 'all 0.3s ease',
+					}}
+					onMouseOver={e => {
+						e.currentTarget.style.transform = 'scale(1.05)'
+					}}
+					onMouseOut={e => {
+						e.currentTarget.style.transform = 'scale(1)'
 					}}
 				>
-					📂 フライトプラン(JSON)や他のデータ(CSV)をドロップ
+					{enable3DVisualization ? '🌐 3D表示 ON' : '🗺️ 3D表示 OFF'}
+				</button>
+				<div
+					style={{
+						marginTop: '10px',
+						padding: '8px',
+						background: enable3DVisualization ? '#E8F5E8' : '#FFF3E0',
+						borderRadius: '4px',
+						fontSize: '12px',
+						color: '#666',
+					}}
+				>
+					{enable3DVisualization ? '高度情報を3D空間で表示中' : '通常の2D表示モード'}
 				</div>
-				<input
-					ref={fileInputRef}
-					type="file"
-					multiple
-					accept=".csv,.json,.geojson"
-					style={{ display: 'none' }}
-					onChange={e => e.target.files && handleFiles(e.target.files)}
-				/>
-
-				<div style={{ marginBottom: '15px' }}>
-					<button
-						onClick={executeFlightPlan}
-						disabled={!flightPlan || currentPhaseIndex !== -1}
-						style={buttonStyle}
-					>
-						🚁 フライトプラン開始
-					</button>
-					<button onClick={stopFlightPlan} disabled={currentPhaseIndex === -1} style={buttonStyle}>
-						⏹️ フライト停止
-					</button>
-					<button onClick={clearAllData} style={buttonStyle}>
-						🗑️ データクリア
-					</button>
-					<button onClick={toggle3D} style={buttonStyle}>
-						🔄 2D/3D切り替え
-					</button>
-				</div>
-
-				{flightPlan && (
-					<div>
-						<h4>実行中のプラン: {flightPlan.name}</h4>
-						<ul>
-							{flightPlan.phases.map((phase, index) => (
-								<li
-									key={index}
-									style={{
-										fontWeight: index === currentPhaseIndex ? 'bold' : 'normal',
-										color: index < currentPhaseIndex ? 'gray' : 'black',
-									}}
-								>
-									{phase.phase}: {phase.action}
-								</li>
-							))}
-						</ul>
-					</div>
-				)}
 			</div>
+
+			{/* 浮動サンプルデータパネル */}
+			<div
+				style={{
+					position: 'absolute',
+					top: '20px',
+					left: '20px',
+					background: 'rgba(255, 255, 255, 0.95)',
+					padding: '15px',
+					borderRadius: '10px',
+					boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+					zIndex: 1000,
+					minWidth: '250px',
+				}}
+			>
+				<div style={{ marginBottom: '10px', fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
+					📂 サンプルデータ
+				</div>
+				<button
+					onClick={downloadSampleFlightPlan}
+					style={{
+						width: '100%',
+						padding: '10px 16px',
+						background: '#2196F3',
+						color: 'white',
+						border: 'none',
+						borderRadius: '6px',
+						cursor: 'pointer',
+						fontSize: '13px',
+						fontWeight: 'bold',
+						boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+						marginBottom: '8px',
+					}}
+				>
+					📥 3D軌跡サンプルをダウンロード
+				</button>
+				<div
+					style={{
+						fontSize: '11px',
+						color: '#666',
+						lineHeight: '1.4',
+					}}
+				>
+					高度50m→300m→0mの3D軌跡テストデータです。ダウンロード後、下部パネルにドラッグ&ドロップしてください。
+				</div>
+			</div>
+
+			{/* パネル表示切り替えボタン */}
+			<div
+				style={{
+					position: 'absolute',
+					bottom: '20px',
+					right: '20px',
+					zIndex: 1000,
+				}}
+			>
+				<button
+					onClick={() => setShowControlPanel(!showControlPanel)}
+					style={{
+						padding: '12px',
+						background: 'rgba(0, 0, 0, 0.8)',
+						color: 'white',
+						border: 'none',
+						borderRadius: '50%',
+						cursor: 'pointer',
+						fontSize: '16px',
+						width: '50px',
+						height: '50px',
+						boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+						transition: 'all 0.3s ease',
+					}}
+					title={showControlPanel ? 'パネルを隠す' : 'パネルを表示'}
+				>
+					{showControlPanel ? '📐' : '🔧'}
+				</button>
+			</div>
+
+			{showControlPanel && (
+				<div
+					style={{
+						height: '350px',
+						overflowY: 'auto',
+						padding: '20px',
+						background: '#f5f5f5',
+						borderTop: '1px solid #ddd',
+					}}
+				>
+					<div
+						style={{
+							display: 'flex',
+							justifyContent: 'space-between',
+							alignItems: 'center',
+							marginBottom: '15px',
+							padding: '10px',
+							background: '#ffffff',
+							borderRadius: '8px',
+							border: '1px solid #ddd',
+						}}
+					>
+						<h3 style={{ margin: 0 }}>✈️ フライトプランナー</h3>
+						<button
+							onClick={toggle3DVisualization}
+							style={{
+								padding: '10px 20px',
+								background: enable3DVisualization ? '#4CAF50' : '#FF9800',
+								color: 'white',
+								border: '2px solid transparent',
+								borderRadius: '6px',
+								cursor: 'pointer',
+								fontSize: '14px',
+								fontWeight: 'bold',
+								boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+								minWidth: '140px',
+							}}
+						>
+							{enable3DVisualization ? '🌐 3D ON' : '🗺️ 3D OFF'}
+						</button>
+					</div>
+
+					<div
+						style={{
+							margin: '10px 0',
+							padding: '10px',
+							background: '#e8f4f8',
+							borderRadius: '5px',
+							fontSize: '14px',
+						}}
+					>
+						{status}
+						{enable3DVisualization && (
+							<span style={{ marginLeft: '10px', color: '#4CAF50', fontWeight: 'bold' }}>
+								3D可視化モード
+							</span>
+						)}
+					</div>
+
+					<div
+						onDragOver={handleDragOver}
+						onDragLeave={handleDragLeave}
+						onDrop={handleDrop}
+						onClick={() => fileInputRef.current?.click()}
+						style={{
+							border: `2px dashed ${dragOver ? '#007cba' : '#ccc'}`,
+							background: dragOver ? '#e3f2fd' : 'transparent',
+							padding: '20px',
+							textAlign: 'center',
+							margin: '10px 0',
+							cursor: 'pointer',
+							transition: 'all 0.3s',
+							borderRadius: '5px',
+						}}
+					>
+						📂 フライトプラン(JSON)や他のデータ(CSV)をドロップ
+						<div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+							サンプルデータが必要な場合：
+							<button
+								onClick={e => {
+									e.stopPropagation()
+									downloadSampleFlightPlan()
+								}}
+								style={{
+									marginLeft: '8px',
+									padding: '4px 8px',
+									background: '#2196F3',
+									color: 'white',
+									border: 'none',
+									borderRadius: '4px',
+									cursor: 'pointer',
+									fontSize: '11px',
+								}}
+							>
+								📥 3Dサンプルをダウンロード
+							</button>
+						</div>
+					</div>
+					<input
+						ref={fileInputRef}
+						type="file"
+						multiple
+						accept=".csv,.json,.geojson"
+						style={{ display: 'none' }}
+						onChange={e => e.target.files && handleFiles(e.target.files)}
+					/>
+
+					<div style={{ marginBottom: '15px' }}>
+						<button
+							onClick={executeFlightPlan}
+							disabled={!flightPlan || currentPhaseIndex !== -1}
+							style={buttonStyle}
+						>
+							🚁 フライトプラン開始
+						</button>
+						<button
+							onClick={stopFlightPlan}
+							disabled={currentPhaseIndex === -1}
+							style={buttonStyle}
+						>
+							⏹️ フライト停止
+						</button>
+						<button onClick={clearAllData} style={buttonStyle}>
+							🗑️ データクリア
+						</button>
+						<button onClick={toggle3D} style={buttonStyle}>
+							🔄 2D/3D切り替え
+						</button>
+					</div>
+
+					{flightPlan && (
+						<div>
+							<h4>実行中のプラン: {flightPlan.name}</h4>
+							<ul>
+								{flightPlan.phases.map((phase, index) => (
+									<li
+										key={index}
+										style={{
+											fontWeight: index === currentPhaseIndex ? 'bold' : 'normal',
+											color: index < currentPhaseIndex ? 'gray' : 'black',
+										}}
+									>
+										{phase.phase}: {phase.action}
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	)
 }
