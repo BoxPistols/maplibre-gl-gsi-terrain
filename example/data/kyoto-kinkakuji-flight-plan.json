@@ -1,116 +1,116 @@
 {
-  "name": "京都金閣寺周遊フライト",
-  "description": "金閣寺と周辺庭園を空から観賞",
-  "created": "2024-01-15T12:00:00Z",
-  "totalDuration": 42000,
-  "phases": [
-    {
-      "phase": "離陸",
-      "action": "庭園から離陸",
-      "duration": 3000,
-      "position": [135.7292, 35.0394, 50],
-      "pitch": 40,
-      "bearing": 0,
-      "zoom": 17
-    },
-    {
-      "phase": "上昇",
-      "action": "金閣寺上空へ上昇",
-      "duration": 3000,
-      "position": [135.7292, 35.0394, 100],
-      "pitch": 55,
-      "bearing": 45,
-      "zoom": 17
-    },
-    {
-      "phase": "金閣撮影1",
-      "action": "正面から金閣を撮影",
-      "duration": 4000,
-      "position": [135.7292, 35.0390, 80],
-      "pitch": 60,
-      "bearing": 0,
-      "zoom": 18
-    },
-    {
-      "phase": "東側移動",
-      "action": "東側に移動",
-      "duration": 3000,
-      "position": [135.7298, 35.0394, 85],
-      "pitch": 60,
-      "bearing": 90,
-      "zoom": 18
-    },
-    {
-      "phase": "金閣撮影2",
-      "action": "東側から金閣を撮影",
-      "duration": 4000,
-      "position": [135.7298, 35.0394, 85],
-      "pitch": 65,
-      "bearing": 135,
-      "zoom": 18
-    },
-    {
-      "phase": "南側移動",
-      "action": "南側に移動",
-      "duration": 3000,
-      "position": [135.7292, 35.0388, 90],
-      "pitch": 60,
-      "bearing": 180,
-      "zoom": 18
-    },
-    {
-      "phase": "金閣撮影3",
-      "action": "南側から金閣を撮影",
-      "duration": 4000,
-      "position": [135.7292, 35.0388, 90],
-      "pitch": 65,
-      "bearing": 225,
-      "zoom": 18
-    },
-    {
-      "phase": "西側移動",
-      "action": "西側に移動",
-      "duration": 3000,
-      "position": [135.7286, 35.0394, 85],
-      "pitch": 60,
-      "bearing": 270,
-      "zoom": 18
-    },
-    {
-      "phase": "金閣撮影4",
-      "action": "西側から金閣を撮影",
-      "duration": 4000,
-      "position": [135.7286, 35.0394, 85],
-      "pitch": 65,
-      "bearing": 315,
-      "zoom": 18
-    },
-    {
-      "phase": "庭園俯瞰",
-      "action": "庭園全体を俯瞰",
-      "duration": 4000,
-      "position": [135.7292, 35.0394, 120],
-      "pitch": 70,
-      "bearing": 0,
-      "zoom": 17
-    },
-    {
-      "phase": "下降",
-      "action": "着陸地点へ下降",
-      "duration": 4000,
-      "position": [135.7292, 35.0394, 60],
-      "pitch": 50,
-      "bearing": 45,
-      "zoom": 17
-    },
-    {
-      "phase": "着陸",
-      "action": "庭園に着陸",
-      "duration": 3000,
-      "position": [135.7292, 35.0394, 50],
-      "pitch": 30,
-      "bearing": 90,
-      "zoom": 17
-    }
-  ]
+	"name": "京都金閣寺周遊フライト",
+	"description": "金閣寺と周辺庭園を空から観賞",
+	"created": "2024-01-15T12:00:00Z",
+	"totalDuration": 42000,
+	"phases": [
+		{
+			"phase": "離陸",
+			"action": "庭園から離陸",
+			"duration": 3000,
+			"position": [135.7292, 35.0394, 50],
+			"pitch": 40,
+			"bearing": 0,
+			"zoom": 17
+		},
+		{
+			"phase": "上昇",
+			"action": "金閣寺上空へ上昇",
+			"duration": 3000,
+			"position": [135.7292, 35.0394, 100],
+			"pitch": 55,
+			"bearing": 45,
+			"zoom": 17
+		},
+		{
+			"phase": "金閣撮影1",
+			"action": "正面から金閣を撮影",
+			"duration": 4000,
+			"position": [135.7292, 35.039, 80],
+			"pitch": 60,
+			"bearing": 0,
+			"zoom": 18
+		},
+		{
+			"phase": "東側移動",
+			"action": "東側に移動",
+			"duration": 3000,
+			"position": [135.7298, 35.0394, 85],
+			"pitch": 60,
+			"bearing": 90,
+			"zoom": 18
+		},
+		{
+			"phase": "金閣撮影2",
+			"action": "東側から金閣を撮影",
+			"duration": 4000,
+			"position": [135.7298, 35.0394, 85],
+			"pitch": 65,
+			"bearing": 135,
+			"zoom": 18
+		},
+		{
+			"phase": "南側移動",
+			"action": "南側に移動",
+			"duration": 3000,
+			"position": [135.7292, 35.0388, 90],
+			"pitch": 60,
+			"bearing": 180,
+			"zoom": 18
+		},
+		{
+			"phase": "金閣撮影3",
+			"action": "南側から金閣を撮影",
+			"duration": 4000,
+			"position": [135.7292, 35.0388, 90],
+			"pitch": 65,
+			"bearing": 225,
+			"zoom": 18
+		},
+		{
+			"phase": "西側移動",
+			"action": "西側に移動",
+			"duration": 3000,
+			"position": [135.7286, 35.0394, 85],
+			"pitch": 60,
+			"bearing": 270,
+			"zoom": 18
+		},
+		{
+			"phase": "金閣撮影4",
+			"action": "西側から金閣を撮影",
+			"duration": 4000,
+			"position": [135.7286, 35.0394, 85],
+			"pitch": 65,
+			"bearing": 315,
+			"zoom": 18
+		},
+		{
+			"phase": "庭園俯瞰",
+			"action": "庭園全体を俯瞰",
+			"duration": 4000,
+			"position": [135.7292, 35.0394, 120],
+			"pitch": 70,
+			"bearing": 0,
+			"zoom": 17
+		},
+		{
+			"phase": "下降",
+			"action": "着陸地点へ下降",
+			"duration": 4000,
+			"position": [135.7292, 35.0394, 60],
+			"pitch": 50,
+			"bearing": 45,
+			"zoom": 17
+		},
+		{
+			"phase": "着陸",
+			"action": "庭園に着陸",
+			"duration": 3000,
+			"position": [135.7292, 35.0394, 50],
+			"pitch": 30,
+			"bearing": 90,
+			"zoom": 17
+		}
+	]
 }

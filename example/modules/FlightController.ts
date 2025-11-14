@@ -112,12 +112,7 @@ export class FlightController {
 		this.currentFlightPlan = plan.phases
 		this.currentFlightPlanName = plan.name
 		this.currentFlightPlanDescription = plan.description
-		this.addFlightLog(
-			'システム',
-			'フライトプラン設定',
-			`${plan.name} を読み込みました`,
-			'success'
-		)
+		this.addFlightLog('システム', 'フライトプラン設定', `${plan.name} を読み込みました`, 'success')
 	}
 
 	/**
@@ -194,7 +189,12 @@ export class FlightController {
 		}
 
 		const phase = this.currentFlightPlan[this.currentFlightPhase]
-		this.addFlightLog(phase.phase, phase.action, `フェーズ ${this.currentFlightPhase + 1} 開始`, 'info')
+		this.addFlightLog(
+			phase.phase,
+			phase.action,
+			`フェーズ ${this.currentFlightPhase + 1} 開始`,
+			'info'
+		)
 
 		// カメラ設定を構築
 		const cameraSettings: CameraSettings = {

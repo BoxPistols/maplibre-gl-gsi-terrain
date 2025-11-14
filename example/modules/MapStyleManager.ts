@@ -37,7 +37,8 @@ export class MapStyleManager {
 						tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],
 						maxzoom: 18,
 						tileSize: 256,
-						attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+						attribution:
+							'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 					},
 					terrain: this.terrainSource,
 				},
@@ -68,7 +69,8 @@ export class MapStyleManager {
 						tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
 						maxzoom: 18,
 						tileSize: 256,
-						attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+						attribution:
+							'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 					},
 					terrain: this.terrainSource,
 				},
@@ -99,7 +101,8 @@ export class MapStyleManager {
 						tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
 						maxzoom: 18,
 						tileSize: 256,
-						attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+						attribution:
+							'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 					},
 					terrain: this.terrainSource,
 				},
@@ -130,7 +133,8 @@ export class MapStyleManager {
 						tiles: ['https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png'],
 						maxzoom: 14,
 						tileSize: 256,
-						attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+						attribution:
+							'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 					},
 					terrain: this.terrainSource,
 				},
@@ -187,7 +191,8 @@ export class MapStyleManager {
 						tiles: ['https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png'],
 						maxzoom: 15,
 						tileSize: 256,
-						attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+						attribution:
+							'<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 					},
 					terrain: this.terrainSource,
 				},
@@ -414,7 +419,7 @@ export class MapStyleManager {
 			width: 100%;
 		`
 
-		exaggerationSlider.addEventListener('input', (e) => {
+		exaggerationSlider.addEventListener('input', e => {
 			const value = parseFloat((e.target as HTMLInputElement).value)
 			this.setTerrainExaggeration(value)
 			exaggerationLabel.textContent = `地形誇張: ${value.toFixed(1)}x`

@@ -285,8 +285,7 @@ export class GameController {
 			const deadzone = 0.15
 			const leftX = Math.abs(gamepadInput.leftStick.x) > deadzone ? gamepadInput.leftStick.x : 0
 			const leftY = Math.abs(gamepadInput.leftStick.y) > deadzone ? gamepadInput.leftStick.y : 0
-			const rightX =
-				Math.abs(gamepadInput.rightStick.x) > deadzone ? gamepadInput.rightStick.x : 0
+			const rightX = Math.abs(gamepadInput.rightStick.x) > deadzone ? gamepadInput.rightStick.x : 0
 
 			moveX += leftX
 			moveY -= leftY // Y軸を反転
@@ -299,7 +298,8 @@ export class GameController {
 		}
 
 		// ターボ補正
-		const speedMultiplier = this.keyboardState.turbo || gamepadInput?.buttons.turbo ? this.params.turboMultiplier : 1.0
+		const speedMultiplier =
+			this.keyboardState.turbo || gamepadInput?.buttons.turbo ? this.params.turboMultiplier : 1.0
 
 		// ドローンの現在位置を取得
 		const currentState = this.droneModel.getPhysicsState()

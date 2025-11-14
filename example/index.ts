@@ -2335,7 +2335,7 @@ map.on('load', () => {
 
 		// FlightControllerの初期化
 		flightController = new FlightController(map)
-		flightController.setLogUpdateCallback((log) => {
+		flightController.setLogUpdateCallback(log => {
 			// FlightControllerのログをグローバルflightLogに同期
 			flightLog = log
 			updateFlightLogDisplay()
@@ -2360,7 +2360,12 @@ map.on('load', () => {
 		}
 		flightController.setFlightPlan(defaultPlan)
 
-		addFlightLog('システム', '拡張機能', 'マップスタイル切り替え、ゲームコントロール機能を有効化', 'success')
+		addFlightLog(
+			'システム',
+			'拡張機能',
+			'マップスタイル切り替え、ゲームコントロール機能を有効化',
+			'success'
+		)
 	} catch (error) {
 		console.error('新しいモジュールの初期化エラー:', error)
 		addFlightLog('エラー', 'モジュール初期化', '一部の拡張機能が利用できません', 'error')
@@ -2392,7 +2397,7 @@ map.on('load', () => {
 // フライトプラン選択ドロップダウン
 const flightPlanSelect = document.getElementById('flightPlanSelect') as HTMLSelectElement
 if (flightPlanSelect) {
-	flightPlanSelect.addEventListener('change', async (e) => {
+	flightPlanSelect.addEventListener('change', async e => {
 		const planId = (e.target as HTMLSelectElement).value
 
 		if (planId === 'custom') {
@@ -2519,4 +2524,3 @@ if (disableGameControlButton) {
 		}
 	})
 }
-
