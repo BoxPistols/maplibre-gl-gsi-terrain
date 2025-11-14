@@ -523,11 +523,21 @@
 		<div class="flight-plan-export">
 			<div class="flight-plan-title">フライトプラン</div>
 			<div class="flight-plan-buttons">
+				<select id="flightPlanSelect" style="width: 100%; padding: 6px; margin-bottom: 8px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.2); background: rgba(255,255,255,0.8); font-size: 11px;">
+					<option value="tokyo-tower">東京タワー点検</option>
+					<option value="mt-fuji">富士山周遊</option>
+					<option value="tokyo-skytree">東京スカイツリー</option>
+					<option value="kyoto-kinkakuji">京都金閣寺</option>
+					<option value="custom">カスタム...</option>
+				</select>
 				<button id="startFlightPlan" class="danger" title="現在のフライトプランを実行します">
 					開始
 				</button>
 				<button id="pauseFlightPlan" class="warning" title="実行中のフライトプランを一時停止します">
 					一時停止
+				</button>
+				<button id="enableGameControl" class="info" title="キーボード/ゲームパッドでドローンを操作します">
+					手動操作
 				</button>
 				<button
 					id="exportFlightPlan"
@@ -544,6 +554,25 @@
 					インポート
 				</button>
 			</div>
+		</div>
+
+		<!-- ゲームコントロールヘルプパネル -->
+		<div id="gameControlHelp" class="info-panel" style="bottom: 220px; top: auto; right: 20px; display: none;">
+			<div class="info-title">ゲームコントロール</div>
+			<ul class="info-list" style="font-size: 10px; line-height: 1.4;">
+				<li><strong>W/↑</strong>: 前進</li>
+				<li><strong>S/↓</strong>: 後退</li>
+				<li><strong>A/←</strong>: 左移動</li>
+				<li><strong>D/→</strong>: 右移動</li>
+				<li><strong>Space</strong>: 上昇</li>
+				<li><strong>Shift</strong>: 下降</li>
+				<li><strong>Q</strong>: 左回転</li>
+				<li><strong>E</strong>: 右回転</li>
+				<li><strong>Ctrl</strong>: ターボ</li>
+			</ul>
+			<button id="disableGameControl" class="error" style="width: 100%; margin-top: 8px;">
+				手動操作終了
+			</button>
 		</div>
 
 		<!-- フライトログFooter -->
