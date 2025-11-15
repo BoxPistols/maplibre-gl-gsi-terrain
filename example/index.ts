@@ -2507,9 +2507,7 @@ if (enableGameControlButton) {
 			helpPanel.style.display = 'block'
 		}
 
-		const controlMethod = isMobileDevice()
-			? 'タッチジョイスティック'
-			: 'キーボード/ゲームパッド'
+		const controlMethod = isMobileDevice() ? 'タッチジョイスティック' : 'キーボード/ゲームパッド'
 		showToast('手動操作モードを有効化しました', 'success')
 		addFlightLog('ゲームコントロール', '有効化', `${controlMethod}で操作可能です`, 'info')
 
@@ -2560,7 +2558,9 @@ if (disableGameControlButton) {
 function isMobileDevice(): boolean {
 	// タッチサポートチェック
 	const hasTouchScreen =
-		'ontouchstart' in window || navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0
+		'ontouchstart' in window ||
+		navigator.maxTouchPoints > 0 ||
+		(navigator as any).msMaxTouchPoints > 0
 
 	// ユーザーエージェントチェック
 	const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
