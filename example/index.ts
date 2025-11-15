@@ -23,6 +23,14 @@ import {
 } from '../src/data-import-export'
 import { getGsiDemProtocolAction } from '../src/terrain.ts'
 
+// 新しいモジュールをインポート
+import { MapStyleManager } from './modules/MapStyleManager'
+import { FlightController } from './modules/FlightController'
+import { DroneModel } from './modules/DroneModel'
+import { GameController } from './modules/GameController'
+import { TouchController } from './modules/TouchController'
+import type { FlightPlanData } from './modules/types'
+
 // サンプルデータの定義
 const SAMPLE_FLIGHT_DATA = `id,name,type,source,longitude,latitude,altitude,relativeAltitude,timestamp,duration,speed,heading,action,waypointId,sequenceNumber,batteryLevel,signalStrength,gpsAccuracy,temperature,humidity,windSpeed,windDirection,missionId,operatorId,aircraftModel,aircraftSerial,description
 flight_001,東京タワー点検1,waypoint,manual,139.7454,35.6586,100,50,2024-01-15T10:00:00Z,30,5,0,takeoff,1,1,85,-45,2,25,60,3,180,mission_001,operator_001,DJI_Mavic_3,SN001,東京タワー点検開始
@@ -44,7 +52,7 @@ const gsiTerrainSource = {
 	tileSize: 256,
 	encoding: 'terrarium' as const,
 	minzoom: 1,
-	maxzoom: 17,
+	maxzoom: 14, // 地理院DEMタイルは最大14まで提供
 	attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 }
 
@@ -115,6 +123,15 @@ let dragStartPos: [number, number] | null = null
 let currentPolygonPoints: [number, number][] = []
 let droneSimulationInterval: number | null = null
 let sampleDataLoaded = false
+
+// 新しいモジュールのインスタンス
+let mapStyleManager: MapStyleManager
+let flightController: FlightController
+let droneModel: DroneModel
+let gameController: GameController
+let touchController: TouchController
+let gameControlActive = false
+let touchControlActive = false
 
 // フライトログ管理
 interface FlightLogEntry {
@@ -2306,10 +2323,81 @@ document.addEventListener('keydown', e => {
 
 // 地図の読み込み完了
 map.on('load', () => {
-	setupLayers()
-	setupEventHandlers()
+	console.log('map.on("load") イベント開始')
+
+	try {
+		setupLayers()
+		console.log('setupLayers() 完了')
+	} catch (error) {
+		console.error('setupLayers() エラー:', error)
+	}
+
+	try {
+		setupEventHandlers()
+		console.log('setupEventHandlers() 完了')
+	} catch (error) {
+		console.error('setupEventHandlers() エラー:', error)
+	}
+
 	updateStatus('地図読み込み完了 - 東京タワー周辺のドローン点検を開始してください')
 	console.log('システム準備完了')
+
+	// 新しいモジュールの初期化
+	try {
+		// MapStyleManagerの初期化
+		mapStyleManager = new MapStyleManager(map, gsiTerrainSource)
+		const styleControl = mapStyleManager.createStyleControl()
+		document.body.appendChild(styleControl)
+		console.log('MapStyleManager初期化完了')
+
+		// FlightControllerの初期化
+		flightController = new FlightController(map)
+		flightController.setLogUpdateCallback(log => {
+			// FlightControllerのログをグローバルflightLogに同期
+			flightLog = log
+			updateFlightLogDisplay()
+		})
+		console.log('FlightController初期化完了')
+
+		// DroneModelの初期化（東京タワーの座標）
+		droneModel = new DroneModel(map, [139.7454, 35.6586, 100])
+		console.log('DroneModel初期化完了')
+
+		// GameControllerの初期化
+		gameController = new GameController(map, droneModel)
+		console.log('GameController初期化完了')
+
+		// TouchControllerの初期化（モバイル用）
+		touchController = new TouchController(map, droneModel)
+		console.log('TouchController初期化完了')
+
+		// モバイルデバイスの場合は自動でタッチコントロールを有効化
+		if (isMobileDevice()) {
+			touchController.enable()
+			touchControlActive = true
+			console.log('モバイルデバイスを検出: タッチコントロール有効')
+		}
+
+		// デフォルトフライトプランを設定
+		const defaultPlan: FlightPlanData = {
+			name: '東京タワー点検フライト',
+			description: '東京タワー周辺を体系的に点検',
+			created: new Date().toISOString(),
+			totalDuration: 39000,
+			phases: currentFlightPlan,
+		}
+		flightController.setFlightPlan(defaultPlan)
+
+		addFlightLog(
+			'システム',
+			'拡張機能',
+			'マップスタイル切り替え、ゲームコントロール機能を有効化',
+			'success'
+		)
+	} catch (error) {
+		console.error('新しいモジュールの初期化エラー:', error)
+		addFlightLog('エラー', 'モジュール初期化', '一部の拡張機能が利用できません', 'error')
+	}
 
 	// フライトログ初期化
 	addFlightLog('システム', '初期化', '東京タワー点検システムが起動しました', 'success')
@@ -2330,4 +2418,184 @@ map.on('load', () => {
 			console.error('FlightLogまたはToggleボタンの初期化に失敗しました')
 		}
 	}, 100) // 少し遅延させて確実にDOMが準備されるようにする
-})
+
+	// ===== 新しいUIコントロールのイベントリスナー =====
+	// すべてのイベントリスナーをmap.on('load')内で設定
+
+	try {
+		// フライトプラン選択ドロップダウン
+		const flightPlanSelect = document.getElementById('flightPlanSelect') as HTMLSelectElement
+		if (flightPlanSelect) {
+			flightPlanSelect.addEventListener('change', async e => {
+				const planId = (e.target as HTMLSelectElement).value
+
+				if (planId === 'custom') {
+					// カスタムフライトプランのインポート
+					const importButton = document.getElementById('importFlightPlan') as HTMLButtonElement
+					if (importButton) {
+						importButton.click()
+					}
+					return
+				}
+
+				// プリセットフライトプランを読み込み
+				try {
+					const fileMap: Record<string, string> = {
+						'mt-fuji': './data/mt-fuji-flight-plan.json',
+						'tokyo-skytree': './data/tokyo-skytree-flight-plan.json',
+						'kyoto-kinkakuji': './data/kyoto-kinkakuji-flight-plan.json',
+					}
+
+					if (planId === 'tokyo-tower') {
+						// デフォルトプランを再設定
+						const defaultPlan: FlightPlanData = {
+							name: '東京タワー点検フライト',
+							description: '東京タワー周辺を体系的に点検',
+							created: new Date().toISOString(),
+							totalDuration: 39000,
+							phases: currentFlightPlan,
+						}
+						flightController.setFlightPlan(defaultPlan)
+						showToast('東京タワー点検フライトプランを読み込みました', 'success')
+
+						// カメラを東京タワーに移動
+						map.flyTo({
+							center: [139.7454, 35.6586],
+							zoom: 16,
+							pitch: 60,
+							bearing: 0,
+							duration: 2000,
+						})
+					} else {
+						const filePath = fileMap[planId]
+						if (!filePath) {
+							showToast('フライトプランが見つかりません', 'error')
+							return
+						}
+
+						const response = await fetch(filePath)
+						if (!response.ok) {
+							throw new Error('ファイルの読み込みに失敗しました')
+						}
+						const planData: FlightPlanData = await response.json()
+						flightController.setFlightPlan(planData)
+						showToast(`${planData.name}を読み込みました`, 'success')
+
+						// カメラを開始位置に移動
+						const startPosition = planData.phases[0].position
+						map.flyTo({
+							center: [startPosition[0], startPosition[1]],
+							zoom: planData.phases[0].zoom || 16,
+							pitch: planData.phases[0].pitch || 60,
+							bearing: planData.phases[0].bearing || 0,
+							duration: 2000,
+						})
+					}
+				} catch (error) {
+					console.error('フライトプラン読み込みエラー:', error)
+					showToast('フライトプランの読み込みに失敗しました', 'error')
+				}
+			})
+		}
+
+		// ゲームコントロール有効化ボタン
+		const enableGameControlButton = document.getElementById(
+			'enableGameControl'
+		) as HTMLButtonElement
+		if (enableGameControlButton) {
+			enableGameControlButton.addEventListener('click', () => {
+				if (!gameController) {
+					showToast('ゲームコントローラーが初期化されていません', 'error')
+					return
+				}
+
+				gameController.enable()
+				gameControlActive = true
+
+				// モバイルデバイスの場合はタッチコントロールも有効化
+				if (isMobileDevice()) {
+					touchController.enable()
+					touchControlActive = true
+				}
+
+				// ヘルプパネルを表示
+				const helpPanel = document.getElementById('gameControlHelp') as HTMLElement
+				if (helpPanel) {
+					helpPanel.style.display = 'block'
+				}
+
+				const controlMethod = isMobileDevice()
+					? 'タッチジョイスティック'
+					: 'キーボード/ゲームパッド'
+				showToast('手動操作モードを有効化しました', 'success')
+				addFlightLog('ゲームコントロール', '有効化', `${controlMethod}で操作可能です`, 'info')
+
+				// ボタンの状態を変更
+				enableGameControlButton.style.opacity = '0.5'
+				enableGameControlButton.style.cursor = 'not-allowed'
+			})
+		}
+
+		// ゲームコントロール無効化ボタン
+		const disableGameControlButton = document.getElementById(
+			'disableGameControl'
+		) as HTMLButtonElement
+		if (disableGameControlButton) {
+			disableGameControlButton.addEventListener('click', () => {
+				if (!gameController) {
+					return
+				}
+
+				gameController.disable()
+				gameControlActive = false
+
+				// ヘルプパネルを非表示
+				const helpPanel = document.getElementById('gameControlHelp') as HTMLElement
+				if (helpPanel) {
+					helpPanel.style.display = 'none'
+				}
+
+				showToast('手動操作モードを無効化しました', 'info')
+				addFlightLog('ゲームコントロール', '無効化', '手動操作を終了しました', 'info')
+
+				// ボタンの状態を復元
+				const enableButton = document.getElementById('enableGameControl') as HTMLButtonElement
+				if (enableButton) {
+					enableButton.style.opacity = '1'
+					enableButton.style.cursor = 'pointer'
+				}
+
+				// モバイルデバイスの場合はタッチコントロールも無効化
+				if (isMobileDevice() && touchControlActive) {
+					touchController.disable()
+					touchControlActive = false
+				}
+			})
+		}
+	} catch (error) {
+		console.error('イベントリスナー設定エラー:', error)
+		console.error('一部のボタンが動作しない可能性があります')
+	}
+	console.log('map.on("load") 処理完了')
+}) // map.on('load')の終了
+
+/**
+ * モバイルデバイスかどうかを判定
+ */
+function isMobileDevice(): boolean {
+	// タッチサポートチェック
+	const hasTouchScreen =
+		'ontouchstart' in window ||
+		navigator.maxTouchPoints > 0 ||
+		(navigator as any).msMaxTouchPoints > 0
+
+	// ユーザーエージェントチェック
+	const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+		navigator.userAgent
+	)
+
+	// 画面サイズチェック
+	const isSmallScreen = window.innerWidth <= 768
+
+	return (hasTouchScreen && isMobileUA) || (hasTouchScreen && isSmallScreen)
+}

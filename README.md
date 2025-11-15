@@ -1,20 +1,77 @@
 ![GitHub Release](https://badge.fury.io/js/maplibre-gl-gsi-terrain.svg) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mug-jp/maplibre-gl-gsi-terrain/test.yml?label=test) [![codecov](https://codecov.io/gh/mug-jp/maplibre-gl-gsi-terrain/graph/badge.svg?token=U9WGZANPZ9)](https://codecov.io/gh/mug-jp/maplibre-gl-gsi-terrain)
 
-# ドローン点検システム - MapLibre GL JS + 地理院地形
+# 🚁 3D Flight Simulator - MapLibre GL JS + GSI Terrain
 
 ![](./screenshot.png)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+[![MapLibre GL](https://img.shields.io/badge/MapLibre%20GL-5.13-green)](https://maplibre.org/)
+
 ## 概要
 
-このプロジェクトは、MapLibre GL JS と地理院地形データを使用した 3D ドローン点検シミュレーションシステムです。東京タワー周辺でのドローン点検シミュレーションを提供し、リアルタイムでのフライトプラン実行とデータ管理機能を備えています。
+MapLibre GL JS と日本の地理院地形データを使用した、インタラクティブな **3D フライトシミュレーター**。教育、観光、ドローン点検計画のための高度なツールです。
+
+### ✨ 最新の機能
+
+- 🗺️ **6種類のマップスタイル** - 衛星写真、標準地図、淡色、白地図、ダーク、地形図
+- ✈️ **4つのプリセットフライトプラン** - 東京タワー、富士山、スカイツリー、金閣寺
+- 🎮 **ゲームパッド対応** - キーボード・ゲームパッドによる手動操作
+- 📊 **高度なアニメーション** - 滑らかなイージング関数と物理演算
+- 📁 **多様なデータフォーマット** - JSON、CSV、GPX形式のインポート/エクスポート
 
 ## 主な機能
 
-### 🚁 フライトプラン管理
+### 🗺️ マップスタイル
 
+- **衛星写真** - 高解像度の衛星画像（GSI Seamless Photo）
+- **標準地図** - 詳細な地図情報（GSI Standard Map）
+- **淡色地図** - シンプルで見やすいスタイル
+- **白地図** - 注記のないクリーンなベースマップ
+- **ダークモード** - 目に優しいダークテーマ
+- **地形図** - 等高線と陰影を含む詳細地形
+- **地形誇張度調整** - 1.0〜3.0倍のリアルタイム調整スライダー
+
+### ✈️ フライトプラン管理
+
+-   **プリセットフライトプラン**
+    - 東京タワー点検（11フェーズ、39秒）
+    - 富士山周遊（13フェーズ、60秒）
+    - 東京スカイツリー点検（12フェーズ、48秒）
+    - 京都金閣寺周遊（12フェーズ、42秒）
+-   **カスタムフライトプラン**
+    - JSON/CSV形式でのインポート/エクスポート
+    - GPX形式でのエクスポート（GPS互換）
 -   **リアルタイム実行**: フライトプランの段階的実行とリアルタイムログ
--   **インポート/エクスポート**: JSON 形式でのフライトプランの保存・読み込み
 -   **一時停止/再開**: 実行中のフライトプランの制御
+
+### 🎮 手動操作
+
+**キーボード操作:**
+- `W` / `↑` - 前進
+- `S` / `↓` - 後退
+- `A` / `←` - 左移動
+- `D` / `→` - 右移動
+- `Space` - 上昇
+- `Shift` - 下降
+- `Q` - 左回転
+- `E` - 右回転
+- `Ctrl` - ターボ
+
+**ゲームパッド対応:**
+- 左スティック - 移動
+- 右スティック - 回転
+- R2トリガー - 上昇
+- L2トリガー - ターボ
+- Aボタン - 離陸
+- Bボタン - 着陸
+
+### 🎨 高度なアニメーション
+
+- **イージング関数** - Linear, Quad, Cubic, Sine, Elastic
+- **カメラ制御** - 滑らかなピッチ/ベアリング/ズーム
+- **パスアニメーション** - ウェイポイントに沿った移動
+- **軌道飛行** - 円形パスでの周回飛行
 
 ### 📊 3D データ可視化
 
