@@ -52,7 +52,7 @@ const gsiTerrainSource = {
 	tileSize: 256,
 	encoding: 'terrarium' as const,
 	minzoom: 1,
-	maxzoom: 17,
+	maxzoom: 14, // 地理院DEMタイルは最大14まで提供
 	attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 }
 
