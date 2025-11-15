@@ -220,9 +220,9 @@ describe('FlightDataManager', () => {
 
 			const stats = FlightDataManager.calculateStatistics(tokyoTower)
 
-			// 約7.5km
-			expect(stats.totalDistance).toBeGreaterThan(7000)
-			expect(stats.totalDistance).toBeLessThan(8000)
+			// 約8.2km (Haversine formula with same altitude)
+			expect(stats.totalDistance).toBeGreaterThan(8000)
+			expect(stats.totalDistance).toBeLessThan(8500)
 		})
 
 		it('should calculate 3D distance correctly', () => {

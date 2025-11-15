@@ -291,6 +291,13 @@ ${plan.phases
 		let maxAltitude = 0
 		let minAltitude = Infinity
 
+		// すべてのフェーズの高度を収集
+		plan.phases.forEach(phase => {
+			maxAltitude = Math.max(maxAltitude, phase.position[2])
+			minAltitude = Math.min(minAltitude, phase.position[2])
+		})
+
+		// フェーズ間の距離を計算
 		for (let i = 0; i < plan.phases.length - 1; i++) {
 			const current = plan.phases[i].position
 			const next = plan.phases[i + 1].position
@@ -305,9 +312,6 @@ ${plan.phases
 				next[2]
 			)
 			totalDistance += distance
-
-			maxAltitude = Math.max(maxAltitude, current[2])
-			minAltitude = Math.min(minAltitude, current[2])
 		}
 
 		const totalDuration = plan.totalDuration / 1000 // 秒に変換

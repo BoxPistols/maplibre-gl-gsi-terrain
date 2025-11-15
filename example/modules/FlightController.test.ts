@@ -213,7 +213,7 @@ describe('Easing Functions', () => {
 
 	describe('easeInOutSine', () => {
 		it('should ease in and out with sine', () => {
-			expect(easingFunctions.easeInOutSine(0)).toBe(0)
+			expect(Math.abs(easingFunctions.easeInOutSine(0))).toBe(0) // Handle -0 vs +0
 			expect(easingFunctions.easeInOutSine(1)).toBe(1)
 			expect(easingFunctions.easeInOutSine(0.5)).toBeCloseTo(0.5, 5)
 		})
@@ -238,7 +238,7 @@ describe('Easing Functions', () => {
 	describe('boundary conditions', () => {
 		it('all easing functions should start at 0', () => {
 			Object.values(easingFunctions).forEach(fn => {
-				expect(fn(0)).toBe(0)
+				expect(Math.abs(fn(0))).toBe(0) // Handle -0 vs +0
 			})
 		})
 
