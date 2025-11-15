@@ -28,6 +28,7 @@ import { MapStyleManager } from './modules/MapStyleManager'
 import { FlightController } from './modules/FlightController'
 import { DroneModel } from './modules/DroneModel'
 import { GameController } from './modules/GameController'
+import { TouchController } from './modules/TouchController'
 import type { FlightPlanData } from './modules/types'
 
 // サンプルデータの定義
@@ -128,7 +129,9 @@ let mapStyleManager: MapStyleManager
 let flightController: FlightController
 let droneModel: DroneModel
 let gameController: GameController
+let touchController: TouchController
 let gameControlActive = false
+let touchControlActive = false
 
 // フライトログ管理
 interface FlightLogEntry {
@@ -2350,6 +2353,17 @@ map.on('load', () => {
 		gameController = new GameController(map, droneModel)
 		console.log('GameController初期化完了')
 
+		// TouchControllerの初期化（モバイル用）
+		touchController = new TouchController(map, droneModel)
+		console.log('TouchController初期化完了')
+
+		// モバイルデバイスの場合は自動でタッチコントロールを有効化
+		if (isMobileDevice()) {
+			touchController.enable()
+			touchControlActive = true
+			console.log('モバイルデバイスを検出: タッチコントロール有効')
+		}
+
 		// デフォルトフライトプランを設定
 		const defaultPlan: FlightPlanData = {
 			name: '東京タワー点検フライト',
@@ -2481,14 +2495,23 @@ if (enableGameControlButton) {
 		gameController.enable()
 		gameControlActive = true
 
+		// モバイルデバイスの場合はタッチコントロールも有効化
+		if (isMobileDevice()) {
+			touchController.enable()
+			touchControlActive = true
+		}
+
 		// ヘルプパネルを表示
 		const helpPanel = document.getElementById('gameControlHelp') as HTMLElement
 		if (helpPanel) {
 			helpPanel.style.display = 'block'
 		}
 
+		const controlMethod = isMobileDevice()
+			? 'タッチジョイスティック'
+			: 'キーボード/ゲームパッド'
 		showToast('手動操作モードを有効化しました', 'success')
-		addFlightLog('ゲームコントロール', '有効化', 'キーボード/ゲームパッドで操作可能です', 'info')
+		addFlightLog('ゲームコントロール', '有効化', `${controlMethod}で操作可能です`, 'info')
 
 		// ボタンの状態を変更
 		enableGameControlButton.style.opacity = '0.5'
@@ -2522,5 +2545,30 @@ if (disableGameControlButton) {
 			enableButton.style.opacity = '1'
 			enableButton.style.cursor = 'pointer'
 		}
+
+		// モバイルデバイスの場合はタッチコントロールも無効化
+		if (isMobileDevice() && touchControlActive) {
+			touchController.disable()
+			touchControlActive = false
+		}
 	})
+}
+
+/**
+ * モバイルデバイスかどうかを判定
+ */
+function isMobileDevice(): boolean {
+	// タッチサポートチェック
+	const hasTouchScreen =
+		'ontouchstart' in window || navigator.maxTouchPoints > 0 || (navigator as any).msMaxTouchPoints > 0
+
+	// ユーザーエージェントチェック
+	const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+		navigator.userAgent
+	)
+
+	// 画面サイズチェック
+	const isSmallScreen = window.innerWidth <= 768
+
+	return (hasTouchScreen && isMobileUA) || (hasTouchScreen && isSmallScreen)
 }

@@ -120,3 +120,39 @@ export interface FlightControllerConfig {
 	physicsEnabled: boolean // 物理演算有効/無効
 	collisionDetection: boolean // 衝突検知有効/無効
 }
+
+/**
+ * タッチ入力状態（仮想ジョイスティック）
+ */
+export interface TouchState {
+	active: boolean
+	startX: number
+	startY: number
+	currentX: number
+	currentY: number
+	deltaX: number
+	deltaY: number
+	touchId: number | null
+}
+
+/**
+ * 仮想ジョイスティック設定
+ */
+export interface VirtualJoystickConfig {
+	maxDistance: number // ジョイスティックの最大移動距離（px）
+	deadzone: number // デッドゾーン（0.0-1.0）
+	sensitivity: number // 感度（0.1-5.0）
+	returnSpeed: number // 元に戻る速度（0.0-1.0）
+}
+
+/**
+ * モバイルタッチコントロール入力
+ */
+export interface MobileTouchInput {
+	leftJoystick: { x: number; y: number } // 移動用（-1.0 to 1.0）
+	rightJoystick: { x: number; y: number } // 回転・高度用（-1.0 to 1.0）
+	buttons: {
+		turbo: boolean
+		center: boolean
+	}
+}
