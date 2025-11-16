@@ -47,7 +47,9 @@ trajectory_005,軌跡点5,trajectory_point,auto,139.7458,35.6588,150,100,2024-01
 // グローバルエラーハンドラー
 window.addEventListener('error', e => {
 	console.error('グローバルエラー:', e.error || e.message)
-	alert(`致命的なエラーが発生しました:\n${e.error?.message || e.message}\n\nページをリロードしてください。`)
+	alert(
+		`致命的なエラーが発生しました:\n${e.error?.message || e.message}\n\nページをリロードしてください。`
+	)
 })
 
 window.addEventListener('unhandledrejection', e => {
