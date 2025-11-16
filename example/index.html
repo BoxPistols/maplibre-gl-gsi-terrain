@@ -811,21 +811,39 @@
 		<!-- コントロールトグルボタン -->
 		<button class="controls-toggle" id="controlsToggle" data-tooltip="コントロールパネル">
 			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
-				<path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round"/>
+				<path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round" />
 			</svg>
 		</button>
 
 		<!-- メインコントロールパネル -->
 		<div id="controls">
-			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+			<div
+				style="
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					margin-bottom: 16px;
+				"
+			>
 				<h3
-					style="margin: 0 0 0 32px; color: rgba(55, 55, 55, 0.9); font-size: 14px; font-weight: 600"
+					style="
+						margin: 0 0 0 32px;
+						color: rgba(55, 55, 55, 0.9);
+						font-size: 14px;
+						font-weight: 600;
+					"
 				>
 					ドローン飛行シミュレーター
 				</h3>
 				<button id="helpButton" class="help-button" data-tooltip="ヘルプを表示">
-					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 14px; height: 14px; fill: currentColor;">
-						<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+					<svg
+						viewBox="0 0 24 24"
+						xmlns="http://www.w3.org/2000/svg"
+						style="width: 14px; height: 14px; fill: currentColor"
+					>
+						<path
+							d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"
+						/>
 					</svg>
 				</button>
 			</div>
@@ -993,7 +1011,12 @@
 		<div class="info-panel visible" id="infoPanel">
 			<button class="info-panel-toggle" id="infoPanelToggle">
 				<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-					<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					<path
+						d="M18 6L6 18M6 6l12 12"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+					/>
 				</svg>
 			</button>
 			<div class="info-title">点検ワークフロー</div>
@@ -1018,7 +1041,12 @@
 		<div class="flight-plan-export visible" id="flightPlanExport">
 			<button class="flight-plan-toggle" id="flightPlanToggle">
 				<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-					<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					<path
+						d="M18 6L6 18M6 6l12 12"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+					/>
 				</svg>
 			</button>
 			<div class="flight-plan-title">フライトプラン</div>
@@ -1099,7 +1127,12 @@
 			<div class="help-modal">
 				<button class="help-modal-close" id="helpModalClose">
 					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-						<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+						<path
+							d="M18 6L6 18M6 6l12 12"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
 					</svg>
 				</button>
 
@@ -1107,7 +1140,10 @@
 
 				<div class="help-section">
 					<h3>システム概要</h3>
-					<p>このシステムは、ドローンを使用した建物点検をシミュレーションするための3D可視化プラットフォームです。国土地理院の地形データとMapLibre GLを使用して、リアルな3D環境でドローンの飛行計画を作成・実行できます。</p>
+					<p>
+						このシステムは、ドローンを使用した建物点検をシミュレーションするための3D可視化プラットフォームです。国土地理院の地形データとMapLibre
+						GLを使用して、リアルな3D環境でドローンの飛行計画を作成・実行できます。
+					</p>
 				</div>
 
 				<div class="help-section">
@@ -1115,7 +1151,9 @@
 					<ul>
 						<li><strong>2D/3D切り替え</strong>: マップビューを2Dと3Dで切り替えます</li>
 						<li><strong>配置</strong>: ドローンを東京タワー周辺に配置します</li>
-						<li><strong>シミュレーション</strong>: ランダム移動シミュレーションを開始/停止します</li>
+						<li>
+							<strong>シミュレーション</strong>: ランダム移動シミュレーションを開始/停止します
+						</li>
 						<li><strong>ポイント作成</strong>: マップをクリックして点検ポイントを追加します</li>
 						<li><strong>多角形作成</strong>: マップをクリックして点検エリアを描画します</li>
 						<li><strong>オブジェクト編集</strong>: オブジェクトの選択・移動・削除ができます</li>
@@ -1125,7 +1163,10 @@
 				<div class="help-section">
 					<h3>データ管理</h3>
 					<ul>
-						<li><strong>CSV入力/出力</strong>: 3Dポイント・メッシュ・ウェイポイントデータをCSV形式で入出力</li>
+						<li>
+							<strong>CSV入力/出力</strong>:
+							3Dポイント・メッシュ・ウェイポイントデータをCSV形式で入出力
+						</li>
 						<li><strong>GeoJSON入力/出力</strong>: 地理データをGeoJSON形式で入出力</li>
 						<li><strong>フライト入力</strong>: 統一フライトデータ形式のCSV/GeoJSONを読み込み</li>
 						<li><strong>ミッション出力</strong>: フライトミッションをKML/JSON形式でエクスポート</li>
@@ -1135,11 +1176,16 @@
 				<div class="help-section">
 					<h3>フライトプラン</h3>
 					<ul>
-						<li><strong>プラン選択</strong>: 東京タワー、富士山、スカイツリー、京都金閣寺などのプリセットプランを選択</li>
+						<li>
+							<strong>プラン選択</strong>:
+							東京タワー、富士山、スカイツリー、京都金閣寺などのプリセットプランを選択
+						</li>
 						<li><strong>開始</strong>: 選択したフライトプランを実行します</li>
 						<li><strong>一時停止</strong>: 実行中のフライトプランを一時停止します</li>
 						<li><strong>手動操作</strong>: キーボード/ゲームパッドでドローンを手動操作します</li>
-						<li><strong>エクスポート/インポート</strong>: フライトプランをJSONファイルで保存・読み込み</li>
+						<li>
+							<strong>エクスポート/インポート</strong>: フライトプランをJSONファイルで保存・読み込み
+						</li>
 					</ul>
 				</div>
 
@@ -1161,9 +1207,18 @@
 				<div class="help-section">
 					<h3>トラブルシューティング</h3>
 					<ul>
-						<li><strong>ドローンが表示されない</strong>: 「配置」ボタンをクリックしてドローンを配置してください</li>
-						<li><strong>フライトプランが動作しない</strong>: プランを選択してから「開始」ボタンをクリックしてください</li>
-						<li><strong>3D表示が重い</strong>: 2D表示に切り替えるか、ブラウザのハードウェアアクセラレーションを確認してください</li>
+						<li>
+							<strong>ドローンが表示されない</strong>:
+							「配置」ボタンをクリックしてドローンを配置してください
+						</li>
+						<li>
+							<strong>フライトプランが動作しない</strong>:
+							プランを選択してから「開始」ボタンをクリックしてください
+						</li>
+						<li>
+							<strong>3D表示が重い</strong>:
+							2D表示に切り替えるか、ブラウザのハードウェアアクセラレーションを確認してください
+						</li>
 					</ul>
 				</div>
 			</div>

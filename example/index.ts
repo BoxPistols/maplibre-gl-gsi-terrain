@@ -2623,13 +2623,26 @@ map.on('load', () => {
 		console.error('一部のボタンが動作しない可能性があります')
 	}
 
-	// Info panel toggle
+	// Info panel toggle with localStorage persistence
 	const infoPanelToggle = document.getElementById('infoPanelToggle') as HTMLButtonElement
 	const infoPanel = document.getElementById('infoPanel') as HTMLElement
 	if (infoPanelToggle && infoPanel) {
+		// localStorageから状態を復元（デフォルトはvisible）
+		const savedInfoPanelState = localStorage.getItem('infoPanelVisible')
+		if (savedInfoPanelState === 'false') {
+			infoPanel.classList.remove('visible')
+			infoPanelToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+				<path d="M12 16v-4m0-4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+			</svg>`
+		}
+
 		infoPanelToggle.addEventListener('click', () => {
 			const isVisible = infoPanel.classList.contains('visible')
 			infoPanel.classList.toggle('visible')
+
+			// localStorageに状態を保存
+			localStorage.setItem('infoPanelVisible', (!isVisible).toString())
 
 			// SVGアイコンを切り替え
 			if (isVisible) {
@@ -2645,13 +2658,25 @@ map.on('load', () => {
 		})
 	}
 
-	// Flight plan panel toggle
+	// Flight plan panel toggle with localStorage persistence
 	const flightPlanToggle = document.getElementById('flightPlanToggle') as HTMLButtonElement
 	const flightPlanExport = document.getElementById('flightPlanExport') as HTMLElement
 	if (flightPlanToggle && flightPlanExport) {
+		// localStorageから状態を復元（デフォルトはvisible）
+		const savedFlightPlanState = localStorage.getItem('flightPlanVisible')
+		if (savedFlightPlanState === 'false') {
+			flightPlanExport.classList.remove('visible')
+			flightPlanToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="currentColor"/>
+			</svg>`
+		}
+
 		flightPlanToggle.addEventListener('click', () => {
 			const isVisible = flightPlanExport.classList.contains('visible')
 			flightPlanExport.classList.toggle('visible')
+
+			// localStorageに状態を保存
+			localStorage.setItem('flightPlanVisible', (!isVisible).toString())
 
 			// SVGアイコンを切り替え
 			if (isVisible) {
@@ -2662,6 +2687,64 @@ map.on('load', () => {
 				flightPlanToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 					<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
 				</svg>`
+			}
+		})
+	}
+
+	// Controls panel toggle with localStorage persistence
+	const controlsToggle = document.getElementById('controlsToggle') as HTMLButtonElement
+	const controls = document.getElementById('controls') as HTMLElement
+
+	if (controlsToggle && controls) {
+		// localStorageから状態を復元（デフォルトは非表示）
+		const savedControlsState = localStorage.getItem('controlsVisible')
+		if (savedControlsState === 'true') {
+			controls.classList.add('visible')
+			controlsToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+				<path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+			</svg>`
+		}
+
+		controlsToggle.addEventListener('click', () => {
+			const isVisible = controls.classList.contains('visible')
+			controls.classList.toggle('visible')
+
+			// localStorageに状態を保存
+			localStorage.setItem('controlsVisible', (!isVisible).toString())
+
+			// アイコンを切り替え
+			if (isVisible) {
+				controlsToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+					<path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round"/>
+				</svg>`
+			} else {
+				controlsToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+					<path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+				</svg>`
+			}
+		})
+	}
+
+	// Help modal toggle
+	const helpButton = document.getElementById('helpButton') as HTMLButtonElement
+	const helpModalOverlay = document.getElementById('helpModalOverlay') as HTMLElement
+	const helpModalClose = document.getElementById('helpModalClose') as HTMLButtonElement
+
+	if (helpButton && helpModalOverlay) {
+		helpButton.addEventListener('click', () => {
+			helpModalOverlay.classList.add('visible')
+		})
+	}
+
+	if (helpModalClose && helpModalOverlay) {
+		helpModalClose.addEventListener('click', () => {
+			helpModalOverlay.classList.remove('visible')
+		})
+
+		// クリックでモーダルを閉じる
+		helpModalOverlay.addEventListener('click', e => {
+			if (e.target === helpModalOverlay) {
+				helpModalOverlay.classList.remove('visible')
 			}
 		})
 	}
