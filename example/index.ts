@@ -736,16 +736,20 @@ const setupLayers = () => {
 
 // フライトプラン可視化更新
 const updateFlightPlanVisualization = (flightPlan: FlightPlanPhase[]) => {
+	const setGeoJsonSourceData = (sourceId: string, features: GeoJSON.Feature[]) => {
+		const source = map.getSource(sourceId)
+		if (source?.type === 'geojson') {
+			;(source as maplibregl.GeoJSONSource).setData({
+				type: 'FeatureCollection',
+				features: features,
+			})
+		}
+	}
+
 	if (!flightPlan || flightPlan.length === 0) {
 		// フライトプランがない場合は空のデータを設定
-		;(map.getSource('flight-plan-waypoints') as maplibregl.GeoJSONSource)?.setData({
-			type: 'FeatureCollection',
-			features: [],
-		})
-		;(map.getSource('flight-plan-path') as maplibregl.GeoJSONSource)?.setData({
-			type: 'FeatureCollection',
-			features: [],
-		})
+		setGeoJsonSourceData('flight-plan-waypoints', [])
+		setGeoJsonSourceData('flight-plan-path', [])
 		return
 	}
 
@@ -786,14 +790,8 @@ const updateFlightPlanVisualization = (flightPlan: FlightPlanPhase[]) => {
 	}
 
 	// マップソースを更新
-	;(map.getSource('flight-plan-waypoints') as maplibregl.GeoJSONSource)?.setData({
-		type: 'FeatureCollection',
-		features: waypointFeatures,
-	})
-	;(map.getSource('flight-plan-path') as maplibregl.GeoJSONSource)?.setData({
-		type: 'FeatureCollection',
-		features: [pathFeature],
-	})
+	setGeoJsonSourceData('flight-plan-waypoints', waypointFeatures)
+	setGeoJsonSourceData('flight-plan-path', [pathFeature])
 
 	console.log(
 		`フライトプラン可視化を更新: ${flightPlan.length}個のウェイポイント、パス長: ${pathCoordinates.length}`
