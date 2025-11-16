@@ -11,6 +11,7 @@
 		"dev": "vite -c vite.config.example.ts",
 		"build:example": "vite build -c vite.config.example.ts",
 		"build": "vite build && tsc",
+		"vercel-build": "npm run build:example",
 		"prepare": "npm run build",
 		"test": "vitest src --coverage --coverage.provider=v8",
 		"test:ci": "vitest run src --coverage --coverage.provider=v8 --reporter=verbose",

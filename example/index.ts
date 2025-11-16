@@ -43,6 +43,22 @@ trajectory_002,軌跡点2,trajectory_point,auto,139.7452,35.6582,75,25,2024-01-1
 trajectory_003,軌跡点3,trajectory_point,auto,139.7454,35.6584,100,50,2024-01-15T09:57:00Z,20,7,90,move,3,3,85,-45,1.5,24,60,2,170,trajectory_001,operator_001,DJI_Mavic_3,SN001,自動飛行中
 trajectory_004,軌跡点4,trajectory_point,auto,139.7456,35.6586,125,75,2024-01-15T09:58:00Z,25,6,135,move,4,4,82,-48,1.8,23,57,2.5,165,trajectory_001,operator_001,DJI_Mavic_3,SN001,自動飛行中
 trajectory_005,軌跡点5,trajectory_point,auto,139.7458,35.6588,150,100,2024-01-15T09:59:00Z,30,4,180,land,5,5,79,-50,2,22,55,3,160,trajectory_001,operator_001,DJI_Mavic_3,SN001,自動飛行終了`
+
+// グローバルエラーハンドラー
+window.addEventListener('error', e => {
+	console.error('グローバルエラー:', e.error || e.message)
+	alert(
+		`致命的なエラーが発生しました:\n${e.error?.message || e.message}\n\nページをリロードしてください。`
+	)
+})
+
+window.addEventListener('unhandledrejection', e => {
+	console.error('未処理のPromise拒否:', e.reason)
+	alert(`非同期エラーが発生しました:\n${e.reason}\n\nページをリロードしてください。`)
+})
+
+console.log('🚀 アプリケーション起動中...')
+
 // 地理院DEM設定
 const protocolAction = getGsiDemProtocolAction('gsidem')
 maplibregl.addProtocol('gsidem', protocolAction)
@@ -110,6 +126,16 @@ const map = new maplibregl.Map({
 		},
 	},
 })
+
+// マップエラーハンドリング
+map.on('error', e => {
+	console.error('マップエラー:', e)
+	const errorMessage = e.error?.message || 'マップのロードに失敗しました'
+	alert(`エラーが発生しました: ${errorMessage}\n\nコンソールで詳細を確認してください。`)
+	updateStatus(`エラー: ${errorMessage}`)
+})
+
+console.log('マップ初期化完了 - loadイベント待機中...')
 
 // グローバル変数
 let loadedObjects: DroneObject[] = []
