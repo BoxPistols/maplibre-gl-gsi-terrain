@@ -2304,12 +2304,25 @@ const executeFlightPhase = () => {
 
 	addFlightLog(phase.phase, '実行中', phase.action, 'info')
 
-	// 地図をドローンの位置に移動
+	// 次のwaypointへの方位を計算（FPV視点のため）
+	let bearing = 0
+	if (currentFlightPhase < currentFlightPlan.length - 1) {
+		const nextPhase = currentFlightPlan[currentFlightPhase + 1]
+		bearing = calculateBearing(
+			[phase.position[0], phase.position[1]],
+			[nextPhase.position[0], nextPhase.position[1]]
+		)
+	} else {
+		// 最後のwaypointの場合は現在のbearingを維持
+		bearing = phase.bearing ?? 0
+	}
+
+	// FPV（ドローン目線）カメラ設定
 	map.flyTo({
 		center: [drone.longitude, drone.latitude],
 		zoom: phase.zoom ?? 18,
-		pitch: phase.pitch ?? 60,
-		bearing: phase.bearing ?? 0,
+		pitch: phase.pitch ?? 70, // ドローン視点で前方下向き
+		bearing: bearing, // 次のwaypointへ向かう方向
 		duration: phase.duration,
 	})
 
@@ -2321,6 +2334,23 @@ const executeFlightPhase = () => {
 		updateFlightLogDisplay() // フェーズ変更時にログ表示を更新
 		executeFlightPhase()
 	}, phase.duration)
+}
+
+// 2点間の方位角を計算（ドローンの進行方向を決定）
+const calculateBearing = (start: [number, number], end: [number, number]): number => {
+	const startLat = (start[1] * Math.PI) / 180
+	const startLng = (start[0] * Math.PI) / 180
+	const endLat = (end[1] * Math.PI) / 180
+	const endLng = (end[0] * Math.PI) / 180
+
+	const y = Math.sin(endLng - startLng) * Math.cos(endLat)
+	const x =
+		Math.cos(startLat) * Math.sin(endLat) -
+		Math.sin(startLat) * Math.cos(endLat) * Math.cos(endLng - startLng)
+
+	const bearingRad = Math.atan2(y, x)
+	const bearingDeg = (bearingRad * 180) / Math.PI
+	return (bearingDeg + 360) % 360
 }
 
 const pauseFlightPlan = () => {
@@ -2727,7 +2757,9 @@ map.on('load', () => {
 					}
 				} catch (error) {
 					console.error('フライトプラン読み込みエラー:', error)
-					showToast('フライトプランの読み込みに失敗しました', 'error')
+					const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+					showToast(`フライトプランの読み込みに失敗しました: ${errorMessage}`, 'error')
+					addFlightLog('エラー', 'フライトプラン読み込み', `${errorMessage}`, 'error')
 				}
 			})
 		}
