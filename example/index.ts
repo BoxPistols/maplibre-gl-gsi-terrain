@@ -112,6 +112,14 @@ const map = new maplibregl.Map({
 				type: 'geojson',
 				data: { type: 'FeatureCollection', features: [] },
 			},
+			'flight-plan-waypoints': {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] },
+			},
+			'flight-plan-path': {
+				type: 'geojson',
+				data: { type: 'FeatureCollection', features: [] },
+			},
 		},
 		layers: [
 			{
@@ -626,6 +634,121 @@ const setupLayers = () => {
 			'circle-opacity': 0.9,
 		},
 	})
+
+	// フライトプランパス（線）
+	map.addLayer({
+		id: 'flight-plan-path-layer',
+		type: 'line',
+		source: 'flight-plan-path',
+		paint: {
+			'line-color': '#00ffff',
+			'line-width': 3,
+			'line-opacity': 0.8,
+		},
+		layout: {
+			'line-cap': 'round',
+			'line-join': 'round',
+		},
+	})
+
+	// フライトプランウェイポイント（マーカー）
+	map.addLayer({
+		id: 'flight-plan-waypoints-layer',
+		type: 'circle',
+		source: 'flight-plan-waypoints',
+		paint: {
+			'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 6, 18, 12],
+			'circle-color': '#00ffff',
+			'circle-stroke-width': 3,
+			'circle-stroke-color': '#ffffff',
+			'circle-opacity': 0.9,
+		},
+	})
+
+	// フライトプランウェイポイントラベル
+	map.addLayer({
+		id: 'flight-plan-waypoint-labels',
+		type: 'symbol',
+		source: 'flight-plan-waypoints',
+		layout: {
+			'text-field': ['get', 'name'],
+			'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+			'text-size': 12,
+			'text-offset': [0, -2],
+			'text-anchor': 'bottom',
+		},
+		paint: {
+			'text-color': '#00ffff',
+			'text-halo-color': '#000000',
+			'text-halo-width': 2,
+		},
+	})
+}
+
+// フライトプラン可視化更新
+const updateFlightPlanVisualization = (flightPlan: FlightPlanPhase[]) => {
+	if (!flightPlan || flightPlan.length === 0) {
+		// フライトプランがない場合は空のデータを設定
+		;(map.getSource('flight-plan-waypoints') as maplibregl.GeoJSONSource)?.setData({
+			type: 'FeatureCollection',
+			features: [],
+		})
+		;(map.getSource('flight-plan-path') as maplibregl.GeoJSONSource)?.setData({
+			type: 'FeatureCollection',
+			features: [],
+		})
+		return
+	}
+
+	// ウェイポイントのGeoJSON作成
+	const waypointFeatures = flightPlan.map((phase, index) => ({
+		type: 'Feature' as const,
+		geometry: {
+			type: 'Point' as const,
+			coordinates: [phase.position[0], phase.position[1]],
+		},
+		properties: {
+			id: `waypoint-${index}`,
+			name: `WP${index + 1}: ${phase.phase}`,
+			phase: phase.phase,
+			action: phase.action,
+			altitude: phase.position[2],
+			sequenceNumber: index + 1,
+		},
+	}))
+
+	// パス（線）のGeoJSON作成
+	const pathCoordinates = flightPlan.map(phase => [
+		phase.position[0],
+		phase.position[1],
+		phase.position[2],
+	])
+
+	const pathFeature = {
+		type: 'Feature' as const,
+		geometry: {
+			type: 'LineString' as const,
+			coordinates: pathCoordinates,
+		},
+		properties: {
+			id: 'flight-path',
+			name: 'Flight Path',
+		},
+	}
+
+	// マップソースを更新
+	;(map.getSource('flight-plan-waypoints') as maplibregl.GeoJSONSource)?.setData({
+		type: 'FeatureCollection',
+		features: waypointFeatures,
+	})
+	;(map.getSource('flight-plan-path') as maplibregl.GeoJSONSource)?.setData({
+		type: 'FeatureCollection',
+		features: [pathFeature],
+	})
+
+	console.log(
+		`フライトプラン可視化を更新: ${flightPlan.length}個のウェイポイント、パス長: ${pathCoordinates.length}`
+	)
 }
 
 // 表示更新
@@ -2222,6 +2345,12 @@ const importFlightPlan = () => {
 					currentFlightPlanName = planData.name
 					currentFlightPlanDescription = planData.description || ''
 
+					// FlightControllerに設定
+					flightController.setFlightPlan(planData)
+
+					// フライトプランの可視化を更新
+					updateFlightPlanVisualization(planData.phases)
+
 					addFlightLog(
 						'システム',
 						'フライトプランインポート',
@@ -2407,6 +2536,7 @@ map.on('load', () => {
 			phases: currentFlightPlan,
 		}
 		flightController.setFlightPlan(defaultPlan)
+		updateFlightPlanVisualization(defaultPlan.phases)
 
 		addFlightLog(
 			'システム',
@@ -2489,6 +2619,7 @@ map.on('load', () => {
 						}
 
 						flightController.setFlightPlan(defaultPlan)
+						updateFlightPlanVisualization(defaultPlan.phases)
 						showToast('東京タワー点検フライトプランを読み込みました', 'success')
 
 						// カメラを東京タワーに移動
@@ -2525,6 +2656,7 @@ map.on('load', () => {
 						}
 
 						flightController.setFlightPlan(planData)
+						updateFlightPlanVisualization(planData.phases)
 						showToast(`${planData.name}を読み込みました`, 'success')
 
 						// カメラを開始位置に移動
