@@ -2364,10 +2364,10 @@ map.on('load', () => {
 
 	// 新しいモジュールの初期化
 	try {
-		// MapStyleManagerの初期化
+		// MapStyleManagerの初期化（コントロールは非表示）
 		mapStyleManager = new MapStyleManager(map, gsiTerrainSource)
-		const styleControl = mapStyleManager.createStyleControl()
-		document.body.appendChild(styleControl)
+		// const styleControl = mapStyleManager.createStyleControl()
+		// document.body.appendChild(styleControl)
 		console.log('MapStyleManager初期化完了')
 
 		// FlightControllerの初期化
@@ -2622,6 +2622,50 @@ map.on('load', () => {
 		console.error('イベントリスナー設定エラー:', error)
 		console.error('一部のボタンが動作しない可能性があります')
 	}
+
+	// Info panel toggle
+	const infoPanelToggle = document.getElementById('infoPanelToggle') as HTMLButtonElement
+	const infoPanel = document.getElementById('infoPanel') as HTMLElement
+	if (infoPanelToggle && infoPanel) {
+		infoPanelToggle.addEventListener('click', () => {
+			const isVisible = infoPanel.classList.contains('visible')
+			infoPanel.classList.toggle('visible')
+
+			// SVGアイコンを切り替え
+			if (isVisible) {
+				infoPanelToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+					<path d="M12 16v-4m0-4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+				</svg>`
+			} else {
+				infoPanelToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+				</svg>`
+			}
+		})
+	}
+
+	// Flight plan panel toggle
+	const flightPlanToggle = document.getElementById('flightPlanToggle') as HTMLButtonElement
+	const flightPlanExport = document.getElementById('flightPlanExport') as HTMLElement
+	if (flightPlanToggle && flightPlanExport) {
+		flightPlanToggle.addEventListener('click', () => {
+			const isVisible = flightPlanExport.classList.contains('visible')
+			flightPlanExport.classList.toggle('visible')
+
+			// SVGアイコンを切り替え
+			if (isVisible) {
+				flightPlanToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="currentColor"/>
+				</svg>`
+			} else {
+				flightPlanToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+				</svg>`
+			}
+		})
+	}
+
 	console.log('map.on("load") 処理完了')
 }) // map.on('load')の終了
 

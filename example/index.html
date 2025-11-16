@@ -127,15 +127,53 @@
 			.info-panel {
 				position: absolute;
 				top: 20px;
-				right: 20px;
-				background: rgba(255, 255, 255, 0.4);
+				right: -300px;
+				width: 280px;
+				background: rgba(255, 255, 255, 0.6);
 				backdrop-filter: blur(4px);
 				border: 1px solid rgba(255, 255, 255, 0.7);
 				padding: 16px;
-				border-radius: 16px;
+				border-radius: 16px 0 0 16px;
 				z-index: 1000;
-				max-width: 280px;
 				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+				transition: right 0.3s ease;
+			}
+
+			.info-panel.visible {
+				right: 0;
+			}
+
+			.info-panel-toggle {
+				position: absolute;
+				left: -40px;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 40px;
+				height: 60px;
+				background: rgba(255, 255, 255, 0.6);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.7);
+				border-right: none;
+				border-radius: 8px 0 0 8px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.15);
+				z-index: 1;
+				padding: 0;
+			}
+
+			.info-panel-toggle:hover {
+				background: rgba(255, 255, 255, 0.8);
+				transform: translateY(-50%) translateX(-2px);
+			}
+
+			.info-panel-toggle svg {
+				width: 20px;
+				height: 20px;
+				fill: rgba(0, 0, 0, 0.7);
 			}
 
 			.info-title {
@@ -262,15 +300,53 @@
 			.flight-plan-export {
 				position: absolute;
 				bottom: 200px;
-				right: 20px;
-				background: rgba(255, 255, 255, 0.4);
+				right: -280px;
+				width: 260px;
+				background: rgba(255, 255, 255, 0.6);
 				backdrop-filter: blur(4px);
 				border: 1px solid rgba(255, 255, 255, 0.7);
 				padding: 16px;
-				border-radius: 12px;
+				border-radius: 12px 0 0 12px;
 				z-index: 1000;
-				max-width: 260px;
 				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+				transition: right 0.3s ease;
+			}
+
+			.flight-plan-export.visible {
+				right: 0;
+			}
+
+			.flight-plan-toggle {
+				position: absolute;
+				left: -40px;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 40px;
+				height: 60px;
+				background: rgba(255, 255, 255, 0.6);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.7);
+				border-right: none;
+				border-radius: 8px 0 0 8px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.15);
+				z-index: 1;
+				padding: 0;
+			}
+
+			.flight-plan-toggle:hover {
+				background: rgba(255, 255, 255, 0.8);
+				transform: translateY(-50%) translateX(-2px);
+			}
+
+			.flight-plan-toggle svg {
+				width: 20px;
+				height: 20px;
+				fill: rgba(0, 0, 0, 0.7);
 			}
 
 			.flight-plan-title {
@@ -542,6 +618,12 @@
 					display: flex;
 				}
 			}
+
+			/* MapLibre controls should be above info panels */
+			.maplibregl-ctrl-group,
+			.maplibregl-ctrl {
+				z-index: 1100 !important;
+			}
 		</style>
 	</head>
 
@@ -716,7 +798,13 @@
 		</div>
 
 		<!-- 情報パネル -->
-		<div class="info-panel">
+		<div class="info-panel" id="infoPanel">
+			<button class="info-panel-toggle" id="infoPanelToggle">
+				<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+					<path d="M12 16v-4m0-4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+				</svg>
+			</button>
 			<div class="info-title">点検ワークフロー</div>
 			<ul class="info-list">
 				<li><strong>1. 離陸</strong>: 南側から開始</li>
@@ -736,7 +824,12 @@
 		</div>
 
 		<!-- フライトプランエクスポートパネル -->
-		<div class="flight-plan-export">
+		<div class="flight-plan-export" id="flightPlanExport">
+			<button class="flight-plan-toggle" id="flightPlanToggle">
+				<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="currentColor"/>
+				</svg>
+			</button>
 			<div class="flight-plan-title">フライトプラン</div>
 			<div class="flight-plan-buttons">
 				<select

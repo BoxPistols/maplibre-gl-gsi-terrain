@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm dev)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)",
+      "Bash(pkill:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
