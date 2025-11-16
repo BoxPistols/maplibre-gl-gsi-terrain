@@ -29,7 +29,7 @@ import { FlightController } from './modules/FlightController'
 import { DroneModel } from './modules/DroneModel'
 import { GameController } from './modules/GameController'
 import { TouchController } from './modules/TouchController'
-import type { FlightPlanData } from './modules/types'
+import type { FlightPlanData, FlightPlanPhase } from './modules/types'
 
 // サンプルデータの定義
 const SAMPLE_FLIGHT_DATA = `id,name,type,source,longitude,latitude,altitude,relativeAltitude,timestamp,duration,speed,heading,action,waypointId,sequenceNumber,batteryLevel,signalStrength,gpsAccuracy,temperature,humidity,windSpeed,windDirection,missionId,operatorId,aircraftModel,aircraftSerial,description
@@ -176,21 +176,6 @@ let currentFlightPhase = 0
 let currentFlightPlan: FlightPlanPhase[] = []
 let currentFlightPlanName = ''
 let currentFlightPlanDescription = ''
-
-interface FlightPlanPhase {
-	phase: string
-	action: string
-	duration: number
-	position: [number, number, number]
-}
-
-interface FlightPlanData {
-	name: string
-	description: string
-	created: string
-	phases: FlightPlanPhase[]
-	totalDuration: number
-}
 
 // デフォルトのフライトプラン定義（東京タワー）
 const defaultFlightPlan: FlightPlanPhase[] = [
@@ -2097,8 +2082,9 @@ const startFlightPlan = () => {
 
 	addFlightLog('システム', 'フライトプラン開始', `${currentFlightPlanName}を開始します`, 'success')
 
-	// ドローンオブジェクトを作成
-	if (loadedObjects.length === 0) {
+	// ドローンオブジェクトを作成または更新
+	let drone = loadedObjects.find(obj => obj.type === 'drone')
+	if (!drone) {
 		const droneObject: DroneObject = {
 			id: 'inspection-drone-1',
 			name: `${currentFlightPlanName}ドローン`,
@@ -2109,8 +2095,14 @@ const startFlightPlan = () => {
 			source: 'flight-plan',
 		}
 		loadedObjects.push(droneObject)
-		updateDisplay()
+	} else {
+		// 既存のドローンの名前と位置を更新
+		drone.name = `${currentFlightPlanName}ドローン`
+		drone.longitude = currentFlightPlan[0].position[0]
+		drone.latitude = currentFlightPlan[0].position[1]
+		drone.altitude = 0
 	}
+	updateDisplay()
 
 	executeFlightPhase()
 }
@@ -2139,8 +2131,10 @@ const executeFlightPhase = () => {
 	// 地図をドローンの位置に移動
 	map.flyTo({
 		center: [drone.longitude, drone.latitude],
-		zoom: 18,
-		duration: 2000,
+		zoom: phase.zoom ?? 18,
+		pitch: phase.pitch ?? 60,
+		bearing: phase.bearing ?? 0,
+		duration: phase.duration,
 	})
 
 	updateDisplay()
@@ -2479,8 +2473,21 @@ map.on('load', () => {
 							description: '東京タワー周辺を体系的に点検',
 							created: new Date().toISOString(),
 							totalDuration: 39000,
-							phases: currentFlightPlan,
+							phases: defaultFlightPlan,
 						}
+
+						// グローバル変数を更新
+						currentFlightPlan = defaultPlan.phases
+						currentFlightPlanName = defaultPlan.name
+						currentFlightPlanDescription = defaultPlan.description
+
+						// 既存のドローンの名前も更新
+						const existingDrone = loadedObjects.find(obj => obj.type === 'drone')
+						if (existingDrone) {
+							existingDrone.name = `${defaultPlan.name}ドローン`
+							updateDisplay()
+						}
+
 						flightController.setFlightPlan(defaultPlan)
 						showToast('東京タワー点検フライトプランを読み込みました', 'success')
 
@@ -2504,6 +2511,19 @@ map.on('load', () => {
 							throw new Error('ファイルの読み込みに失敗しました')
 						}
 						const planData: FlightPlanData = await response.json()
+
+						// グローバル変数を更新
+						currentFlightPlan = planData.phases
+						currentFlightPlanName = planData.name
+						currentFlightPlanDescription = planData.description
+
+						// 既存のドローンの名前も更新
+						const existingDrone = loadedObjects.find(obj => obj.type === 'drone')
+						if (existingDrone) {
+							existingDrone.name = `${planData.name}ドローン`
+							updateDisplay()
+						}
+
 						flightController.setFlightPlan(planData)
 						showToast(`${planData.name}を読み込みました`, 'success')
 

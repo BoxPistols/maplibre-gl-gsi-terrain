@@ -9,17 +9,25 @@ export default defineConfig({
 		},
 	},
 	esbuild: {
-		target: 'es2020',
+		target: 'esnext',
+		supported: {
+			'class-field': true,
+			'class-static-field': true,
+		},
 	},
 	optimizeDeps: {
 		include: ['maplibre-gl'],
 		esbuildOptions: {
-			target: 'es2020',
+			target: 'esnext',
+			supported: {
+				'class-field': true,
+				'class-static-field': true,
+			},
 		},
 	},
 	build: {
 		outDir: '../demo',
-		target: 'es2020',
+		target: 'esnext',
 		rollupOptions: {
 			input: {
 				index: 'example/index.html',
