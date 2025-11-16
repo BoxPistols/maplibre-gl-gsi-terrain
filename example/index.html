@@ -364,6 +364,116 @@
 				color: #22c55e;
 			}
 
+			/* フライトステータスバー */
+			.flight-status-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 8px 12px;
+				margin-bottom: 8px;
+				background: rgba(59, 130, 246, 0.15);
+				border-radius: 6px;
+				border: 1px solid rgba(59, 130, 246, 0.3);
+			}
+
+			.status-indicator {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				animation: pulse 2s infinite;
+			}
+
+			.status-indicator.active .status-dot {
+				background: #22c55e;
+				box-shadow: 0 0 8px #22c55e;
+			}
+
+			.status-indicator.standby .status-dot {
+				background: #fbbf24;
+				box-shadow: 0 0 8px #fbbf24;
+			}
+
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.5;
+				}
+			}
+
+			.status-text {
+				color: rgba(255, 255, 255, 0.9);
+				font-size: 11px;
+				font-weight: 600;
+			}
+
+			.current-phase {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				font-size: 10px;
+			}
+
+			.phase-label {
+				color: rgba(255, 255, 255, 0.7);
+			}
+
+			.phase-name {
+				color: #22c55e;
+				font-weight: 600;
+			}
+
+			.phase-number {
+				color: rgba(255, 255, 255, 0.6);
+			}
+
+			/* 最新のログエントリ */
+			.log-entry-latest {
+				background: rgba(34, 197, 94, 0.1);
+				border-left: 3px solid #22c55e;
+				padding-left: 8px;
+				animation: highlight 1s ease-in-out;
+			}
+
+			@keyframes highlight {
+				0% {
+					background: rgba(34, 197, 94, 0.3);
+				}
+				100% {
+					background: rgba(34, 197, 94, 0.1);
+				}
+			}
+
+			.log-entry-recent {
+				opacity: 1;
+				background: rgba(255, 255, 255, 0.02);
+			}
+
+			.latest-indicator {
+				color: #22c55e;
+				font-size: 8px;
+				margin-right: 4px;
+				animation: blink 1.5s infinite;
+			}
+
+			@keyframes blink {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.3;
+				}
+			}
+
 			.flight-plan-export {
 				position: absolute;
 				bottom: 200px;

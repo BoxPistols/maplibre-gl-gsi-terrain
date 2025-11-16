@@ -338,9 +338,44 @@ const updateFlightLogDisplay = () => {
 
 	logContainer.innerHTML = ''
 
-	flightLog.forEach(entry => {
+	// フライトステータス表示
+	if (flightPlanActive && currentFlightPlan.length > 0) {
+		const statusBar = document.createElement('div')
+		statusBar.className = 'flight-status-bar'
+		statusBar.innerHTML = `
+			<div class="status-indicator active">
+				<span class="status-dot"></span>
+				<span class="status-text">フライト実行中</span>
+			</div>
+			<div class="current-phase">
+				<span class="phase-label">現在:</span>
+				<span class="phase-name">${currentFlightPlan[currentFlightPhase]?.phase || '待機中'}</span>
+				<span class="phase-number">(${currentFlightPhase + 1}/${currentFlightPlan.length})</span>
+			</div>
+		`
+		logContainer.appendChild(statusBar)
+	} else if (currentFlightPlan.length > 0) {
+		const statusBar = document.createElement('div')
+		statusBar.className = 'flight-status-bar'
+		statusBar.innerHTML = `
+			<div class="status-indicator standby">
+				<span class="status-dot"></span>
+				<span class="status-text">待機中</span>
+			</div>
+			<div class="current-phase">
+				<span class="phase-label">フライトプラン:</span>
+				<span class="phase-name">${currentFlightPlanName}</span>
+			</div>
+		`
+		logContainer.appendChild(statusBar)
+	}
+
+	flightLog.forEach((entry, index) => {
 		const logEntry = document.createElement('div')
-		logEntry.className = 'log-entry'
+		const isLatest = index === flightLog.length - 1
+		const isRecent = index >= flightLog.length - 3
+
+		logEntry.className = `log-entry ${isLatest ? 'log-entry-latest' : ''} ${isRecent ? 'log-entry-recent' : ''}`
 
 		const timestamp = document.createElement('span')
 		timestamp.className = 'log-timestamp'
@@ -357,6 +392,14 @@ const updateFlightLogDisplay = () => {
 		const details = document.createElement('span')
 		details.className = 'log-details'
 		details.textContent = entry.details
+
+		// 最新のログにインジケーターを追加
+		if (isLatest) {
+			const indicator = document.createElement('span')
+			indicator.className = 'latest-indicator'
+			indicator.textContent = '●'
+			logEntry.insertBefore(indicator, logEntry.firstChild)
+		}
 
 		logEntry.appendChild(timestamp)
 		logEntry.appendChild(phase)
@@ -1634,12 +1677,12 @@ const setupEventHandlers = () => {
 	})
 
 	// フライトログクリア
-	document.getElementById('clearFlightLog')?.addEventListener('click', () => {
+	document.getElementById('clearLog')?.addEventListener('click', () => {
 		clearFlightLog()
 	})
 
 	// フライトログエクスポート
-	document.getElementById('exportFlightLog')?.addEventListener('click', () => {
+	document.getElementById('exportLog')?.addEventListener('click', () => {
 		exportFlightLog()
 	})
 
@@ -2204,6 +2247,7 @@ const startFlightPlan = () => {
 	currentFlightPhase = 0
 
 	addFlightLog('システム', 'フライトプラン開始', `${currentFlightPlanName}を開始します`, 'success')
+	updateFlightLogDisplay() // ステータスバーを更新
 
 	// ドローンオブジェクトを作成または更新
 	let drone = loadedObjects.find(obj => obj.type === 'drone')
@@ -2265,6 +2309,7 @@ const executeFlightPhase = () => {
 	// 次のフェーズへ
 	setTimeout(() => {
 		currentFlightPhase++
+		updateFlightLogDisplay() // フェーズ変更時にログ表示を更新
 		executeFlightPhase()
 	}, phase.duration)
 }
@@ -2282,6 +2327,7 @@ const pauseFlightPlan = () => {
 		`フェーズ${currentFlightPhase + 1}で一時停止しました`,
 		'warning'
 	)
+	updateFlightLogDisplay() // ステータスバーを更新
 }
 
 const completeFlightPlan = () => {
@@ -2292,6 +2338,7 @@ const completeFlightPlan = () => {
 		`${currentFlightPlanName}が完了しました`,
 		'success'
 	)
+	updateFlightLogDisplay() // ステータスバーを更新
 	showToast('フライトプランが完了しました', 'success')
 }
 
