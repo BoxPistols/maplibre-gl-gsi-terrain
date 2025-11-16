@@ -312,21 +312,53 @@
 				background: rgba(255, 255, 255, 0.3);
 			}
 
+			/* フライトステータス（固定表示） */
+			.flight-status {
+				padding: 8px 12px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+			}
+
+			/* ログコンテナ（スクロール可能） */
+			.flight-log-container {
+				flex: 1;
+				overflow-y: auto;
+				overflow-x: hidden;
+				max-height: 180px;
+				transition: all 0.3s ease;
+				scrollbar-width: thin;
+				scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);
+			}
+
+			.flight-log-container::-webkit-scrollbar {
+				width: 6px;
+			}
+
+			.flight-log-container::-webkit-scrollbar-track {
+				background: rgba(0, 0, 0, 0.2);
+			}
+
+			.flight-log-container::-webkit-scrollbar-thumb {
+				background: rgba(255, 255, 255, 0.3);
+				border-radius: 3px;
+			}
+
+			.flight-log-container::-webkit-scrollbar-thumb:hover {
+				background: rgba(255, 255, 255, 0.5);
+			}
+
+			.flight-log-container.hidden {
+				display: none;
+			}
+
+			.flight-log-container.visible {
+				display: block;
+			}
+
 			.flight-log {
 				display: flex;
 				flex-direction: column;
 				gap: 3px;
-				transition: all 0.3s ease;
-				display: none;
-				/* 初期状態は非表示 */
-			}
-
-			.flight-log.hidden {
-				display: none;
-			}
-
-			.flight-log.visible {
-				display: flex;
+				padding: 8px 12px;
 			}
 
 			.log-entry {
@@ -1355,12 +1387,15 @@
 					<button id="toggleLog" title="フライトログの表示/非表示を切り替えます">表示切替</button>
 				</div>
 			</div>
-			<div id="flightLog" class="flight-log">
-				<div class="log-entry">
-					<span class="log-timestamp">--:--:--</span>
-					<span class="log-phase">システム</span>
-					<span class="log-action">初期化</span>
-					<span class="log-details">ドローン飛行シミュレーター準備完了</span>
+			<div id="flightStatus" class="flight-status"></div>
+			<div id="flightLogContainer" class="flight-log-container">
+				<div id="flightLog" class="flight-log">
+					<div class="log-entry">
+						<span class="log-timestamp">--:--:--</span>
+						<span class="log-phase">システム</span>
+						<span class="log-action">初期化</span>
+						<span class="log-details">ドローン飛行シミュレーター準備完了</span>
+					</div>
 				</div>
 			</div>
 		</div>

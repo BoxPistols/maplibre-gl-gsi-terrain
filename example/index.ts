@@ -333,12 +333,14 @@ const addFlightLog = (
 }
 
 const updateFlightLogDisplay = () => {
+	const statusContainer = document.getElementById('flightStatus')
 	const logContainer = document.getElementById('flightLog')
-	if (!logContainer) return
+	const logScrollContainer = document.getElementById('flightLogContainer')
 
-	logContainer.innerHTML = ''
+	if (!statusContainer || !logContainer || !logScrollContainer) return
 
-	// フライトステータス表示
+	// ステータスバーの更新
+	statusContainer.innerHTML = ''
 	if (flightPlanActive && currentFlightPlan.length > 0) {
 		const statusBar = document.createElement('div')
 		statusBar.className = 'flight-status-bar'
@@ -353,7 +355,7 @@ const updateFlightLogDisplay = () => {
 				<span class="phase-number">(${currentFlightPhase + 1}/${currentFlightPlan.length})</span>
 			</div>
 		`
-		logContainer.appendChild(statusBar)
+		statusContainer.appendChild(statusBar)
 	} else if (currentFlightPlan.length > 0) {
 		const statusBar = document.createElement('div')
 		statusBar.className = 'flight-status-bar'
@@ -367,9 +369,11 @@ const updateFlightLogDisplay = () => {
 				<span class="phase-name">${currentFlightPlanName}</span>
 			</div>
 		`
-		logContainer.appendChild(statusBar)
+		statusContainer.appendChild(statusBar)
 	}
 
+	// ログエントリの更新
+	logContainer.innerHTML = ''
 	flightLog.forEach((entry, index) => {
 		const logEntry = document.createElement('div')
 		const isLatest = index === flightLog.length - 1
@@ -409,8 +413,10 @@ const updateFlightLogDisplay = () => {
 		logContainer.appendChild(logEntry)
 	})
 
-	// 最新のログまでスクロール
-	logContainer.scrollTop = logContainer.scrollHeight
+	// 最新のログまでスクロール（スクロールコンテナに対して実行）
+	setTimeout(() => {
+		logScrollContainer.scrollTop = logScrollContainer.scrollHeight
+	}, 50) // 少し遅延させてDOMの更新を待つ
 }
 
 const clearFlightLog = () => {
@@ -1705,37 +1711,40 @@ const setupEventHandlers = () => {
 
 	// フライトログ表示切替
 	document.getElementById('toggleLog')?.addEventListener('click', () => {
-		const flightLog = document.getElementById('flightLog') as HTMLElement
+		const flightLogContainer = document.getElementById('flightLogContainer') as HTMLElement
 		const toggleButton = document.getElementById('toggleLog') as HTMLButtonElement
 
 		console.log('Toggleボタンがクリックされました')
-		console.log('FlightLog要素:', flightLog)
+		console.log('FlightLogContainer要素:', flightLogContainer)
 		console.log('Toggleボタン要素:', toggleButton)
-		console.log('現在のFlightLog表示状態:', flightLog?.classList.contains('visible'))
+		console.log(
+			'現在のFlightLogContainer表示状態:',
+			flightLogContainer?.classList.contains('visible')
+		)
 
-		if (flightLog && toggleButton) {
+		if (flightLogContainer && toggleButton) {
 			// ログリストの表示状態を判定
-			const isCurrentlyVisible = flightLog.classList.contains('visible')
+			const isCurrentlyVisible = flightLogContainer.classList.contains('visible')
 
 			console.log('現在の表示状態:', isCurrentlyVisible)
 
 			if (isCurrentlyVisible) {
 				// ログリストを非表示にする
-				flightLog.classList.remove('visible')
-				flightLog.classList.add('hidden')
+				flightLogContainer.classList.remove('visible')
+				flightLogContainer.classList.add('hidden')
 				toggleButton.textContent = 'ログ表示'
 				addFlightLog('システム', 'ログ表示切替', 'ログ表示を無効にしました', 'info')
 				console.log('ログリストを非表示にしました')
 			} else {
 				// ログリストを表示にする
-				flightLog.classList.remove('hidden')
-				flightLog.classList.add('visible')
+				flightLogContainer.classList.remove('hidden')
+				flightLogContainer.classList.add('visible')
 				toggleButton.textContent = 'ログ非表示'
 				addFlightLog('システム', 'ログ表示切替', 'ログ表示を有効にしました', 'info')
 				console.log('ログリストを表示にしました')
 			}
 		} else {
-			console.error('FlightLogまたはToggleボタンが見つかりません')
+			console.error('FlightLogContainerまたはToggleボタンが見つかりません')
 		}
 	})
 
@@ -2602,17 +2611,17 @@ map.on('load', () => {
 
 	// Footerを初期表示状態にする（より確実な処理）
 	setTimeout(() => {
-		const flightLog = document.getElementById('flightLog') as HTMLElement
+		const flightLogContainer = document.getElementById('flightLogContainer') as HTMLElement
 		const toggleButton = document.getElementById('toggleLog') as HTMLButtonElement
 
-		if (flightLog && toggleButton) {
+		if (flightLogContainer && toggleButton) {
 			// ログリストを表示状態に設定
-			flightLog.classList.remove('hidden')
-			flightLog.classList.add('visible')
+			flightLogContainer.classList.remove('hidden')
+			flightLogContainer.classList.add('visible')
 			toggleButton.textContent = 'ログ非表示'
 			console.log('ログリストを初期表示状態に設定しました')
 		} else {
-			console.error('FlightLogまたはToggleボタンの初期化に失敗しました')
+			console.error('FlightLogContainerまたはToggleボタンの初期化に失敗しました')
 		}
 	}, 100) // 少し遅延させて確実にDOMが準備されるようにする
 
