@@ -487,7 +487,8 @@ const exportFlightLog = () => {
 		})
 		.join('\n')
 
-	const headers = 'timestamp,phase,action,details,type,latitude,longitude,altitude,bearing,pitch,zoom\n'
+	const headers =
+		'timestamp,phase,action,details,type,latitude,longitude,altitude,bearing,pitch,zoom\n'
 	const csvContent = headers + logText
 
 	const blob = new Blob([csvContent], { type: 'text/csv' })
