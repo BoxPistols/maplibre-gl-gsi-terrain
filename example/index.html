@@ -700,23 +700,42 @@
 
 			/* モバイル対応レスポンシブデザイン */
 			@media (max-width: 768px) {
-				#controls {
+				/* コントロールトグルボタンを大きく、タップしやすく */
+				.controls-toggle {
+					width: 54px;
+					height: 54px;
 					top: 10px;
 					left: 10px;
-					right: 10px;
-					max-width: none;
-					padding: 12px;
-					max-height: 50vh;
+				}
+
+				.controls-toggle svg {
+					width: 28px;
+					height: 28px;
+				}
+
+				#controls {
+					top: 0;
+					left: -100%;
+					right: auto;
+					width: 85%;
+					max-width: 320px;
+					padding: 16px;
+					max-height: 100vh;
 					overflow-y: auto;
+					border-radius: 0 16px 16px 0;
+				}
+
+				#controls.visible {
+					left: 0;
 				}
 
 				#controls h3 {
-					font-size: 12px !important;
-					margin: 0 0 10px 0 !important;
+					font-size: 14px !important;
+					margin: 0 0 12px 0 !important;
 				}
 
 				.control-section {
-					margin-bottom: 10px;
+					margin-bottom: 12px;
 				}
 
 				.section-title {
@@ -724,72 +743,83 @@
 				}
 
 				button {
-					padding: 6px 10px;
-					font-size: 10px;
-					margin: 2px;
-					min-width: 60px;
+					padding: 8px 12px;
+					font-size: 11px;
+					margin: 3px;
+					min-width: 70px;
+					min-height: 40px;
 				}
 
 				.info-panel {
-					top: 10px;
-					right: 10px;
-					left: 10px;
-					max-width: none;
-					padding: 12px;
-					font-size: 11px;
-					display: none; /* モバイルでは初期非表示 */
-				}
-
-				.info-panel.mobile-visible {
-					display: block;
+					display: none !important; /* モバイルでは完全非表示 */
 				}
 
 				.flight-plan-export {
-					bottom: auto;
-					top: 10px;
-					right: 10px;
-					left: auto;
-					max-width: 200px;
-					padding: 10px;
-					display: none; /* モバイルでは初期非表示 */
-				}
-
-				.flight-plan-export.mobile-visible {
-					display: block;
+					display: none !important; /* モバイルでは完全非表示 */
 				}
 
 				.footer {
-					padding: 10px;
-					font-size: 9px;
-					max-height: 120px;
+					padding: 8px;
+					font-size: 8px;
+					max-height: 60px; /* モバイルでは高さを縮小 */
+				}
+
+				.footer-header {
+					margin-bottom: 6px;
+					padding-bottom: 4px;
 				}
 
 				.footer-title {
-					font-size: 10px;
+					font-size: 9px;
+				}
+
+				.footer-controls button {
+					padding: 3px 6px;
+					font-size: 8px;
+				}
+
+				.flight-status {
+					padding: 4px 8px;
+					font-size: 8px;
+				}
+
+				.flight-log-container {
+					max-height: 40px;
 				}
 
 				.log-entry {
-					font-size: 8px;
-					gap: 6px;
+					font-size: 7px;
+					gap: 4px;
+					padding: 2px 0;
 				}
 
 				.log-timestamp {
-					min-width: 50px;
+					min-width: 40px;
+					font-size: 7px;
 				}
 
 				.log-phase {
-					min-width: 60px;
+					min-width: 50px;
+					font-size: 7px;
+				}
+
+				.log-action {
+					font-size: 7px;
+				}
+
+				.log-details {
+					font-size: 7px;
+				}
+
+				.log-extended-info {
+					display: none; /* モバイルでは詳細情報を非表示 */
 				}
 
 				#gameControlHelp {
-					bottom: auto;
-					top: 10px;
-					right: 10px;
-					left: 10px;
-					max-width: none;
+					display: none !important; /* モバイルでは非表示 */
 				}
 
-				/* 仮想ジョイスティックをモバイルで表示 */
+				/* 仮想ジョイスティックをモバイルで表示、フッターと重ならないように */
 				.virtual-joystick {
 					width: 120px;
 					height: 120px;
@@ -797,12 +827,12 @@
 
 				.virtual-joystick.left {
 					left: 20px;
-					bottom: 30px;
+					bottom: 80px; /* フッターの上に配置 */
 				}
 
 				.virtual-joystick.right {
 					right: 20px;
-					bottom: 30px;
+					bottom: 80px; /* フッターの上に配置 */
 				}
 
 				.joystick-knob {
@@ -812,18 +842,36 @@
 			}
 
 			@media (max-width: 480px) {
+				.controls-toggle {
+					width: 50px;
+					height: 50px;
+					top: 8px;
+					left: 8px;
+				}
+
+				.controls-toggle svg {
+					width: 26px;
+					height: 26px;
+				}
+
 				#controls {
-					top: 5px;
-					left: 5px;
-					right: 5px;
-					padding: 8px;
-					max-height: 45vh;
+					top: 0;
+					left: -100%;
+					width: 90%;
+					max-width: 280px;
+					padding: 12px;
+					max-height: 100vh;
+				}
+
+				#controls h3 {
+					font-size: 13px !important;
 				}
 
 				button {
-					padding: 4px 6px;
-					font-size: 9px;
-					min-width: 50px;
+					padding: 7px 10px;
+					font-size: 10px;
+					min-width: 65px;
+					min-height: 38px;
 				}
 
 				.virtual-joystick {
@@ -833,12 +881,12 @@
 
 				.virtual-joystick.left {
 					left: 10px;
-					bottom: 20px;
+					bottom: 70px; /* フッターの上に配置 */
 				}
 
 				.virtual-joystick.right {
 					right: 10px;
-					bottom: 20px;
+					bottom: 70px; /* フッターの上に配置 */
 				}
 
 				.joystick-knob {
@@ -847,9 +895,26 @@
 				}
 
 				.footer {
-					padding: 8px;
+					padding: 6px;
+					font-size: 7px;
+					max-height: 50px; /* より小さく */
+				}
+
+				.footer-title {
 					font-size: 8px;
-					max-height: 100px;
+				}
+
+				.footer-controls button {
+					padding: 2px 4px;
+					font-size: 7px;
+				}
+
+				.flight-log-container {
+					max-height: 30px;
+				}
+
+				.log-entry {
+					font-size: 6px;
 				}
 			}
 
