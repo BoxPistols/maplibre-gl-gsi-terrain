@@ -40,6 +40,18 @@ export interface FlightLogEntry {
 	action: string
 	details: string
 	type: 'info' | 'success' | 'error' | 'warning'
+	// 位置情報（オプショナル）
+	position?: {
+		latitude: number
+		longitude: number
+		altitude: number
+	}
+	// カメラ情報（オプショナル）
+	camera?: {
+		bearing: number
+		pitch: number
+		zoom: number
+	}
 }
 
 /**

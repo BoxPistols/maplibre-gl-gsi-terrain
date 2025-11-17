@@ -507,6 +507,42 @@
 				}
 			}
 
+			/* 位置情報・カメラ情報の拡張表示 */
+			.log-entry {
+				flex-wrap: wrap;
+			}
+
+			.log-extended-info {
+				width: 100%;
+				margin-top: 4px;
+				padding-left: 86px;
+				font-size: 9px;
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+			}
+
+			.log-position-info,
+			.log-camera-info {
+				display: flex;
+				gap: 8px;
+				align-items: center;
+			}
+
+			.info-label {
+				color: rgba(255, 255, 255, 0.5);
+				font-weight: 600;
+				min-width: 50px;
+			}
+
+			.info-value {
+				color: rgba(255, 255, 255, 0.7);
+				background: rgba(255, 255, 255, 0.05);
+				padding: 2px 6px;
+				border-radius: 3px;
+				font-family: 'Courier New', monospace;
+			}
+
 			.flight-plan-export {
 				position: absolute;
 				bottom: 200px;

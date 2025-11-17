@@ -174,6 +174,18 @@ interface FlightLogEntry {
 	action: string
 	details: string
 	type: 'info' | 'success' | 'error' | 'warning'
+	// 位置情報（オプショナル）
+	position?: {
+		latitude: number
+		longitude: number
+		altitude: number
+	}
+	// カメラ情報（オプショナル）
+	camera?: {
+		bearing: number
+		pitch: number
+		zoom: number
+	}
 }
 
 let flightLog: FlightLogEntry[] = []
@@ -310,7 +322,9 @@ const addFlightLog = (
 	phase: string,
 	action: string,
 	details: string,
-	type: 'info' | 'success' | 'error' | 'warning' = 'info'
+	type: 'info' | 'success' | 'error' | 'warning' = 'info',
+	position?: { latitude: number; longitude: number; altitude: number },
+	camera?: { bearing: number; pitch: number; zoom: number }
 ) => {
 	const now = new Date()
 	const timestamp = now.toLocaleTimeString('ja-JP')
@@ -321,6 +335,8 @@ const addFlightLog = (
 		action,
 		details,
 		type,
+		...(position && { position }),
+		...(camera && { camera }),
 	}
 
 	flightLog.push(logEntry)
@@ -410,6 +426,38 @@ const updateFlightLogDisplay = () => {
 		logEntry.appendChild(action)
 		logEntry.appendChild(details)
 
+		// 位置情報とカメラ情報を追加表示
+		if (entry.position || entry.camera) {
+			const extendedInfo = document.createElement('div')
+			extendedInfo.className = 'log-extended-info'
+
+			if (entry.position) {
+				const positionInfo = document.createElement('div')
+				positionInfo.className = 'log-position-info'
+				positionInfo.innerHTML = `
+					<span class="info-label">位置:</span>
+					<span class="info-value">緯度 ${entry.position.latitude.toFixed(6)}°</span>
+					<span class="info-value">経度 ${entry.position.longitude.toFixed(6)}°</span>
+					<span class="info-value">高度 ${entry.position.altitude.toFixed(1)}m</span>
+				`
+				extendedInfo.appendChild(positionInfo)
+			}
+
+			if (entry.camera) {
+				const cameraInfo = document.createElement('div')
+				cameraInfo.className = 'log-camera-info'
+				cameraInfo.innerHTML = `
+					<span class="info-label">カメラ:</span>
+					<span class="info-value">方位 ${entry.camera.bearing.toFixed(1)}°</span>
+					<span class="info-value">チルト ${entry.camera.pitch}°</span>
+					<span class="info-value">ズーム ${entry.camera.zoom}</span>
+				`
+				extendedInfo.appendChild(cameraInfo)
+			}
+
+			logEntry.appendChild(extendedInfo)
+		}
+
 		logContainer.appendChild(logEntry)
 	})
 
@@ -427,12 +475,19 @@ const clearFlightLog = () => {
 
 const exportFlightLog = () => {
 	const logText = flightLog
-		.map(
-			entry => `${entry.timestamp},${entry.phase},${entry.action},${entry.details},${entry.type}`
-		)
+		.map(entry => {
+			const base = `${entry.timestamp},${entry.phase},${entry.action},${entry.details},${entry.type}`
+			const lat = entry.position?.latitude.toFixed(6) || ''
+			const lng = entry.position?.longitude.toFixed(6) || ''
+			const alt = entry.position?.altitude.toFixed(1) || ''
+			const bearing = entry.camera?.bearing.toFixed(1) || ''
+			const pitch = entry.camera?.pitch || ''
+			const zoom = entry.camera?.zoom || ''
+			return `${base},${lat},${lng},${alt},${bearing},${pitch},${zoom}`
+		})
 		.join('\n')
 
-	const headers = 'timestamp,phase,action,details,type\n'
+	const headers = 'timestamp,phase,action,details,type,latitude,longitude,altitude,bearing,pitch,zoom\n'
 	const csvContent = headers + logText
 
 	const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -2300,8 +2355,6 @@ const executeFlightPhase = () => {
 	drone.latitude = phase.position[1]
 	drone.altitude = phase.position[2]
 
-	addFlightLog(phase.phase, '実行中', phase.action, 'info')
-
 	// 次のwaypointへの方位を計算（FPV視点のため）
 	let bearing = 0
 	if (currentFlightPhase < currentFlightPlan.length - 1) {
@@ -2315,11 +2368,33 @@ const executeFlightPhase = () => {
 		bearing = phase.bearing ?? 0
 	}
 
+	// カメラパラメータを取得
+	const zoom = phase.zoom ?? 18
+	const pitch = phase.pitch ?? 70
+
+	// 詳細な位置情報とカメラ情報を含めたログを記録
+	addFlightLog(
+		phase.phase,
+		'実行中',
+		phase.action,
+		'info',
+		{
+			latitude: drone.latitude,
+			longitude: drone.longitude,
+			altitude: drone.altitude,
+		},
+		{
+			bearing: Math.round(bearing * 100) / 100, // 小数点2桁に丸める
+			pitch: pitch,
+			zoom: zoom,
+		}
+	)
+
 	// FPV（ドローン目線）カメラ設定
 	map.flyTo({
 		center: [drone.longitude, drone.latitude],
-		zoom: phase.zoom ?? 18,
-		pitch: phase.pitch ?? 70, // ドローン視点で前方下向き
+		zoom: zoom,
+		pitch: pitch, // ドローン視点で前方下向き
 		bearing: bearing, // 次のwaypointへ向かう方向
 		duration: phase.duration,
 	})
