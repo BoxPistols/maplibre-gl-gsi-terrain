@@ -1763,49 +1763,14 @@ const setupEventHandlers = () => {
 		importFlightPlan()
 	})
 
-	// モバイル用フライトプラン管理（既存の関数を再利用）
-	document.getElementById('startFlightPlanMobile')?.addEventListener('click', () => {
-		startFlightPlan()
-	})
-
-	document.getElementById('pauseFlightPlanMobile')?.addEventListener('click', () => {
-		pauseFlightPlan()
-	})
-
-	document.getElementById('exportFlightPlanMobile')?.addEventListener('click', () => {
-		exportFlightPlan()
-	})
-
-	document.getElementById('importFlightPlanMobile')?.addEventListener('click', () => {
-		importFlightPlan()
-	})
-
-	document.getElementById('enableGameControlMobile')?.addEventListener('click', () => {
-		// enableGameControlボタンと同じ処理
-		const desktopButton = document.getElementById('enableGameControl') as HTMLButtonElement
-		if (desktopButton) {
-			desktopButton.click() // 既存のボタンをクリックして同じ処理を実行
+	// モバイル用フライトプランボタン（右上の🚁ボタン）
+	document.getElementById('mobileFlightPlanToggle')?.addEventListener('click', () => {
+		// デスクトップのstartFlightPlanボタンをクリックして同じ処理を実行
+		const startButton = document.getElementById('startFlightPlan') as HTMLButtonElement
+		if (startButton) {
+			startButton.click()
 		}
 	})
-
-	// モバイル用フライトプランセレクト（デスクトップと同期）
-	const flightPlanSelectMobile = document.getElementById('flightPlanSelectMobile') as HTMLSelectElement
-	const flightPlanSelectDesktop = document.getElementById('flightPlanSelect') as HTMLSelectElement
-
-	if (flightPlanSelectMobile && flightPlanSelectDesktop) {
-		// モバイルセレクトが変更されたらデスクトップセレクトも同期
-		flightPlanSelectMobile.addEventListener('change', () => {
-			flightPlanSelectDesktop.value = flightPlanSelectMobile.value
-			// デスクトップセレクトのchangeイベントを発火
-			const event = new Event('change', { bubbles: true })
-			flightPlanSelectDesktop.dispatchEvent(event)
-		})
-
-		// デスクトップセレクトが変更されたらモバイルセレクトも同期
-		flightPlanSelectDesktop.addEventListener('change', () => {
-			flightPlanSelectMobile.value = flightPlanSelectDesktop.value
-		})
-	}
 
 	// フライトログ表示切替
 	document.getElementById('toggleLog')?.addEventListener('click', () => {

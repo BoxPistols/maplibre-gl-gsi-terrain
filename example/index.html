@@ -187,6 +187,32 @@
 				display: none;
 			}
 
+			/* モバイル専用フライトプランボタン（デスクトップでは非表示） */
+			.mobile-flight-plan-toggle {
+				display: none;
+				position: fixed;
+				top: 10px;
+				right: 10px;
+				width: 54px;
+				height: 54px;
+				background: rgba(255, 255, 255, 0.9);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.8);
+				border-radius: 8px;
+				cursor: pointer;
+				align-items: center;
+				justify-content: center;
+				z-index: 2100;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				transition: all 0.2s ease;
+				font-size: 24px;
+			}
+
+			.mobile-flight-plan-toggle:hover {
+				background: rgba(255, 255, 255, 1);
+				transform: scale(1.05);
+			}
+
 			#status {
 				margin-top: 12px;
 				font-size: 11px;
@@ -710,13 +736,19 @@
 					display: block;
 				}
 
+				/* モバイル専用フライトプランボタンを表示 */
+				.mobile-flight-plan-toggle {
+					display: flex;
+				}
+
 				/* コントロールトグルボタンを大きく、タップしやすく */
 				.controls-toggle {
 					width: 54px;
 					height: 54px;
 					top: 10px;
 					left: 10px;
-					z-index: 2000; /* フッターより上に */
+					z-index: 2100; /* コントロールパネルより上に配置 */
+					position: fixed; /* 常に同じ位置に固定 */
 				}
 
 				.controls-toggle svg {
@@ -867,7 +899,8 @@
 					height: 50px;
 					top: 8px;
 					left: 8px;
-					z-index: 2000;
+					z-index: 2100; /* コントロールパネルより上に配置 */
+					position: fixed;
 				}
 
 				.controls-toggle svg {
@@ -1088,6 +1121,11 @@
 			</svg>
 		</button>
 
+		<!-- モバイル専用フライトプランボタン -->
+		<button class="mobile-flight-plan-toggle" id="mobileFlightPlanToggle" data-tooltip="フライトプラン">
+			🚁
+		</button>
+
 		<!-- メインコントロールパネル -->
 		<div id="controls">
 			<div
@@ -1272,62 +1310,6 @@
 						title="フライトログをCSV形式でエクスポートします"
 					>
 						ログ出力
-					</button>
-				</div>
-			</div>
-
-			<!-- フライトプラン（モバイル専用） -->
-			<div class="control-section mobile-only">
-				<div class="section-title">フライトプラン</div>
-				<select
-					id="flightPlanSelectMobile"
-					style="
-						width: 100%;
-						padding: 8px;
-						margin-bottom: 8px;
-						border-radius: 6px;
-						border: 1px solid rgba(0, 0, 0, 0.2);
-						background: rgba(255, 255, 255, 0.8);
-						font-size: 11px;
-					"
-				>
-					<option value="tokyo-tower">東京タワー点検</option>
-					<option value="mt-fuji">富士山周遊</option>
-					<option value="tokyo-skytree">東京スカイツリー</option>
-					<option value="kyoto-kinkakuji">京都金閣寺</option>
-					<option value="custom">カスタム...</option>
-				</select>
-				<div class="button-group">
-					<button id="startFlightPlanMobile" class="error" title="現在のフライトプランを実行します">
-						開始
-					</button>
-					<button
-						id="pauseFlightPlanMobile"
-						class="warning"
-						title="実行中のフライトプランを一時停止します"
-					>
-						一時停止
-					</button>
-					<button
-						id="enableGameControlMobile"
-						class="info"
-						title="キーボード/ゲームパッドでドローンを操作します"
-					>
-						手動操作
-					</button>
-					<button
-						id="exportFlightPlanMobile"
-						class="info"
-						title="現在のフライトプランをJSONファイルでエクスポートします"
-					>
-						エクスポート
-					</button>
-					<button
-						id="importFlightPlanMobile"
-						class="success"
-						title="JSONファイルからフライトプランをインポートします"
-					>
-						インポート
 					</button>
 				</div>
 			</div>
