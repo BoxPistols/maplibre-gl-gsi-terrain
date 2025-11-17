@@ -700,12 +700,18 @@
 
 			/* モバイル対応レスポンシブデザイン */
 			@media (max-width: 768px) {
+				/* モバイル専用セクションを表示 */
+				.mobile-only {
+					display: block;
+				}
+
 				/* コントロールトグルボタンを大きく、タップしやすく */
 				.controls-toggle {
 					width: 54px;
 					height: 54px;
 					top: 10px;
 					left: 10px;
+					z-index: 2000; /* フッターより上に */
 				}
 
 				.controls-toggle svg {
@@ -720,9 +726,11 @@
 					width: 85%;
 					max-width: 320px;
 					padding: 16px;
-					max-height: 100vh;
+					max-height: calc(100vh - 20px); /* フッター分を引いて余裕を持たせる */
 					overflow-y: auto;
+					-webkit-overflow-scrolling: touch; /* iOS用スムーススクロール */
 					border-radius: 0 16px 16px 0;
+					z-index: 2000; /* フッターより上に */
 				}
 
 				#controls.visible {
@@ -758,33 +766,39 @@
 					display: none !important; /* モバイルでは完全非表示 */
 				}
 
+				/* フッターをモバイルでは最小限に */
 				.footer {
-					padding: 8px;
-					font-size: 8px;
-					max-height: 60px; /* モバイルでは高さを縮小 */
+					padding: 4px 6px;
+					font-size: 7px;
+					max-height: 28px; /* 非常にコンパクトに */
+					z-index: 1500; /* ジョイスティックより下、コントロールより下 */
 				}
 
 				.footer-header {
-					margin-bottom: 6px;
-					padding-bottom: 4px;
+					margin-bottom: 2px;
+					padding-bottom: 2px;
 				}
 
 				.footer-title {
-					font-size: 9px;
+					font-size: 8px;
+				}
+
+				.footer-controls {
+					display: flex;
+					gap: 4px;
 				}
 
 				.footer-controls button {
-					padding: 3px 6px;
-					font-size: 8px;
+					padding: 2px 4px;
+					font-size: 7px;
 				}
 
 				.flight-status {
-					padding: 4px 8px;
-					font-size: 8px;
+					display: none; /* モバイルでは非表示 */
 				}
 
 				.flight-log-container {
-					max-height: 40px;
+					display: none; /* モバイルではログを非表示にしてスペース確保 */
 				}
 
 				.log-entry {
@@ -823,16 +837,17 @@
 				.virtual-joystick {
 					width: 120px;
 					height: 120px;
+					z-index: 1800; /* フッターより上、コントロールより下 */
 				}
 
 				.virtual-joystick.left {
 					left: 20px;
-					bottom: 80px; /* フッターの上に配置 */
+					bottom: 40px; /* フッターが小さくなったので調整 */
 				}
 
 				.virtual-joystick.right {
 					right: 20px;
-					bottom: 80px; /* フッターの上に配置 */
+					bottom: 40px; /* フッターが小さくなったので調整 */
 				}
 
 				.joystick-knob {
@@ -847,6 +862,7 @@
 					height: 50px;
 					top: 8px;
 					left: 8px;
+					z-index: 2000;
 				}
 
 				.controls-toggle svg {
@@ -860,7 +876,9 @@
 					width: 90%;
 					max-width: 280px;
 					padding: 12px;
-					max-height: 100vh;
+					max-height: calc(100vh - 20px); /* フッター分を引く */
+					-webkit-overflow-scrolling: touch;
+					z-index: 2000;
 				}
 
 				#controls h3 {
@@ -877,16 +895,17 @@
 				.virtual-joystick {
 					width: 100px;
 					height: 100px;
+					z-index: 1800;
 				}
 
 				.virtual-joystick.left {
 					left: 10px;
-					bottom: 70px; /* フッターの上に配置 */
+					bottom: 35px; /* フッターが小さくなったので調整 */
 				}
 
 				.virtual-joystick.right {
 					right: 10px;
-					bottom: 70px; /* フッターの上に配置 */
+					bottom: 35px; /* フッターが小さくなったので調整 */
 				}
 
 				.joystick-knob {
@@ -895,22 +914,27 @@
 				}
 
 				.footer {
-					padding: 6px;
+					padding: 4px;
 					font-size: 7px;
-					max-height: 50px; /* より小さく */
+					max-height: 28px; /* 非常に小さく */
+					z-index: 1500;
 				}
 
 				.footer-title {
-					font-size: 8px;
-				}
-
-				.footer-controls button {
-					padding: 2px 4px;
 					font-size: 7px;
 				}
 
+				.footer-controls button {
+					padding: 2px 3px;
+					font-size: 6px;
+				}
+
 				.flight-log-container {
-					max-height: 30px;
+					display: none; /* 完全非表示 */
+				}
+
+				.flight-status {
+					display: none; /* 完全非表示 */
 				}
 
 				.log-entry {
