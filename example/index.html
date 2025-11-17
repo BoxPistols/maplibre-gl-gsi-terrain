@@ -182,6 +182,11 @@
 				gap: 4px;
 			}
 
+			/* モバイル専用セクション（デスクトップでは非表示） */
+			.mobile-only {
+				display: none;
+			}
+
 			#status {
 				margin-top: 12px;
 				font-size: 11px;
@@ -1267,6 +1272,62 @@
 						title="フライトログをCSV形式でエクスポートします"
 					>
 						ログ出力
+					</button>
+				</div>
+			</div>
+
+			<!-- フライトプラン（モバイル専用） -->
+			<div class="control-section mobile-only">
+				<div class="section-title">フライトプラン</div>
+				<select
+					id="flightPlanSelectMobile"
+					style="
+						width: 100%;
+						padding: 8px;
+						margin-bottom: 8px;
+						border-radius: 6px;
+						border: 1px solid rgba(0, 0, 0, 0.2);
+						background: rgba(255, 255, 255, 0.8);
+						font-size: 11px;
+					"
+				>
+					<option value="tokyo-tower">東京タワー点検</option>
+					<option value="mt-fuji">富士山周遊</option>
+					<option value="tokyo-skytree">東京スカイツリー</option>
+					<option value="kyoto-kinkakuji">京都金閣寺</option>
+					<option value="custom">カスタム...</option>
+				</select>
+				<div class="button-group">
+					<button id="startFlightPlanMobile" class="error" title="現在のフライトプランを実行します">
+						開始
+					</button>
+					<button
+						id="pauseFlightPlanMobile"
+						class="warning"
+						title="実行中のフライトプランを一時停止します"
+					>
+						一時停止
+					</button>
+					<button
+						id="enableGameControlMobile"
+						class="info"
+						title="キーボード/ゲームパッドでドローンを操作します"
+					>
+						手動操作
+					</button>
+					<button
+						id="exportFlightPlanMobile"
+						class="info"
+						title="現在のフライトプランをJSONファイルでエクスポートします"
+					>
+						エクスポート
+					</button>
+					<button
+						id="importFlightPlanMobile"
+						class="success"
+						title="JSONファイルからフライトプランをインポートします"
+					>
+						インポート
 					</button>
 				</div>
 			</div>
