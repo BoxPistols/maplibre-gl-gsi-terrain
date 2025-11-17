@@ -2,12 +2,10 @@
 description: Show project status and health
 ---
 
-Display the current status of the project:
+Display the current status of the project by:
 
-1. Check git status
-2. Show recently modified files
-3. Display any uncommitted changes
-4. Show recent commits
+- Showing the output of `git status` (including modified files and uncommitted changes).
+- Listing the 5 most recent commits.
 
 ```bash
 git status && echo "" && echo "Recent commits:" && git log --oneline -5
