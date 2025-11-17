@@ -230,6 +230,13 @@ export class DroneModel {
 	}
 
 	/**
+	 * ドローンの現在位置を取得
+	 */
+	getPosition(): [number, number, number] {
+		return [...this.physicsState.position] as [number, number, number]
+	}
+
+	/**
 	 * 現在の物理状態を取得
 	 */
 	getPhysicsState(): DronePhysicsState {
