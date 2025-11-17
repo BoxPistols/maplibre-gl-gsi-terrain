@@ -1763,13 +1763,84 @@ const setupEventHandlers = () => {
 		importFlightPlan()
 	})
 
-	// モバイル用フライトプランボタン（右上の🚁ボタン）
+	// モバイル用フライトプランボタン（右上の🚁ボタン） - モーダルを開く
 	document.getElementById('mobileFlightPlanToggle')?.addEventListener('click', () => {
-		// デスクトップのstartFlightPlanボタンをクリックして同じ処理を実行
-		const startButton = document.getElementById('startFlightPlan') as HTMLButtonElement
-		if (startButton) {
-			startButton.click()
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.add('visible')
 		}
+	})
+
+	// モバイルフライトプランモーダルを閉じる
+	document.getElementById('mobileFlightPlanModalClose')?.addEventListener('click', () => {
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.remove('visible')
+		}
+	})
+
+	// モバイルフライトプランモーダル - 背景クリックで閉じる
+	document.getElementById('mobileFlightPlanModalOverlay')?.addEventListener('click', e => {
+		if (e.target === e.currentTarget) {
+			const modal = document.getElementById('mobileFlightPlanModalOverlay')
+			if (modal) {
+				modal.classList.remove('visible')
+			}
+		}
+	})
+
+	// モバイルフライトプランセレクト - デスクトップと同期
+	const mobileFlightPlanSelect = document.getElementById(
+		'mobileFlightPlanSelect'
+	) as HTMLSelectElement
+	const desktopFlightPlanSelect = document.getElementById('flightPlanSelect') as HTMLSelectElement
+
+	if (mobileFlightPlanSelect && desktopFlightPlanSelect) {
+		// モバイルセレクトが変更されたらデスクトップセレクトも同期
+		mobileFlightPlanSelect.addEventListener('change', () => {
+			desktopFlightPlanSelect.value = mobileFlightPlanSelect.value
+			const event = new Event('change', { bubbles: true })
+			desktopFlightPlanSelect.dispatchEvent(event)
+		})
+
+		// デスクトップセレクトが変更されたらモバイルセレクトも同期
+		desktopFlightPlanSelect.addEventListener('change', () => {
+			mobileFlightPlanSelect.value = desktopFlightPlanSelect.value
+		})
+	}
+
+	// モバイルフライトプランモーダル - アクションボタン
+	document.getElementById('mobileStartFlightPlan')?.addEventListener('click', () => {
+		startFlightPlan()
+		// モーダルを閉じる
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.remove('visible')
+		}
+	})
+
+	document.getElementById('mobilePauseFlightPlan')?.addEventListener('click', () => {
+		pauseFlightPlan()
+	})
+
+	document.getElementById('mobileEnableGameControl')?.addEventListener('click', () => {
+		const desktopButton = document.getElementById('enableGameControl') as HTMLButtonElement
+		if (desktopButton) {
+			desktopButton.click()
+		}
+		// モーダルを閉じる
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.remove('visible')
+		}
+	})
+
+	document.getElementById('mobileExportFlightPlan')?.addEventListener('click', () => {
+		exportFlightPlan()
+	})
+
+	document.getElementById('mobileImportFlightPlan')?.addEventListener('click', () => {
+		importFlightPlan()
 	})
 
 	// フライトログ表示切替

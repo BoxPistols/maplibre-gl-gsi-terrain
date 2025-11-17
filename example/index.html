@@ -998,6 +998,129 @@
 				z-index: 1100 !important;
 			}
 
+			/* モバイルフライトプランモーダル */
+			.mobile-flight-plan-modal-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0, 0, 0, 0.7);
+				backdrop-filter: blur(4px);
+				z-index: 3000; /* 最前面 */
+				display: none;
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+			}
+
+			.mobile-flight-plan-modal-overlay.visible {
+				display: flex;
+			}
+
+			.mobile-flight-plan-modal {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(8px);
+				border-radius: 16px;
+				max-width: 400px;
+				width: 100%;
+				padding: 24px;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+				position: relative;
+			}
+
+			.mobile-flight-plan-modal-close {
+				position: absolute;
+				top: 12px;
+				right: 12px;
+				width: 32px;
+				height: 32px;
+				min-width: 32px;
+				min-height: 32px;
+				background: rgba(0, 0, 0, 0.1);
+				border: none;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				padding: 0;
+			}
+
+			.mobile-flight-plan-modal-close:hover {
+				background: rgba(0, 0, 0, 0.2);
+				transform: rotate(90deg);
+			}
+
+			.mobile-flight-plan-modal-close svg {
+				width: 16px;
+				height: 16px;
+			}
+
+			.mobile-flight-plan-buttons {
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+			}
+
+			.mobile-fp-btn {
+				width: 100%;
+				padding: 12px 16px;
+				border-radius: 8px;
+				font-size: 14px;
+				font-weight: 600;
+				border: none;
+				cursor: pointer;
+				transition: all 0.2s ease;
+				min-height: 44px; /* タッチターゲット */
+			}
+
+			.mobile-fp-start {
+				background: #ef4444;
+				color: white;
+			}
+
+			.mobile-fp-start:hover {
+				background: #dc2626;
+			}
+
+			.mobile-fp-pause {
+				background: #f59e0b;
+				color: white;
+			}
+
+			.mobile-fp-pause:hover {
+				background: #d97706;
+			}
+
+			.mobile-fp-manual {
+				background: #3b82f6;
+				color: white;
+			}
+
+			.mobile-fp-manual:hover {
+				background: #2563eb;
+			}
+
+			.mobile-fp-export,
+			.mobile-fp-import {
+				background: #10b981;
+				color: white;
+			}
+
+			.mobile-fp-export:hover,
+			.mobile-fp-import:hover {
+				background: #059669;
+			}
+
+			/* デスクトップでは非表示 */
+			@media (min-width: 769px) {
+				.mobile-flight-plan-modal-overlay {
+					display: none !important;
+				}
+			}
+
 			/* Help Modal */
 			.help-modal-overlay {
 				position: fixed;
@@ -1035,6 +1158,8 @@
 				right: 16px;
 				width: 32px;
 				height: 32px;
+				min-width: 32px; /* モバイルのbuttonスタイルを上書き */
+				min-height: 32px; /* モバイルのbuttonスタイルを上書き */
 				background: rgba(0, 0, 0, 0.1);
 				border: none;
 				border-radius: 50%;
@@ -1043,6 +1168,7 @@
 				align-items: center;
 				justify-content: center;
 				transition: all 0.2s ease;
+				padding: 0; /* モバイルのbuttonスタイルを上書き */
 			}
 
 			.help-modal-close:hover {
@@ -1431,6 +1557,65 @@
 			<button id="disableGameControl" class="error" style="width: 100%; margin-top: 8px">
 				手動操作終了
 			</button>
+		</div>
+
+		<!-- モバイル専用フライトプランモーダル -->
+		<div class="mobile-flight-plan-modal-overlay" id="mobileFlightPlanModalOverlay">
+			<div class="mobile-flight-plan-modal">
+				<button class="mobile-flight-plan-modal-close" id="mobileFlightPlanModalClose">
+					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M18 6L6 18M6 6l12 12"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
+					</svg>
+				</button>
+
+				<h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700">フライトプラン</h2>
+
+				<div style="margin-bottom: 16px">
+					<label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px"
+						>プラン選択</label
+					>
+					<select
+						id="mobileFlightPlanSelect"
+						style="
+							width: 100%;
+							padding: 10px;
+							border-radius: 6px;
+							border: 1px solid rgba(0, 0, 0, 0.2);
+							background: rgba(255, 255, 255, 0.9);
+							font-size: 14px;
+						"
+					>
+						<option value="tokyo-tower">東京タワー点検</option>
+						<option value="mt-fuji">富士山周遊</option>
+						<option value="tokyo-skytree">東京スカイツリー</option>
+						<option value="kyoto-kinkakuji">京都金閣寺</option>
+						<option value="custom">カスタム...</option>
+					</select>
+				</div>
+
+				<div class="mobile-flight-plan-buttons">
+					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">
+						▶ 開始
+					</button>
+					<button id="mobilePauseFlightPlan" class="mobile-fp-btn mobile-fp-pause">
+						⏸ 一時停止
+					</button>
+					<button id="mobileEnableGameControl" class="mobile-fp-btn mobile-fp-manual">
+						🎮 手動操作
+					</button>
+					<button id="mobileExportFlightPlan" class="mobile-fp-btn mobile-fp-export">
+						📤 エクスポート
+					</button>
+					<button id="mobileImportFlightPlan" class="mobile-fp-btn mobile-fp-import">
+						📥 インポート
+					</button>
+				</div>
+			</div>
 		</div>
 
 		<!-- ヘルプモーダル -->
