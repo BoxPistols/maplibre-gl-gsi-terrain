@@ -81,6 +81,11 @@ const map = new maplibregl.Map({
 	maxZoom: 18,
 	pitch: 60,
 	maxPitch: 85,
+	// iOS Safari対策
+	preserveDrawingBuffer: true, // WebGLコンテキストロスト対策
+	refreshExpiredTiles: false, // パフォーマンス向上
+	fadeDuration: 0, // タイルフェードアニメーション無効化
+	trackResize: true, // ウィンドウリサイズ追跡
 	style: {
 		version: 8,
 		sources: {
@@ -1763,6 +1768,86 @@ const setupEventHandlers = () => {
 		importFlightPlan()
 	})
 
+	// モバイル用フライトプランボタン（右上の🚁ボタン） - モーダルを開く
+	document.getElementById('mobileFlightPlanToggle')?.addEventListener('click', () => {
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.add('visible')
+		}
+	})
+
+	// モバイルフライトプランモーダルを閉じる
+	document.getElementById('mobileFlightPlanModalClose')?.addEventListener('click', () => {
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.remove('visible')
+		}
+	})
+
+	// モバイルフライトプランモーダル - 背景クリックで閉じる
+	document.getElementById('mobileFlightPlanModalOverlay')?.addEventListener('click', e => {
+		if (e.target === e.currentTarget) {
+			const modal = document.getElementById('mobileFlightPlanModalOverlay')
+			if (modal) {
+				modal.classList.remove('visible')
+			}
+		}
+	})
+
+	// モバイルフライトプランセレクト - デスクトップと同期
+	const mobileFlightPlanSelect = document.getElementById(
+		'mobileFlightPlanSelect'
+	) as HTMLSelectElement
+	const desktopFlightPlanSelect = document.getElementById('flightPlanSelect') as HTMLSelectElement
+
+	if (mobileFlightPlanSelect && desktopFlightPlanSelect) {
+		// モバイルセレクトが変更されたらデスクトップセレクトも同期
+		mobileFlightPlanSelect.addEventListener('change', () => {
+			desktopFlightPlanSelect.value = mobileFlightPlanSelect.value
+			const event = new Event('change', { bubbles: true })
+			desktopFlightPlanSelect.dispatchEvent(event)
+		})
+
+		// デスクトップセレクトが変更されたらモバイルセレクトも同期
+		desktopFlightPlanSelect.addEventListener('change', () => {
+			mobileFlightPlanSelect.value = desktopFlightPlanSelect.value
+		})
+	}
+
+	// モバイルフライトプランモーダル - アクションボタン
+	document.getElementById('mobileStartFlightPlan')?.addEventListener('click', () => {
+		startFlightPlan()
+		// モーダルを閉じる
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.remove('visible')
+		}
+	})
+
+	document.getElementById('mobilePauseFlightPlan')?.addEventListener('click', () => {
+		pauseFlightPlan()
+	})
+
+	document.getElementById('mobileEnableGameControl')?.addEventListener('click', () => {
+		const desktopButton = document.getElementById('enableGameControl') as HTMLButtonElement
+		if (desktopButton) {
+			desktopButton.click()
+		}
+		// モーダルを閉じる
+		const modal = document.getElementById('mobileFlightPlanModalOverlay')
+		if (modal) {
+			modal.classList.remove('visible')
+		}
+	})
+
+	document.getElementById('mobileExportFlightPlan')?.addEventListener('click', () => {
+		exportFlightPlan()
+	})
+
+	document.getElementById('mobileImportFlightPlan')?.addEventListener('click', () => {
+		importFlightPlan()
+	})
+
 	// フライトログ表示切替
 	document.getElementById('toggleLog')?.addEventListener('click', () => {
 		const flightLogContainer = document.getElementById('flightLogContainer') as HTMLElement
@@ -2630,15 +2715,73 @@ document.addEventListener('keydown', e => {
 	}
 })
 
+// iOS Safari対策: WebGLコンテキストロスト対策
+map.on('webglcontextlost', event => {
+	console.error('WebGL context lost:', event)
+	event.preventDefault()
+	// ページリロードを促す
+	const shouldReload = confirm(
+		'地図の描画に問題が発生しました。ページをリロードしますか？\n\nMap rendering issue detected. Reload page?'
+	)
+	if (shouldReload) {
+		window.location.reload()
+	}
+})
+
+map.on('webglcontextrestored', () => {
+	console.log('WebGL context restored')
+})
+
+// iOS Safari対策: リサイズ処理
+let resizeTimeout: number | null = null
+window.addEventListener('resize', () => {
+	if (resizeTimeout) {
+		clearTimeout(resizeTimeout)
+	}
+	resizeTimeout = window.setTimeout(() => {
+		map.resize()
+		console.log('Map resized for iOS Safari')
+	}, 100)
+})
+
+// iOS Safari対策: orientationchange
+window.addEventListener('orientationchange', () => {
+	setTimeout(() => {
+		map.resize()
+		console.log('Map resized after orientation change')
+	}, 300)
+})
+
+// マップエラーハンドリング
+map.on('error', e => {
+	console.error('MapLibre GL error:', e)
+	// iOS Safariでよく起こるタイル読み込みエラーは無視
+	if (e.error && e.error.message && e.error.message.includes('tile')) {
+		console.warn('Tile loading error (non-critical):', e.error.message)
+		return
+	}
+	// 致命的なエラーの場合は通知
+	if (e.error && e.error.message) {
+		console.error('Critical map error:', e.error.message)
+	}
+})
+
 // 地図の読み込み完了
 map.on('load', () => {
 	console.log('map.on("load") イベント開始')
+
+	// iOS Safari対策: マップサイズ調整
+	setTimeout(() => {
+		map.resize()
+		console.log('Initial map resize for iOS Safari')
+	}, 100)
 
 	try {
 		setupLayers()
 		console.log('setupLayers() 完了')
 	} catch (error) {
 		console.error('setupLayers() エラー:', error)
+		alert('地図レイヤーの初期化に失敗しました。ページをリロードしてください。')
 	}
 
 	try {
@@ -2646,6 +2789,7 @@ map.on('load', () => {
 		console.log('setupEventHandlers() 完了')
 	} catch (error) {
 		console.error('setupEventHandlers() エラー:', error)
+		alert('イベントハンドラーの初期化に失敗しました。一部機能が使用できない可能性があります。')
 	}
 
 	updateStatus('地図読み込み完了 - 東京タワー周辺のドローン点検を開始してください')

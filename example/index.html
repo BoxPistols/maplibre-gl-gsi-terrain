@@ -2,7 +2,12 @@
 <html lang="ja">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+		/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<title>ドローン飛行シミュレーター</title>
 		<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 		<!-- MapLibre GL CSSはindex.tsでimportされるため、ここでの読み込みは不要 -->
@@ -15,11 +20,20 @@
 				background: #000;
 				-webkit-font-smoothing: antialiased;
 				-moz-osx-font-smoothing: grayscale;
+				/* iOS Safari用のタッチ操作最適化 */
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				user-select: none;
+				position: fixed;
+				width: 100%;
+				height: 100%;
 			}
 
 			#map {
 				width: 100vw;
 				height: 100vh;
+				/* iOS Safari用のタッチ操作最適化 */
+				touch-action: pan-x pan-y;
 			}
 
 			#controls {
@@ -180,6 +194,37 @@
 				display: flex;
 				flex-wrap: wrap;
 				gap: 4px;
+			}
+
+			/* モバイル専用セクション（デスクトップでは非表示） */
+			.mobile-only {
+				display: none;
+			}
+
+			/* モバイル専用フライトプランボタン（デスクトップでは非表示） */
+			.mobile-flight-plan-toggle {
+				display: none;
+				position: fixed;
+				top: 10px;
+				right: 10px;
+				width: 54px;
+				height: 54px;
+				background: rgba(255, 255, 255, 0.9);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.8);
+				border-radius: 8px;
+				cursor: pointer;
+				align-items: center;
+				justify-content: center;
+				z-index: 2100;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				transition: all 0.2s ease;
+				font-size: 24px;
+			}
+
+			.mobile-flight-plan-toggle:hover {
+				background: rgba(255, 255, 255, 1);
+				transform: scale(1.05);
 			}
 
 			#status {
@@ -700,23 +745,56 @@
 
 			/* モバイル対応レスポンシブデザイン */
 			@media (max-width: 768px) {
-				#controls {
+				/* モバイル専用セクションを表示 */
+				.mobile-only {
+					display: block;
+				}
+
+				/* モバイル専用フライトプランボタンを表示 */
+				.mobile-flight-plan-toggle {
+					display: flex;
+				}
+
+				/* コントロールトグルボタンを大きく、タップしやすく */
+				.controls-toggle {
+					width: 54px;
+					height: 54px;
 					top: 10px;
 					left: 10px;
-					right: 10px;
-					max-width: none;
-					padding: 12px;
-					max-height: 50vh;
+					z-index: 2100; /* コントロールパネルより上に配置 */
+					position: fixed; /* 常に同じ位置に固定 */
+				}
+
+				.controls-toggle svg {
+					width: 28px;
+					height: 28px;
+				}
+
+				#controls {
+					top: 0;
+					left: -100%;
+					right: auto;
+					width: 85%;
+					max-width: 320px;
+					padding: 16px;
+					max-height: calc(100vh - 20px); /* フッター分を引いて余裕を持たせる */
 					overflow-y: auto;
+					-webkit-overflow-scrolling: touch; /* iOS用スムーススクロール */
+					border-radius: 0 16px 16px 0;
+					z-index: 2000; /* フッターより上に */
+				}
+
+				#controls.visible {
+					left: 0;
 				}
 
 				#controls h3 {
-					font-size: 12px !important;
-					margin: 0 0 10px 0 !important;
+					font-size: 14px !important;
+					margin: 0 0 12px 0 !important;
 				}
 
 				.control-section {
-					margin-bottom: 10px;
+					margin-bottom: 12px;
 				}
 
 				.section-title {
@@ -724,85 +802,103 @@
 				}
 
 				button {
-					padding: 6px 10px;
-					font-size: 10px;
-					margin: 2px;
-					min-width: 60px;
+					padding: 8px 12px;
+					font-size: 11px;
+					margin: 3px;
+					min-width: 70px;
+					min-height: 40px;
 				}
 
 				.info-panel {
-					top: 10px;
-					right: 10px;
-					left: 10px;
-					max-width: none;
-					padding: 12px;
-					font-size: 11px;
-					display: none; /* モバイルでは初期非表示 */
-				}
-
-				.info-panel.mobile-visible {
-					display: block;
+					display: none !important; /* モバイルでは完全非表示 */
 				}
 
 				.flight-plan-export {
-					bottom: auto;
-					top: 10px;
-					right: 10px;
-					left: auto;
-					max-width: 200px;
-					padding: 10px;
-					display: none; /* モバイルでは初期非表示 */
+					display: none !important; /* モバイルでは完全非表示 */
 				}
 
-				.flight-plan-export.mobile-visible {
-					display: block;
-				}
-
+				/* フッターをモバイルでは最小限に */
 				.footer {
-					padding: 10px;
-					font-size: 9px;
-					max-height: 120px;
+					padding: 4px 6px;
+					font-size: 7px;
+					max-height: 28px; /* 非常にコンパクトに */
+					z-index: 1500; /* ジョイスティックより下、コントロールより下 */
+				}
+
+				.footer-header {
+					margin-bottom: 2px;
+					padding-bottom: 2px;
 				}
 
 				.footer-title {
-					font-size: 10px;
+					font-size: 8px;
+				}
+
+				.footer-controls {
+					display: flex;
+					gap: 4px;
+				}
+
+				.footer-controls button {
+					padding: 2px 4px;
+					font-size: 7px;
+				}
+
+				.flight-status {
+					display: none; /* モバイルでは非表示 */
+				}
+
+				.flight-log-container {
+					display: none; /* モバイルではログを非表示にしてスペース確保 */
 				}
 
 				.log-entry {
-					font-size: 8px;
-					gap: 6px;
+					font-size: 7px;
+					gap: 4px;
+					padding: 2px 0;
 				}
 
 				.log-timestamp {
-					min-width: 50px;
+					min-width: 40px;
+					font-size: 7px;
 				}
 
 				.log-phase {
-					min-width: 60px;
+					min-width: 50px;
+					font-size: 7px;
+				}
+
+				.log-action {
+					font-size: 7px;
+				}
+
+				.log-details {
+					font-size: 7px;
+				}
+
+				.log-extended-info {
+					display: none; /* モバイルでは詳細情報を非表示 */
 				}
 
 				#gameControlHelp {
-					bottom: auto;
-					top: 10px;
-					right: 10px;
-					left: 10px;
-					max-width: none;
+					display: none !important; /* モバイルでは非表示 */
 				}
 
-				/* 仮想ジョイスティックをモバイルで表示 */
+				/* 仮想ジョイスティックをモバイルで表示、フッターと重ならないように */
 				.virtual-joystick {
 					width: 120px;
 					height: 120px;
+					z-index: 1800; /* フッターより上、コントロールより下 */
 				}
 
 				.virtual-joystick.left {
 					left: 20px;
-					bottom: 30px;
+					bottom: 40px; /* フッターが小さくなったので調整 */
 				}
 
 				.virtual-joystick.right {
 					right: 20px;
-					bottom: 30px;
+					bottom: 40px; /* フッターが小さくなったので調整 */
 				}
 
 				.joystick-knob {
@@ -812,33 +908,56 @@
 			}
 
 			@media (max-width: 480px) {
+				.controls-toggle {
+					width: 50px;
+					height: 50px;
+					top: 8px;
+					left: 8px;
+					z-index: 2100; /* コントロールパネルより上に配置 */
+					position: fixed;
+				}
+
+				.controls-toggle svg {
+					width: 26px;
+					height: 26px;
+				}
+
 				#controls {
-					top: 5px;
-					left: 5px;
-					right: 5px;
-					padding: 8px;
-					max-height: 45vh;
+					top: 0;
+					left: -100%;
+					width: 90%;
+					max-width: 280px;
+					padding: 12px;
+					max-height: calc(100vh - 20px); /* フッター分を引く */
+					-webkit-overflow-scrolling: touch;
+					z-index: 2000;
+				}
+
+				#controls h3 {
+					font-size: 13px !important;
 				}
 
 				button {
-					padding: 4px 6px;
-					font-size: 9px;
-					min-width: 50px;
+					padding: 7px 10px;
+					font-size: 10px;
+					min-width: 65px;
+					min-height: 38px;
 				}
 
 				.virtual-joystick {
 					width: 100px;
 					height: 100px;
+					z-index: 1800;
 				}
 
 				.virtual-joystick.left {
 					left: 10px;
-					bottom: 20px;
+					bottom: 35px; /* フッターが小さくなったので調整 */
 				}
 
 				.virtual-joystick.right {
 					right: 10px;
-					bottom: 20px;
+					bottom: 35px; /* フッターが小さくなったので調整 */
 				}
 
 				.joystick-knob {
@@ -847,9 +966,31 @@
 				}
 
 				.footer {
-					padding: 8px;
-					font-size: 8px;
-					max-height: 100px;
+					padding: 4px;
+					font-size: 7px;
+					max-height: 28px; /* 非常に小さく */
+					z-index: 1500;
+				}
+
+				.footer-title {
+					font-size: 7px;
+				}
+
+				.footer-controls button {
+					padding: 2px 3px;
+					font-size: 6px;
+				}
+
+				.flight-log-container {
+					display: none; /* 完全非表示 */
+				}
+
+				.flight-status {
+					display: none; /* 完全非表示 */
+				}
+
+				.log-entry {
+					font-size: 6px;
 				}
 			}
 
@@ -869,6 +1010,129 @@
 			.maplibregl-ctrl-group,
 			.maplibregl-ctrl {
 				z-index: 1100 !important;
+			}
+
+			/* モバイルフライトプランモーダル */
+			.mobile-flight-plan-modal-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0, 0, 0, 0.7);
+				backdrop-filter: blur(4px);
+				z-index: 3000; /* 最前面 */
+				display: none;
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+			}
+
+			.mobile-flight-plan-modal-overlay.visible {
+				display: flex;
+			}
+
+			.mobile-flight-plan-modal {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(8px);
+				border-radius: 16px;
+				max-width: 400px;
+				width: 100%;
+				padding: 24px;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+				position: relative;
+			}
+
+			.mobile-flight-plan-modal-close {
+				position: absolute;
+				top: 12px;
+				right: 12px;
+				width: 32px;
+				height: 32px;
+				min-width: 32px;
+				min-height: 32px;
+				background: rgba(0, 0, 0, 0.1);
+				border: none;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				padding: 0;
+			}
+
+			.mobile-flight-plan-modal-close:hover {
+				background: rgba(0, 0, 0, 0.2);
+				transform: rotate(90deg);
+			}
+
+			.mobile-flight-plan-modal-close svg {
+				width: 16px;
+				height: 16px;
+			}
+
+			.mobile-flight-plan-buttons {
+				display: flex;
+				flex-direction: column;
+				gap: 10px;
+			}
+
+			.mobile-fp-btn {
+				width: 100%;
+				padding: 12px 16px;
+				border-radius: 8px;
+				font-size: 14px;
+				font-weight: 600;
+				border: none;
+				cursor: pointer;
+				transition: all 0.2s ease;
+				min-height: 44px; /* タッチターゲット */
+			}
+
+			.mobile-fp-start {
+				background: #ef4444;
+				color: white;
+			}
+
+			.mobile-fp-start:hover {
+				background: #dc2626;
+			}
+
+			.mobile-fp-pause {
+				background: #f59e0b;
+				color: white;
+			}
+
+			.mobile-fp-pause:hover {
+				background: #d97706;
+			}
+
+			.mobile-fp-manual {
+				background: #3b82f6;
+				color: white;
+			}
+
+			.mobile-fp-manual:hover {
+				background: #2563eb;
+			}
+
+			.mobile-fp-export,
+			.mobile-fp-import {
+				background: #10b981;
+				color: white;
+			}
+
+			.mobile-fp-export:hover,
+			.mobile-fp-import:hover {
+				background: #059669;
+			}
+
+			/* デスクトップでは非表示 */
+			@media (min-width: 769px) {
+				.mobile-flight-plan-modal-overlay {
+					display: none !important;
+				}
 			}
 
 			/* Help Modal */
@@ -908,6 +1172,8 @@
 				right: 16px;
 				width: 32px;
 				height: 32px;
+				min-width: 32px; /* モバイルのbuttonスタイルを上書き */
+				min-height: 32px; /* モバイルのbuttonスタイルを上書き */
 				background: rgba(0, 0, 0, 0.1);
 				border: none;
 				border-radius: 50%;
@@ -916,6 +1182,7 @@
 				align-items: center;
 				justify-content: center;
 				transition: all 0.2s ease;
+				padding: 0; /* モバイルのbuttonスタイルを上書き */
 			}
 
 			.help-modal-close:hover {
@@ -992,6 +1259,15 @@
 			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
 				<path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round" />
 			</svg>
+		</button>
+
+		<!-- モバイル専用フライトプランボタン -->
+		<button
+			class="mobile-flight-plan-toggle"
+			id="mobileFlightPlanToggle"
+			data-tooltip="フライトプラン"
+		>
+			🚁
 		</button>
 
 		<!-- メインコントロールパネル -->
@@ -1299,6 +1575,63 @@
 			<button id="disableGameControl" class="error" style="width: 100%; margin-top: 8px">
 				手動操作終了
 			</button>
+		</div>
+
+		<!-- モバイル専用フライトプランモーダル -->
+		<div class="mobile-flight-plan-modal-overlay" id="mobileFlightPlanModalOverlay">
+			<div class="mobile-flight-plan-modal">
+				<button class="mobile-flight-plan-modal-close" id="mobileFlightPlanModalClose">
+					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M18 6L6 18M6 6l12 12"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
+					</svg>
+				</button>
+
+				<h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700">フライトプラン</h2>
+
+				<div style="margin-bottom: 16px">
+					<label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px"
+						>プラン選択</label
+					>
+					<select
+						id="mobileFlightPlanSelect"
+						style="
+							width: 100%;
+							padding: 10px;
+							border-radius: 6px;
+							border: 1px solid rgba(0, 0, 0, 0.2);
+							background: rgba(255, 255, 255, 0.9);
+							font-size: 14px;
+						"
+					>
+						<option value="tokyo-tower">東京タワー点検</option>
+						<option value="mt-fuji">富士山周遊</option>
+						<option value="tokyo-skytree">東京スカイツリー</option>
+						<option value="kyoto-kinkakuji">京都金閣寺</option>
+						<option value="custom">カスタム...</option>
+					</select>
+				</div>
+
+				<div class="mobile-flight-plan-buttons">
+					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">▶ 開始</button>
+					<button id="mobilePauseFlightPlan" class="mobile-fp-btn mobile-fp-pause">
+						⏸ 一時停止
+					</button>
+					<button id="mobileEnableGameControl" class="mobile-fp-btn mobile-fp-manual">
+						🎮 手動操作
+					</button>
+					<button id="mobileExportFlightPlan" class="mobile-fp-btn mobile-fp-export">
+						📤 エクスポート
+					</button>
+					<button id="mobileImportFlightPlan" class="mobile-fp-btn mobile-fp-import">
+						📥 インポート
+					</button>
+				</div>
+			</div>
 		</div>
 
 		<!-- ヘルプモーダル -->

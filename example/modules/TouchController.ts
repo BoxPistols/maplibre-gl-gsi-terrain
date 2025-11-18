@@ -305,7 +305,7 @@ export class TouchController {
 		const newBearing = currentBearing + rotation * this.params.rotationSpeed * speedMultiplier
 
 		// ドローンの位置を更新
-		this.droneModel.setPosition([lng, lat, alt])
+		this.droneModel.updatePosition([lng, lat, alt])
 
 		// カメラを更新
 		this.map.easeTo({
