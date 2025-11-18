@@ -2,7 +2,12 @@
 <html lang="ja">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+		/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<title>ドローン飛行シミュレーター</title>
 		<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 		<!-- MapLibre GL CSSはindex.tsでimportされるため、ここでの読み込みは不要 -->
@@ -15,11 +20,20 @@
 				background: #000;
 				-webkit-font-smoothing: antialiased;
 				-moz-osx-font-smoothing: grayscale;
+				/* iOS Safari用のタッチ操作最適化 */
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				user-select: none;
+				position: fixed;
+				width: 100%;
+				height: 100%;
 			}
 
 			#map {
 				width: 100vw;
 				height: 100vh;
+				/* iOS Safari用のタッチ操作最適化 */
+				touch-action: pan-x pan-y;
 			}
 
 			#controls {
@@ -1248,7 +1262,11 @@
 		</button>
 
 		<!-- モバイル専用フライトプランボタン -->
-		<button class="mobile-flight-plan-toggle" id="mobileFlightPlanToggle" data-tooltip="フライトプラン">
+		<button
+			class="mobile-flight-plan-toggle"
+			id="mobileFlightPlanToggle"
+			data-tooltip="フライトプラン"
+		>
 			🚁
 		</button>
 
@@ -1599,9 +1617,7 @@
 				</div>
 
 				<div class="mobile-flight-plan-buttons">
-					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">
-						▶ 開始
-					</button>
+					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">▶ 開始</button>
 					<button id="mobilePauseFlightPlan" class="mobile-fp-btn mobile-fp-pause">
 						⏸ 一時停止
 					</button>

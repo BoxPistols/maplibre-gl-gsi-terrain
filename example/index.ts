@@ -81,6 +81,11 @@ const map = new maplibregl.Map({
 	maxZoom: 18,
 	pitch: 60,
 	maxPitch: 85,
+	// iOS Safari対策
+	preserveDrawingBuffer: true, // WebGLコンテキストロスト対策
+	refreshExpiredTiles: false, // パフォーマンス向上
+	fadeDuration: 0, // タイルフェードアニメーション無効化
+	trackResize: true, // ウィンドウリサイズ追跡
 	style: {
 		version: 8,
 		sources: {
@@ -2710,15 +2715,73 @@ document.addEventListener('keydown', e => {
 	}
 })
 
+// iOS Safari対策: WebGLコンテキストロスト対策
+map.on('webglcontextlost', event => {
+	console.error('WebGL context lost:', event)
+	event.preventDefault()
+	// ページリロードを促す
+	const shouldReload = confirm(
+		'地図の描画に問題が発生しました。ページをリロードしますか？\n\nMap rendering issue detected. Reload page?'
+	)
+	if (shouldReload) {
+		window.location.reload()
+	}
+})
+
+map.on('webglcontextrestored', () => {
+	console.log('WebGL context restored')
+})
+
+// iOS Safari対策: リサイズ処理
+let resizeTimeout: number | null = null
+window.addEventListener('resize', () => {
+	if (resizeTimeout) {
+		clearTimeout(resizeTimeout)
+	}
+	resizeTimeout = window.setTimeout(() => {
+		map.resize()
+		console.log('Map resized for iOS Safari')
+	}, 100)
+})
+
+// iOS Safari対策: orientationchange
+window.addEventListener('orientationchange', () => {
+	setTimeout(() => {
+		map.resize()
+		console.log('Map resized after orientation change')
+	}, 300)
+})
+
+// マップエラーハンドリング
+map.on('error', e => {
+	console.error('MapLibre GL error:', e)
+	// iOS Safariでよく起こるタイル読み込みエラーは無視
+	if (e.error && e.error.message && e.error.message.includes('tile')) {
+		console.warn('Tile loading error (non-critical):', e.error.message)
+		return
+	}
+	// 致命的なエラーの場合は通知
+	if (e.error && e.error.message) {
+		console.error('Critical map error:', e.error.message)
+	}
+})
+
 // 地図の読み込み完了
 map.on('load', () => {
 	console.log('map.on("load") イベント開始')
+
+	// iOS Safari対策: マップサイズ調整
+	setTimeout(() => {
+		map.resize()
+		console.log('Initial map resize for iOS Safari')
+	}, 100)
 
 	try {
 		setupLayers()
 		console.log('setupLayers() 完了')
 	} catch (error) {
 		console.error('setupLayers() エラー:', error)
+		alert('地図レイヤーの初期化に失敗しました。ページをリロードしてください。')
 	}
 
 	try {
@@ -2726,6 +2789,7 @@ map.on('load', () => {
 		console.log('setupEventHandlers() 完了')
 	} catch (error) {
 		console.error('setupEventHandlers() エラー:', error)
+		alert('イベントハンドラーの初期化に失敗しました。一部機能が使用できない可能性があります。')
 	}
 
 	updateStatus('地図読み込み完了 - 東京タワー周辺のドローン点検を開始してください')
