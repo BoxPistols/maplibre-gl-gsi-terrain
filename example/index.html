@@ -11,6 +11,25 @@
 		<title>ドローン飛行シミュレーター</title>
 		<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 		<!-- MapLibre GL CSSはindex.tsでimportされるため、ここでの読み込みは不要 -->
+
+		<!-- モバイル判定とファイル分岐 -->
+		<script>
+			// モバイルデバイス判定（User-Agent + 画面サイズ）
+			;(function () {
+				const isMobile =
+					/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+						navigator.userAgent
+					) || window.innerWidth <= 768
+
+				// モバイルフラグをグローバルに設定
+				window.IS_MOBILE_DEVICE = isMobile
+
+				console.log('Device type:', isMobile ? 'MOBILE' : 'DESKTOP')
+				console.log('User-Agent:', navigator.userAgent)
+				console.log('Screen width:', window.innerWidth)
+			})()
+		</script>
+
 		<style>
 			body {
 				margin: 0;

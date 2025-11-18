@@ -1,5 +1,44 @@
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+
+// モバイルデバイス判定（HTMLで設定されたフラグを使用）
+const IS_MOBILE = (window as any).IS_MOBILE_DEVICE || false
+
+// モバイル用軽量設定
+const MOBILE_CONFIG = {
+	maxZoom: 16, // モバイルは16まで
+	pitch: 0, // モバイルは2D（パフォーマンス優先）
+	maxPitch: 30, // 最大でも30度まで
+	zoom: 14, // 初期ズームを下げる
+	tileSize: 512, // タイルサイズを大きく（リクエスト数削減）
+	enableTerrain: false, // 地形無効化（パフォーマンス優先）
+	terrainExaggeration: 0, // 地形の誇張なし
+	fadeDuration: 0, // フェードアニメーション無効
+	enableDroneTrail: false, // ドローン軌跡を無効化
+}
+
+// デスクトップ用通常設定
+const DESKTOP_CONFIG = {
+	maxZoom: 18,
+	pitch: 60,
+	maxPitch: 85,
+	zoom: 15,
+	tileSize: 256,
+	enableTerrain: true,
+	terrainExaggeration: 1.2,
+	fadeDuration: 300,
+	enableDroneTrail: true,
+}
+
+// 使用する設定を選択
+const CONFIG = IS_MOBILE ? MOBILE_CONFIG : DESKTOP_CONFIG
+
+console.log('='.repeat(60))
+console.log('ドローン飛行シミュレーター初期化')
+console.log('デバイスタイプ:', IS_MOBILE ? 'モバイル（軽量版）' : 'デスクトップ（通常版）')
+console.log('設定:', CONFIG)
+console.log('='.repeat(60))
+
 import {
 	clearData,
 	convertDroneObjectToUnified,
@@ -72,20 +111,26 @@ const gsiTerrainSource = {
 	attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 }
 
-// 地図初期化
+// 地図初期化（モバイル/デスクトップ分岐）
 const map = new maplibregl.Map({
 	container: 'map',
-	zoom: 15,
+	zoom: CONFIG.zoom,
 	center: [139.7454, 35.6586], // 東京タワー
 	minZoom: 5,
-	maxZoom: 18,
-	pitch: 60,
-	maxPitch: 85,
-	// iOS Safari対策
+	maxZoom: CONFIG.maxZoom,
+	pitch: CONFIG.pitch,
+	maxPitch: CONFIG.maxPitch,
+	// iOS Safari対策 + パフォーマンス最適化
 	preserveDrawingBuffer: true, // WebGLコンテキストロスト対策
 	refreshExpiredTiles: false, // パフォーマンス向上
-	fadeDuration: 0, // タイルフェードアニメーション無効化
+	fadeDuration: CONFIG.fadeDuration, // モバイルはアニメーション無効化
 	trackResize: true, // ウィンドウリサイズ追跡
+	// モバイル用追加最適化
+	...(IS_MOBILE && {
+		maxTileCacheSize: 50, // タイルキャッシュを削減
+		renderWorldCopies: false, // 世界地図の複製無効化
+		crossSourceCollisions: false, // 衝突判定無効化（パフォーマンス向上）
+	}),
 	style: {
 		version: 8,
 		sources: {
@@ -93,10 +138,10 @@ const map = new maplibregl.Map({
 				type: 'raster',
 				tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],
 				maxzoom: 18,
-				tileSize: 256,
+				tileSize: CONFIG.tileSize, // モバイル: 512, デスクトップ: 256
 				attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 			},
-			terrain: gsiTerrainSource,
+			...(CONFIG.enableTerrain ? { terrain: gsiTerrainSource } : {}),
 			'drone-objects': {
 				type: 'geojson',
 				data: { type: 'FeatureCollection', features: [] },
@@ -133,10 +178,14 @@ const map = new maplibregl.Map({
 				type: 'raster',
 			},
 		],
-		terrain: {
-			source: 'terrain',
-			exaggeration: 1.5,
-		},
+		...(CONFIG.enableTerrain
+			? {
+					terrain: {
+						source: 'terrain',
+						exaggeration: CONFIG.terrainExaggeration,
+					},
+				}
+			: {}),
 	},
 })
 
@@ -525,17 +574,19 @@ const updateStatus = (message: string) => {
 
 // レイヤー設定
 const setupLayers = () => {
-	// 高度表示ライン
-	map.addLayer({
-		id: 'altitude-lines-layer',
-		type: 'line',
-		source: 'altitude-lines',
-		paint: {
-			'line-color': '#ffaa00',
-			'line-width': 1,
-			'line-opacity': 0.4,
-		},
-	})
+	// 高度表示ライン（モバイルでは無効化）
+	if (CONFIG.enableDroneTrail) {
+		map.addLayer({
+			id: 'altitude-lines-layer',
+			type: 'line',
+			source: 'altitude-lines',
+			paint: {
+				'line-color': '#ffaa00',
+				'line-width': 1,
+				'line-opacity': 0.4,
+			},
+		})
+	}
 
 	// 多角形レイヤー
 	map.addLayer({
@@ -636,18 +687,20 @@ const setupLayers = () => {
 		},
 	})
 
-	// 接続線
-	map.addLayer({
-		id: 'drone-connections',
-		type: 'line',
-		source: 'drone-connections',
-		paint: {
-			'line-color': '#00ff00',
-			'line-width': 2,
-			'line-opacity': 0.7,
-			'line-dasharray': [2, 2],
-		},
-	})
+	// 接続線（モバイルでは無効化）
+	if (CONFIG.enableDroneTrail) {
+		map.addLayer({
+			id: 'drone-connections',
+			type: 'line',
+			source: 'drone-connections',
+			paint: {
+				'line-color': '#00ff00',
+				'line-width': 2,
+				'line-opacity': 0.7,
+				'line-dasharray': [2, 2],
+			},
+		})
+	}
 
 	// ラベル
 	map.addLayer({
@@ -923,13 +976,16 @@ const updateDisplay = () => {
 		},
 	}))
 
-	;(map.getSource('altitude-lines') as maplibregl.GeoJSONSource)?.setData({
-		type: 'FeatureCollection',
-		features: altitudeFeatures,
-	})
+	// 高度ラインと接続線の更新（モバイルでは無効化）
+	if (CONFIG.enableDroneTrail) {
+		;(map.getSource('altitude-lines') as maplibregl.GeoJSONSource)?.setData({
+			type: 'FeatureCollection',
+			features: altitudeFeatures,
+		})
 
-	// 接続線表示
-	updateConnections()
+		// 接続線表示
+		updateConnections()
+	}
 
 	console.log(`表示更新: ${loadedObjects.length}個のオブジェクト`)
 }
