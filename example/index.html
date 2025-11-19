@@ -1322,6 +1322,56 @@
 				</button>
 			</div>
 
+			<!-- マッププロバイダー選択セクション -->
+			<div class="control-section">
+				<div class="section-title">マッププロバイダー</div>
+				<div class="button-group">
+					<select
+						id="mapProviderSelect"
+						style="
+							width: 100%;
+							margin-bottom: 8px;
+							padding: 6px;
+							border-radius: 4px;
+							border: 1px solid rgba(0, 0, 0, 0.2);
+							background: rgba(255, 255, 255, 0.9);
+							font-size: 12px;
+						"
+					>
+						<option value="maplibre">MapLibre GL（推奨）</option>
+						<option value="mapbox">Mapbox GL</option>
+					</select>
+					<div id="mapboxTokenSection" style="display: none; margin-top: 8px">
+						<input
+							type="text"
+							id="mapboxTokenInput"
+							placeholder="Mapbox アクセストークン"
+							style="
+								width: 100%;
+								padding: 6px;
+								border-radius: 4px;
+								border: 1px solid rgba(0, 0, 0, 0.2);
+								font-size: 11px;
+								margin-bottom: 6px;
+							"
+						/>
+						<button
+							id="saveMapboxToken"
+							class="success"
+							style="width: 100%"
+							data-tooltip="トークンを保存してリロード"
+						>
+							トークン保存
+						</button>
+					</div>
+					<div
+						style="margin-top: 8px; font-size: 10px; color: rgba(0, 0, 0, 0.6); line-height: 1.4"
+					>
+						<div id="currentProviderInfo"></div>
+					</div>
+				</div>
+			</div>
+
 			<!-- サンプルデータセクション -->
 			<div class="control-section">
 				<div class="section-title">コントローラー</div>

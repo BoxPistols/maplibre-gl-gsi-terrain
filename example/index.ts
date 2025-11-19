@@ -1,5 +1,32 @@
+/**
+ * ドローン飛行シミュレーター
+ * MapLibre GL / Mapbox GL 実行時切り替え対応
+ */
+
 import maplibregl from 'maplibre-gl'
+import mapboxgl from 'mapbox-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import 'mapbox-gl/dist/mapbox-gl.css'
+
+import { loadProviderConfig, saveProviderConfig, type MapProviderConfig } from './map-provider'
+
+// マッププロバイダー設定をロード
+const PROVIDER_CONFIG: MapProviderConfig = loadProviderConfig()
+
+// 使用するマップライブラリを選択
+const mapgl = PROVIDER_CONFIG.provider === 'mapbox' ? mapboxgl : maplibregl
+
+// Mapbox アクセストークンの設定
+if (PROVIDER_CONFIG.provider === 'mapbox') {
+	if (PROVIDER_CONFIG.mapboxAccessToken) {
+		mapboxgl.accessToken = PROVIDER_CONFIG.mapboxAccessToken
+		console.log('✅ Mapbox GL を使用（アクセストークン設定済み）')
+	} else {
+		console.warn('⚠️  Mapbox アクセストークンが未設定です')
+	}
+} else {
+	console.log('✅ MapLibre GL を使用')
+}
 
 // モバイルデバイス判定（HTMLで設定されたフラグを使用）
 const IS_MOBILE = (window as any).IS_MOBILE_DEVICE || false
@@ -100,7 +127,7 @@ console.log('🚀 アプリケーション起動中...')
 
 // 地理院DEM設定
 const protocolAction = getGsiDemProtocolAction('gsidem')
-maplibregl.addProtocol('gsidem', protocolAction)
+mapgl.addProtocol('gsidem', protocolAction)
 const gsiTerrainSource = {
 	type: 'raster-dem' as const,
 	tiles: ['gsidem://https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png'],
@@ -111,8 +138,8 @@ const gsiTerrainSource = {
 	attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 }
 
-// 地図初期化（モバイル/デスクトップ分岐）
-const map = new maplibregl.Map({
+// 地図初期化（モバイル/デスクトップ分岐 + プロバイダー切り替え）
+const map = new mapgl.Map({
 	container: 'map',
 	zoom: CONFIG.zoom,
 	center: [139.7454, 35.6586], // 東京タワー
@@ -853,7 +880,7 @@ const updateFlightPlanVisualization = (flightPlan: FlightPlanPhase[]) => {
 	const setGeoJsonSourceData = (sourceId: string, features: GeoJSON.Feature[]) => {
 		const source = map.getSource(sourceId)
 		if (source?.type === 'geojson') {
-			;(source as maplibregl.GeoJSONSource).setData({
+			;(source as mapgl.GeoJSONSource).setData({
 				type: 'FeatureCollection',
 				features: features,
 			})
@@ -959,7 +986,7 @@ const updateDisplay = () => {
 	}
 
 	console.log('drone-objectsソースに設定するデータ:', geoJSONData)
-	;(map.getSource('drone-objects') as maplibregl.GeoJSONSource)?.setData(geoJSONData)
+	;(map.getSource('drone-objects') as mapgl.GeoJSONSource)?.setData(geoJSONData)
 
 	// 高度ライン表示
 	const altitudeFeatures = loadedObjects.map(obj => ({
@@ -978,7 +1005,7 @@ const updateDisplay = () => {
 
 	// 高度ラインと接続線の更新（モバイルでは無効化）
 	if (CONFIG.enableDroneTrail) {
-		;(map.getSource('altitude-lines') as maplibregl.GeoJSONSource)?.setData({
+		;(map.getSource('altitude-lines') as mapgl.GeoJSONSource)?.setData({
 			type: 'FeatureCollection',
 			features: altitudeFeatures,
 		})
@@ -993,7 +1020,7 @@ const updateDisplay = () => {
 // 接続線更新
 const updateConnections = () => {
 	if (loadedObjects.length < 2) {
-		;(map.getSource('drone-connections') as maplibregl.GeoJSONSource)?.setData({
+		;(map.getSource('drone-connections') as mapgl.GeoJSONSource)?.setData({
 			type: 'FeatureCollection',
 			features: [],
 		})
@@ -1032,14 +1059,14 @@ const updateConnections = () => {
 			})
 		}
 	})
-	;(map.getSource('drone-connections') as maplibregl.GeoJSONSource)?.setData({
+	;(map.getSource('drone-connections') as mapgl.GeoJSONSource)?.setData({
 		type: 'FeatureCollection',
 		features: connectionFeatures,
 	})
 }
 
 // 多角形描画関数
-const handlePolygonClick = (lngLat: maplibregl.LngLat) => {
+const handlePolygonClick = (lngLat: mapgl.LngLat) => {
 	const point: [number, number] = [lngLat.lng, lngLat.lat]
 
 	// 3点以上ある場合、始点に近いかチェック
@@ -1129,7 +1156,7 @@ const updatePolygonDisplay = () => {
 		})
 	}
 
-	;(map.getSource('drawing-polygon') as maplibregl.GeoJSONSource).setData({
+	;(map.getSource('drawing-polygon') as mapgl.GeoJSONSource).setData({
 		type: 'FeatureCollection',
 		features: features,
 	})
@@ -1192,14 +1219,14 @@ const calculatePolygonArea = (coordinates: [number, number][]): number => {
 
 const resetPolygonDrawing = () => {
 	currentPolygonPoints = []
-	;(map.getSource('drawing-polygon') as maplibregl.GeoJSONSource).setData({
+	;(map.getSource('drawing-polygon') as mapgl.GeoJSONSource).setData({
 		type: 'FeatureCollection',
 		features: [],
 	})
 }
 
 // オブジェクト選択機能
-const selectObject = (lngLat: maplibregl.LngLat) => {
+const selectObject = (lngLat: mapgl.LngLat) => {
 	const point = map.project(lngLat)
 	const tolerance = 20 // クリック許容範囲（ピクセル）
 
@@ -1237,7 +1264,7 @@ const deselectObject = () => {
 
 const updateSelectedObjectDisplay = () => {
 	if (!selectedObject) {
-		;(map.getSource('selected-object') as maplibregl.GeoJSONSource).setData({
+		;(map.getSource('selected-object') as mapgl.GeoJSONSource).setData({
 			type: 'FeatureCollection',
 			features: [],
 		})
@@ -1292,7 +1319,7 @@ const updateSelectedObjectDisplay = () => {
 		})
 	}
 
-	;(map.getSource('selected-object') as maplibregl.GeoJSONSource).setData({
+	;(map.getSource('selected-object') as mapgl.GeoJSONSource).setData({
 		type: 'FeatureCollection',
 		features: features,
 	})
@@ -1320,7 +1347,7 @@ const enableMapInteraction = () => {
 }
 
 // オブジェクト移動機能
-const startDragObject = (lngLat: maplibregl.LngLat) => {
+const startDragObject = (lngLat: mapgl.LngLat) => {
 	if (!selectedObject) return false
 
 	isDragging = true
@@ -1333,7 +1360,7 @@ const startDragObject = (lngLat: maplibregl.LngLat) => {
 	return true
 }
 
-const dragObject = (lngLat: maplibregl.LngLat) => {
+const dragObject = (lngLat: mapgl.LngLat) => {
 	if (!isDragging || !selectedObject || !dragStartPos) return
 
 	const deltaLng = lngLat.lng - dragStartPos[0]
@@ -1390,7 +1417,7 @@ const deleteSelectedObject = () => {
 }
 
 // オブジェクト追加
-const addObjectAtLocation = (lngLat: maplibregl.LngLat) => {
+const addObjectAtLocation = (lngLat: mapgl.LngLat) => {
 	const newObject: DroneObject = {
 		id: `manual_${Date.now()}`,
 		name: `点検ポイント_${loadedObjects.filter(obj => obj.type === 'manual').length + 1}`,
@@ -3241,6 +3268,74 @@ map.on('load', () => {
 				helpModalOverlay.classList.remove('visible')
 			}
 		})
+	}
+
+	// マッププロバイダー切り替え
+	const mapProviderSelect = document.getElementById('mapProviderSelect') as HTMLSelectElement
+	const mapboxTokenSection = document.getElementById('mapboxTokenSection') as HTMLElement
+	const mapboxTokenInput = document.getElementById('mapboxTokenInput') as HTMLInputElement
+	const saveMapboxToken = document.getElementById('saveMapboxToken') as HTMLButtonElement
+	const currentProviderInfo = document.getElementById('currentProviderInfo') as HTMLElement
+
+	// 現在のプロバイダーを表示
+	if (mapProviderSelect && currentProviderInfo) {
+		mapProviderSelect.value = PROVIDER_CONFIG.provider
+		currentProviderInfo.innerHTML = `現在: <strong>${PROVIDER_CONFIG.provider === 'mapbox' ? 'Mapbox GL' : 'MapLibre GL'}</strong>`
+
+		// Mapboxトークン入力欄の表示/非表示
+		if (PROVIDER_CONFIG.provider === 'mapbox' && mapboxTokenSection) {
+			mapboxTokenSection.style.display = 'block'
+			if (mapboxTokenInput && PROVIDER_CONFIG.mapboxAccessToken) {
+				mapboxTokenInput.value = PROVIDER_CONFIG.mapboxAccessToken
+			}
+		}
+
+		// プロバイダー変更時
+		mapProviderSelect.addEventListener('change', e => {
+			const newProvider = (e.target as HTMLSelectElement).value as 'maplibre' | 'mapbox'
+
+			// Mapboxトークン入力欄の表示/非表示
+			if (newProvider === 'mapbox' && mapboxTokenSection) {
+				mapboxTokenSection.style.display = 'block'
+			} else if (mapboxTokenSection) {
+				mapboxTokenSection.style.display = 'none'
+			}
+
+			// MapLibreに切り替える場合は即座にリロード
+			if (newProvider === 'maplibre') {
+				if (confirm('MapLibre GLに切り替えますか？\nページがリロードされます。')) {
+					saveProviderConfig({ provider: newProvider })
+					location.reload()
+				} else {
+					// キャンセル時は元に戻す
+					mapProviderSelect.value = PROVIDER_CONFIG.provider
+					if (PROVIDER_CONFIG.provider === 'mapbox' && mapboxTokenSection) {
+						mapboxTokenSection.style.display = 'block'
+					}
+				}
+			}
+		})
+
+		// Mapboxトークン保存
+		if (saveMapboxToken && mapboxTokenInput) {
+			saveMapboxToken.addEventListener('click', () => {
+				const token = mapboxTokenInput.value.trim()
+				if (!token) {
+					alert('アクセストークンを入力してください')
+					return
+				}
+				if (!token.startsWith('pk.')) {
+					alert('有効なMapboxアクセストークンを入力してください\n（pk.で始まる必要があります）')
+					return
+				}
+				// トークンを保存してMapboxに切り替え
+				saveProviderConfig({
+					provider: 'mapbox',
+					mapboxAccessToken: token,
+				})
+				location.reload()
+			})
+		}
 	}
 
 	console.log('map.on("load") 処理完了')
