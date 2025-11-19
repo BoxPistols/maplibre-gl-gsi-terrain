@@ -52,11 +52,7 @@ window.addEventListener('error', e => {
 	e.preventDefault() // デフォルトのエラー表示を防ぐ
 
 	// 画面下部に警告トーストを表示
-	showErrorToast(
-		'エラーが発生しました',
-		e.error?.message || e.message || '不明なエラー',
-		'error'
-	)
+	showErrorToast('エラーが発生しました', e.error?.message || e.message || '不明なエラー', 'error')
 })
 
 window.addEventListener('unhandledrejection', e => {
