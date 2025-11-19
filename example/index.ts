@@ -72,14 +72,22 @@ const gsiTerrainSource = {
 	attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
 }
 
+// 地図の初期位置（ホームボタン用）
+const initialMapPosition = {
+	center: [139.7454, 35.6586] as [number, number], // 東京タワー
+	zoom: 15,
+	pitch: 60,
+	bearing: 0,
+}
+
 // 地図初期化
 const map = new maplibregl.Map({
 	container: 'map',
-	zoom: 15,
-	center: [139.7454, 35.6586], // 東京タワー
+	zoom: initialMapPosition.zoom,
+	center: initialMapPosition.center,
 	minZoom: 5,
 	maxZoom: 18,
-	pitch: 60,
+	pitch: initialMapPosition.pitch,
 	maxPitch: 85,
 	// iOS Safari対策
 	preserveDrawingBuffer: true, // WebGLコンテキストロスト対策
@@ -1846,6 +1854,26 @@ const setupEventHandlers = () => {
 
 	document.getElementById('mobileImportFlightPlan')?.addEventListener('click', () => {
 		importFlightPlan()
+	})
+
+	// モバイル専用ホームボタン - 初期位置に戻る
+	document.getElementById('mobileHomeButton')?.addEventListener('click', () => {
+		// フライトプランが実行中の場合は停止
+		if (flightPlanActive) {
+			pauseFlightPlan()
+		}
+
+		// 初期位置に戻る
+		map.flyTo({
+			center: initialMapPosition.center,
+			zoom: initialMapPosition.zoom,
+			pitch: initialMapPosition.pitch,
+			bearing: initialMapPosition.bearing,
+			duration: 1500,
+		})
+
+		showToast('ホーム位置に戻りました', 'success')
+		console.log('ホームボタン: 初期位置に戻る')
 	})
 
 	// フライトログ表示切替

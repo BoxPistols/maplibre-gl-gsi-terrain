@@ -227,6 +227,32 @@
 				transform: scale(1.05);
 			}
 
+			/* モバイル専用ホームボタン（デスクトップでは非表示） */
+			.mobile-home-button {
+				display: none;
+				position: fixed;
+				top: 74px;
+				right: 10px;
+				width: 54px;
+				height: 54px;
+				background: rgba(255, 255, 255, 0.9);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.8);
+				border-radius: 8px;
+				cursor: pointer;
+				align-items: center;
+				justify-content: center;
+				z-index: 2100;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				transition: all 0.2s ease;
+				font-size: 24px;
+			}
+
+			.mobile-home-button:hover {
+				background: rgba(255, 255, 255, 1);
+				transform: scale(1.05);
+			}
+
 			#status {
 				margin-top: 12px;
 				font-size: 11px;
@@ -755,6 +781,11 @@
 					display: flex;
 				}
 
+				/* モバイル専用ホームボタンを表示 */
+				.mobile-home-button {
+					display: flex;
+				}
+
 				/* コントロールトグルボタンを大きく、タップしやすく */
 				.controls-toggle {
 					width: 54px;
@@ -1268,6 +1299,15 @@
 			data-tooltip="フライトプラン"
 		>
 			🚁
+		</button>
+
+		<!-- モバイル専用ホームボタン（定位置に戻る） -->
+		<button
+			class="mobile-home-button"
+			id="mobileHomeButton"
+			data-tooltip="ホーム位置に戻る"
+		>
+			🏠
 		</button>
 
 		<!-- メインコントロールパネル -->
