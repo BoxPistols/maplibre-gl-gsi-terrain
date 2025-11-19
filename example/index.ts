@@ -44,32 +44,157 @@ trajectory_003,軌跡点3,trajectory_point,auto,139.7454,35.6584,100,50,2024-01-
 trajectory_004,軌跡点4,trajectory_point,auto,139.7456,35.6586,125,75,2024-01-15T09:58:00Z,25,6,135,move,4,4,82,-48,1.8,23,57,2.5,165,trajectory_001,operator_001,DJI_Mavic_3,SN001,自動飛行中
 trajectory_005,軌跡点5,trajectory_point,auto,139.7458,35.6588,150,100,2024-01-15T09:59:00Z,30,4,180,land,5,5,79,-50,2,22,55,3,160,trajectory_001,operator_001,DJI_Mavic_3,SN001,自動飛行終了`
 
-// グローバルエラーハンドラー
+// グローバルエラーハンドラー（画面を真っ黒にしない改良版）
 window.addEventListener('error', e => {
 	console.error('グローバルエラー:', e.error || e.message)
-	alert(
-		`致命的なエラーが発生しました:\n${e.error?.message || e.message}\n\nページをリロードしてください。`
+
+	// エラーをログに記録するが、画面は表示し続ける
+	e.preventDefault() // デフォルトのエラー表示を防ぐ
+
+	// 画面下部に警告トーストを表示
+	showErrorToast(
+		'エラーが発生しました',
+		e.error?.message || e.message || '不明なエラー',
+		'error'
 	)
 })
 
 window.addEventListener('unhandledrejection', e => {
 	console.error('未処理のPromise拒否:', e.reason)
-	alert(`非同期エラーが発生しました:\n${e.reason}\n\nページをリロードしてください。`)
+
+	// エラーをログに記録するが、画面は表示し続ける
+	e.preventDefault() // デフォルトのエラー表示を防ぐ
+
+	const errorMessage =
+		e.reason instanceof Error ? e.reason.message : String(e.reason || '不明なエラー')
+
+	// 画面下部に警告トーストを表示
+	showErrorToast('非同期エラーが発生しました', errorMessage, 'error')
 })
+
+// エラートースト表示関数
+function showErrorToast(title: string, message: string, type: 'error' | 'warning' = 'error') {
+	const bgColor = type === 'error' ? 'rgba(244, 67, 54, 0.95)' : 'rgba(255, 193, 7, 0.95)'
+	const textColor = type === 'error' ? '#fff' : '#000'
+
+	const toast = document.createElement('div')
+	toast.style.cssText = `
+		position: fixed;
+		top: 20px;
+		right: 20px;
+		background: ${bgColor};
+		color: ${textColor};
+		padding: 16px 24px;
+		border-radius: 8px;
+		z-index: 10000;
+		font-size: 14px;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+		max-width: 400px;
+		cursor: pointer;
+		animation: slideIn 0.3s ease-out;
+	`
+
+	toast.innerHTML = `
+		<div style="font-weight: bold; margin-bottom: 4px;">${title}</div>
+		<div style="font-size: 12px; opacity: 0.9;">${message}</div>
+		<div style="font-size: 11px; margin-top: 8px; opacity: 0.7;">クリックして閉じる</div>
+	`
+
+	// クリックで閉じる
+	toast.addEventListener('click', () => {
+		toast.style.transition = 'opacity 0.3s'
+		toast.style.opacity = '0'
+		setTimeout(() => toast.remove(), 300)
+	})
+
+	document.body.appendChild(toast)
+
+	// 10秒後に自動で消す
+	setTimeout(() => {
+		if (toast.parentElement) {
+			toast.style.transition = 'opacity 0.5s'
+			toast.style.opacity = '0'
+			setTimeout(() => toast.remove(), 500)
+		}
+	}, 10000)
+}
 
 console.log('🚀 アプリケーション起動中...')
 
 // 地理院DEM設定
-const protocolAction = getGsiDemProtocolAction('gsidem')
-maplibregl.addProtocol('gsidem', protocolAction)
-const gsiTerrainSource = {
-	type: 'raster-dem' as const,
-	tiles: ['gsidem://https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png'],
-	tileSize: 256,
-	encoding: 'terrarium' as const,
-	minzoom: 1,
-	maxzoom: 14, // 地理院DEMタイルは最大14まで提供
-	attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+let gsiTerrainSource
+try {
+	console.log('[START] 地理院DEMプロトコル登録中...')
+
+	// MapLibre GL JSのaddProtocolが利用可能かチェック
+	if (typeof maplibregl.addProtocol !== 'function') {
+		throw new Error(
+			'maplibregl.addProtocol が利用できません。MapLibre GL JSのバージョンを確認してください。'
+		)
+	}
+
+	const protocolAction = getGsiDemProtocolAction('gsidem')
+	maplibregl.addProtocol('gsidem', protocolAction)
+
+	gsiTerrainSource = {
+		type: 'raster-dem' as const,
+		tiles: ['gsidem://https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png'],
+		tileSize: 256,
+		encoding: 'terrarium' as const,
+		minzoom: 1,
+		maxzoom: 14, // 地理院DEMタイルは最大14まで提供
+		attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+	}
+
+	console.log('[SUCCESS] 地理院DEMプロトコル登録完了')
+} catch (error) {
+	console.error('[ERROR] 地理院DEMプロトコル登録失敗:', error)
+
+	// フォールバック: 直接HTTPSタイルを使用（地形なし）
+	gsiTerrainSource = {
+		type: 'raster-dem' as const,
+		tiles: ['https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png'],
+		tileSize: 256,
+		encoding: 'terrarium' as const,
+		minzoom: 1,
+		maxzoom: 14,
+		attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>',
+	}
+
+	// ユーザーに通知（画面を真っ黒にしない）
+	const errorMessage = error instanceof Error ? error.message : String(error)
+	console.warn(
+		'⚠️ 地形機能の初期化に失敗しました。基本マップのみで動作します。\nエラー:',
+		errorMessage
+	)
+
+	// 画面下部にトーストで通知（エラーダイアログは表示しない）
+	setTimeout(() => {
+		const toast = document.createElement('div')
+		toast.style.cssText = `
+			position: fixed;
+			bottom: 80px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: rgba(255, 193, 7, 0.95);
+			color: #000;
+			padding: 12px 24px;
+			border-radius: 8px;
+			z-index: 10000;
+			font-size: 14px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+			max-width: 90%;
+			text-align: center;
+		`
+		toast.textContent = '⚠️ 地形機能が利用できません。基本マップで動作します。'
+		document.body.appendChild(toast)
+
+		setTimeout(() => {
+			toast.style.transition = 'opacity 0.5s'
+			toast.style.opacity = '0'
+			setTimeout(() => toast.remove(), 500)
+		}, 5000)
+	}, 1000)
 }
 
 // 地図の初期位置（ホームボタン用）
