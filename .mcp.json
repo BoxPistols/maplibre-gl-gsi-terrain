@@ -1,0 +1,21 @@
+{
+	"mcpServers": {
+		"filesystem": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-filesystem",
+				"/home/user/maplibre-gl-gsi-terrain"
+			]
+		},
+		"git": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-git",
+				"--repository",
+				"/home/user/maplibre-gl-gsi-terrain"
+			]
+		}
+	}
+}
