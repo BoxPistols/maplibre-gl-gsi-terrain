@@ -20,12 +20,12 @@ const mapgl = PROVIDER_CONFIG.provider === 'mapbox' ? mapboxgl : maplibregl
 if (PROVIDER_CONFIG.provider === 'mapbox') {
 	if (PROVIDER_CONFIG.mapboxAccessToken) {
 		mapboxgl.accessToken = PROVIDER_CONFIG.mapboxAccessToken
-		console.log('✅ Mapbox GL を使用（アクセストークン設定済み）')
+		console.log('[OK] Mapbox GL を使用（アクセストークン設定済み）')
 	} else {
-		console.warn('⚠️  Mapbox アクセストークンが未設定です')
+		console.warn('[WARNING] Mapbox アクセストークンが未設定です')
 	}
 } else {
-	console.log('✅ MapLibre GL を使用')
+	console.log('[OK] MapLibre GL を使用')
 }
 
 // モバイルデバイス判定（HTMLで設定されたフラグを使用）
@@ -42,6 +42,10 @@ const MOBILE_CONFIG = {
 	terrainExaggeration: 0, // 地形の誇張なし
 	fadeDuration: 0, // フェードアニメーション無効
 	enableDroneTrail: false, // ドローン軌跡を無効化
+	// 追加最適化
+	pixelRatio: Math.min(window.devicePixelRatio, 2), // 高解像度ディスプレイでも最大2倍まで
+	roundZoomLevel: true, // ズームレベルを整数に丸める
+	collectResourceTiming: false, // パフォーマンス計測無効化
 }
 
 // デスクトップ用通常設定
@@ -123,7 +127,7 @@ window.addEventListener('unhandledrejection', e => {
 	alert(`非同期エラーが発生しました:\n${e.reason}\n\nページをリロードしてください。`)
 })
 
-console.log('🚀 アプリケーション起動中...')
+console.log('[START] アプリケーション起動中...')
 
 // 地理院DEM設定
 const protocolAction = getGsiDemProtocolAction('gsidem')
@@ -157,6 +161,9 @@ const map = new mapgl.Map({
 		maxTileCacheSize: 50, // タイルキャッシュを削減
 		renderWorldCopies: false, // 世界地図の複製無効化
 		crossSourceCollisions: false, // 衝突判定無効化（パフォーマンス向上）
+		pixelRatio: CONFIG.pixelRatio, // 高解像度ディスプレイでも最大2倍まで
+		collectResourceTiming: false, // パフォーマンス計測無効化
+		antialias: false, // アンチエイリアス無効化（パフォーマンス向上）
 	}),
 	style: {
 		version: 8,
@@ -1851,7 +1858,7 @@ const setupEventHandlers = () => {
 		importFlightPlan()
 	})
 
-	// モバイル用フライトプランボタン（右上の🚁ボタン） - モーダルを開く
+	// モバイル用フライトプランボタン（右上のドローンアイコンボタン） - モーダルを開く
 	document.getElementById('mobileFlightPlanToggle')?.addEventListener('click', () => {
 		const modal = document.getElementById('mobileFlightPlanModalOverlay')
 		if (modal) {
