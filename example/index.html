@@ -1250,7 +1250,9 @@
 				.mobile-flight-plan-modal {
 					padding: 16px;
 					width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
-					max-height: calc(var(--app-height) - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+					max-height: calc(
+						var(--app-height) - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+					);
 				}
 
 				.mobile-flight-plan-modal h2 {
@@ -1396,9 +1398,9 @@
 			class="mobile-flight-plan-toggle"
 			id="mobileFlightPlanToggle"
 			data-tooltip="フライトプラン"
-			style="font-size: 10px; font-weight: 700; line-height: 1.2; padding: 4px; text-align: center;"
+			style="font-size: 10px; font-weight: 700; line-height: 1.2; padding: 4px; text-align: center"
 		>
-			DRONE<br>FLIGHT
+			DRONE<br />FLIGHT
 		</button>
 
 		<!-- メインコントロールパネル -->
@@ -1801,38 +1803,74 @@
 
 				<div class="mobile-flight-plan-buttons">
 					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; flex-shrink: 0;">
-							<path d="M8 5v14l11-7z"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M8 5v14l11-7z" />
 						</svg>
 						<span>開始</span>
 					</button>
 					<button id="mobilePauseFlightPlan" class="mobile-fp-btn mobile-fp-pause">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; flex-shrink: 0;">
-							<rect x="6" y="4" width="4" height="16"/>
-							<rect x="14" y="4" width="4" height="16"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<rect x="6" y="4" width="4" height="16" />
+							<rect x="14" y="4" width="4" height="16" />
 						</svg>
 						<span>一時停止</span>
 					</button>
 					<button id="mobileEnableGameControl" class="mobile-fp-btn mobile-fp-manual">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-							<rect x="2" y="6" width="20" height="12" rx="2"/>
-							<path d="M6 12h4m8 0h4M14 10v4M10 10v4"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<rect x="2" y="6" width="20" height="12" rx="2" />
+							<path d="M6 12h4m8 0h4M14 10v4M10 10v4" />
 						</svg>
 						<span>手動操作</span>
 					</button>
 					<button id="mobileExportFlightPlan" class="mobile-fp-btn mobile-fp-export">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-							<polyline points="17 8 12 3 7 8"/>
-							<line x1="12" y1="3" x2="12" y2="15"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="17 8 12 3 7 8" />
+							<line x1="12" y1="3" x2="12" y2="15" />
 						</svg>
 						<span>エクスポート</span>
 					</button>
 					<button id="mobileImportFlightPlan" class="mobile-fp-btn mobile-fp-import">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; flex-shrink: 0;">
-							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-							<polyline points="7 10 12 15 17 10"/>
-							<line x1="12" y1="15" x2="12" y2="3"/>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="7 10 12 15 17 10" />
+							<line x1="12" y1="15" x2="12" y2="3" />
 						</svg>
 						<span>インポート</span>
 					</button>
