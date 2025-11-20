@@ -2541,12 +2541,12 @@ const startFlightPlan = () => {
 	}
 
 	// フライトプラン実行中はコントロールを無効化
-	if (isMobileDevice() && touchControlActive) {
+	if (isMobileDevice() && touchController && touchControlActive) {
 		touchController.disable()
 		touchControlActive = false
 		console.log('フライトプラン開始: タッチコントロール無効化')
 	}
-	if (gameController.isEnabled()) {
+	if (gameController && gameController.isEnabled()) {
 		gameController.disable()
 		console.log('フライトプラン開始: ゲームコントロール無効化')
 	}
@@ -2681,7 +2681,7 @@ const pauseFlightPlan = () => {
 	flightPlanActive = false
 
 	// フライトプラン一時停止時は手動コントロールを再有効化
-	if (isMobileDevice()) {
+	if (isMobileDevice() && touchController) {
 		touchController.enable()
 		touchControlActive = true
 		console.log('フライトプラン一時停止: タッチコントロール再有効化')
@@ -2700,7 +2700,7 @@ const completeFlightPlan = () => {
 	flightPlanActive = false
 
 	// フライトプラン完了時は手動コントロールを再有効化
-	if (isMobileDevice()) {
+	if (isMobileDevice() && touchController) {
 		touchController.enable()
 		touchControlActive = true
 		console.log('フライトプラン完了: タッチコントロール再有効化')
