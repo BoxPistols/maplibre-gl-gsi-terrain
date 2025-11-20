@@ -239,9 +239,11 @@ export class TouchController {
 		// ジョイスティックを表示
 		if (this.leftJoystickContainer) {
 			this.leftJoystickContainer.style.display = 'flex'
+			this.leftJoystickContainer.style.pointerEvents = 'auto'
 		}
 		if (this.rightJoystickContainer) {
 			this.rightJoystickContainer.style.display = 'flex'
+			this.rightJoystickContainer.style.pointerEvents = 'auto'
 		}
 
 		// 定期的に入力を処理
@@ -259,12 +261,14 @@ export class TouchController {
 			this.updateInterval = null
 		}
 
-		// ジョイスティックを非表示
+		// ジョイスティックを非表示にし、ポインターイベントも無効化
 		if (this.leftJoystickContainer) {
 			this.leftJoystickContainer.style.display = 'none'
+			this.leftJoystickContainer.style.pointerEvents = 'none'
 		}
 		if (this.rightJoystickContainer) {
 			this.rightJoystickContainer.style.display = 'none'
+			this.rightJoystickContainer.style.pointerEvents = 'none'
 		}
 
 		// 状態をリセット
