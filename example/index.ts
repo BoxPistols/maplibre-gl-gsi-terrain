@@ -2630,13 +2630,13 @@ const startFlightPlan = () => {
 		return
 	}
 
-// フライトプラン実行中はコントロールを無効化
-if (isMobileDevice() && touchControlActive) {
+	// フライトプラン実行中はコントロールを無効化
+	if (isMobileDevice() && touchControlActive) {
 		touchController.disable()
 		touchControlActive = false
 		addFlightLog('システム', 'コントロール無効化', 'タッチコントロールを無効化しました', 'info')
 	}
-if (gameControlActive) {
+	if (gameControlActive) {
 		gameController.disable()
 		addFlightLog('システム', 'コントロール無効化', 'ゲームコントロールを無効化しました', 'info')
 	}
