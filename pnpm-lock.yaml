@@ -6,6 +6,10 @@ settings:
 
 importers:
   .:
+    dependencies:
+      mapbox-gl:
+        specifier: ^3.16.0
+        version: 3.16.0
     devDependencies:
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.46.4
@@ -531,6 +535,12 @@ packages:
       }
     engines: { node: '>= 0.6' }
 
+  '@mapbox/mapbox-gl-supported@3.0.0':
+    resolution:
+      {
+        integrity: sha512-2XghOwu16ZwPJLOFVuIOaLbN0iKMn867evzXFyf0P22dqugezfJwLmdanAgU25ITvz1TvOfVP4jsDImlDJzcWg==,
+      }
+
   '@mapbox/point-geometry@1.1.0':
     resolution:
       {
@@ -844,6 +854,12 @@ packages:
         integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==,
       }
 
+  '@types/mapbox__point-geometry@0.1.4':
+    resolution:
+      {
+        integrity: sha512-mUWlSxAmYLfwnRBmgYV86tgYmMIICX4kza8YnE/eIlywGe2XoOxlpVnXWwir92xRLjwyarqwpu2EJKD2pk0IUA==,
+      }
+
   '@types/node@20.19.9':
     resolution:
       {
@@ -854,6 +870,12 @@ packages:
     resolution:
       {
         integrity: sha512-F8Q+SeGimwOo86fiovQh8qiXfFEh2/ocYv7tU5pJ3EXMSSxk1Joj5wefpFK2fHTf/N6HKGSxIDBT9f3gCxXPkQ==,
+      }
+
+  '@types/pbf@3.0.5':
+    resolution:
+      {
+        integrity: sha512-j3pOPiEcWZ34R6a6mN07mUkM4o4Lwf6hPNt8eilOeZhTFbxFXmKhvXl9Y28jotFPaI1bpPDJsbCprUoNke6OrA==,
       }
 
   '@types/statuses@2.0.5':
@@ -1185,6 +1207,12 @@ packages:
       }
     engines: { node: '>=10' }
 
+  cheap-ruler@4.0.0:
+    resolution:
+      {
+        integrity: sha512-0BJa8f4t141BYKQyn9NSQt1PguFQXMXwZiA5shfoaBYHAb2fFk2RAX+tiWMoQU+Agtzt3mdt0JtuyshAXqZ+Vw==,
+      }
+
   check-error@2.1.1:
     resolution:
       {
@@ -1238,6 +1266,12 @@ packages:
         integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==,
       }
     engines: { node: '>= 8' }
+
+  csscolorparser@1.0.3:
+    resolution:
+      {
+        integrity: sha512-umPSgYwZkdFoUrH5hIq5kf0wPSXiro51nPw0j2K/c83KflkPSTBGMz6NJvMB+07VlL0y7VPo6QJcDjcgKTTm3w==,
+      }
 
   debug@4.4.0:
     resolution:
@@ -1566,6 +1600,12 @@ packages:
       }
     engines: { node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0 }
 
+  grid-index@1.1.0:
+    resolution:
+      {
+        integrity: sha512-HZRwumpOGUrHyxO5bqKZL0B0GlUpwtCAzZ42sgxUPniu33R1LSFH5yrIcBCHjkctCAh3mtWKcKd9J4vDDdeVHA==,
+      }
+
   happy-dom@20.0.10:
     resolution:
       {
@@ -1809,12 +1849,24 @@ packages:
       }
     engines: { node: '>=10' }
 
+  mapbox-gl@3.16.0:
+    resolution:
+      {
+        integrity: sha512-rluV1Zp/0oHf1Y9BV+nePRNnKyTdljko3E19CzO5rBqtQaNUYS0ePCMPRtxOuWRwSdKp3f9NWJkOCjemM8nmjw==,
+      }
+
   maplibre-gl@5.13.0:
     resolution:
       {
         integrity: sha512-UsIVP34rZdM4TjrjhwBAhbC3HT7AzFx9p/draiAPlLr8/THozZF6WmJnZ9ck4q94uO55z7P7zoGCh+AZVoagsQ==,
       }
     engines: { node: '>=16.14.0', npm: '>=8.1.0' }
+
+  martinez-polygon-clipping@0.7.4:
+    resolution:
+      {
+        integrity: sha512-jBEwrKtA0jTagUZj2bnmb4Yg2s4KnJGRePStgI7bAVjtcipKiF39R4LZ2V/UT61jMYWrTcBhPazexeqd6JAVtw==,
+      }
 
   merge2@1.4.1:
     resolution:
@@ -2142,6 +2194,12 @@ packages:
       }
     engines: { iojs: '>=1.0.0', node: '>=0.10.0' }
 
+  robust-predicates@2.0.4:
+    resolution:
+      {
+        integrity: sha512-l4NwboJM74Ilm4VKfbAtFeGq7aEjWL+5kVFcmgFA2MrdnQWx9iE/tUGvxY5HyMI7o/WpSIUFLbC5fbeaHgSCYg==,
+      }
+
   rollup@4.29.1:
     resolution:
       {
@@ -2169,6 +2227,13 @@ packages:
       }
     engines: { node: '>=10' }
     hasBin: true
+
+  serialize-to-js@3.1.2:
+    resolution:
+      {
+        integrity: sha512-owllqNuDDEimQat7EPG0tH7JjO090xKNzUtYz6X+Sk2BXDnOCilDdNLwjWeFywG9xkJul1ULvtUQa9O4pUaY0w==,
+      }
+    engines: { node: '>=4.0.0' }
 
   shebang-command@2.0.0:
     resolution:
@@ -2210,6 +2275,12 @@ packages:
         integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==,
       }
     engines: { node: '>=0.10.0' }
+
+  splaytree@0.1.4:
+    resolution:
+      {
+        integrity: sha512-D50hKrjZgBzqD3FT2Ek53f2dcDLAQT8SSGrzj3vidNH5ISRgceeGVJ2dQIthKOuayqFXfFjXheHNo4bbt9LhRQ==,
+      }
 
   stackback@0.0.2:
     resolution:
@@ -2309,6 +2380,12 @@ packages:
         integrity: sha512-al6n+QEANGFOMf/dmUMsuS5/r9B06uwlyNjZZql/zv8J7ybHCgoihBNORZCY2mzUuAnomQa2JdhyHKzZxPCrFA==,
       }
     engines: { node: ^18.0.0 || >=20.0.0 }
+
+  tinyqueue@1.2.3:
+    resolution:
+      {
+        integrity: sha512-Qz9RgWuO9l8lT+Y9xvbzhPT2efIUIFd69N7eF7tJ9lnQl0iLj1M7peK7IoUGZL9DJHw9XftqLreccfxcQgYLxA==,
+      }
 
   tinyqueue@3.0.0:
     resolution:
@@ -2829,6 +2906,8 @@ snapshots:
 
   '@mapbox/jsonlint-lines-primitives@2.0.2': {}
 
+  '@mapbox/mapbox-gl-supported@3.0.0': {}
+
   '@mapbox/point-geometry@1.1.0': {}
 
   '@mapbox/tiny-sdf@2.0.7': {}
@@ -2988,6 +3067,8 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/mapbox__point-geometry@0.1.4': {}
+
   '@types/node@20.19.9':
     dependencies:
       undici-types: 6.21.0
@@ -2995,6 +3076,8 @@ snapshots:
   '@types/node@22.10.5':
     dependencies:
       undici-types: 6.20.0
+
+  '@types/pbf@3.0.5': {}
 
   '@types/statuses@2.0.5': {}
 
@@ -3250,6 +3333,8 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
+  cheap-ruler@4.0.0: {}
+
   check-error@2.1.1: {}
 
   cli-width@4.1.0: {}
@@ -3275,6 +3360,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  csscolorparser@1.0.3: {}
 
   debug@4.4.0:
     dependencies:
@@ -3480,6 +3567,8 @@ snapshots:
 
   graphql@16.10.0: {}
 
+  grid-index@1.1.0: {}
+
   happy-dom@20.0.10:
     dependencies:
       '@types/node': 20.19.9
@@ -3597,6 +3686,36 @@ snapshots:
     dependencies:
       semver: 7.6.3
 
+  mapbox-gl@3.16.0:
+    dependencies:
+      '@mapbox/jsonlint-lines-primitives': 2.0.2
+      '@mapbox/mapbox-gl-supported': 3.0.0
+      '@mapbox/point-geometry': 1.1.0
+      '@mapbox/tiny-sdf': 2.0.7
+      '@mapbox/unitbezier': 0.0.1
+      '@mapbox/vector-tile': 2.0.4
+      '@mapbox/whoots-js': 3.1.0
+      '@types/geojson': 7946.0.16
+      '@types/geojson-vt': 3.2.5
+      '@types/mapbox__point-geometry': 0.1.4
+      '@types/pbf': 3.0.5
+      '@types/supercluster': 7.1.3
+      cheap-ruler: 4.0.0
+      csscolorparser: 1.0.3
+      earcut: 3.0.2
+      geojson-vt: 4.0.2
+      gl-matrix: 3.4.4
+      grid-index: 1.1.0
+      kdbush: 4.0.2
+      martinez-polygon-clipping: 0.7.4
+      murmurhash-js: 1.0.0
+      pbf: 4.0.1
+      potpack: 2.1.0
+      quickselect: 3.0.0
+      serialize-to-js: 3.1.2
+      supercluster: 8.0.1
+      tinyqueue: 3.0.0
+
   maplibre-gl@5.13.0:
     dependencies:
       '@mapbox/geojson-rewind': 0.5.2
@@ -3622,6 +3741,12 @@ snapshots:
       quickselect: 3.0.0
       supercluster: 8.0.1
       tinyqueue: 3.0.0
+
+  martinez-polygon-clipping@0.7.4:
+    dependencies:
+      robust-predicates: 2.0.4
+      splaytree: 0.1.4
+      tinyqueue: 1.2.3
 
   merge2@1.4.1: {}
 
@@ -3783,6 +3908,8 @@ snapshots:
 
   reusify@1.1.0: {}
 
+  robust-predicates@2.0.4: {}
+
   rollup@4.29.1:
     dependencies:
       '@types/estree': 1.0.6
@@ -3816,6 +3943,8 @@ snapshots:
 
   semver@7.6.3: {}
 
+  serialize-to-js@3.1.2: {}
+
   shebang-command@2.0.0:
     dependencies:
       shebang-regex: 3.0.0
@@ -3833,6 +3962,8 @@ snapshots:
       totalist: 3.0.1
 
   source-map-js@1.2.1: {}
+
+  splaytree@0.1.4: {}
 
   stackback@0.0.2: {}
 
@@ -3883,6 +4014,8 @@ snapshots:
   tinyexec@0.3.2: {}
 
   tinypool@1.0.2: {}
+
+  tinyqueue@1.2.3: {}
 
   tinyqueue@3.0.0: {}
 

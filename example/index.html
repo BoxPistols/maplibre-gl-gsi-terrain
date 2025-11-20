@@ -11,7 +11,52 @@
 		<title>ドローン飛行シミュレーター</title>
 		<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 		<!-- MapLibre GL CSSはindex.tsでimportされるため、ここでの読み込みは不要 -->
+
+		<!-- モバイル判定とファイル分岐 -->
+		<script>
+			// モバイルデバイス判定（User-Agent + 画面サイズ）
+			;(function () {
+				const isMobile =
+					/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+						navigator.userAgent
+					) || window.innerWidth <= 768
+
+				// モバイルフラグをグローバルに設定
+				window.IS_MOBILE_DEVICE = isMobile
+
+				console.log('Device type:', isMobile ? 'MOBILE' : 'DESKTOP')
+				console.log('User-Agent:', navigator.userAgent)
+				console.log('Screen width:', window.innerWidth)
+
+				// iOS Safari用の実際のビューポート高さを設定
+				const setAppHeight = () => {
+					const doc = document.documentElement
+					// window.innerHeightは実際の表示領域の高さを返す
+					doc.style.setProperty('--app-height', `${window.innerHeight}px`)
+				}
+
+				// 初期設定
+				setAppHeight()
+
+				// リサイズ時とオリエンテーション変更時に再計算
+				window.addEventListener('resize', setAppHeight)
+				window.addEventListener('orientationchange', () => {
+					setTimeout(setAppHeight, 100) // オリエンテーション変更後に少し待つ
+				})
+
+				// iOS用の追加対策: ビジュアルビューポート変更時
+				if (window.visualViewport) {
+					window.visualViewport.addEventListener('resize', setAppHeight)
+				}
+			})()
+		</script>
+
 		<style>
+			/* CSS変数でビューポート高さを管理 */
+			:root {
+				--app-height: 100vh;
+			}
+
 			body {
 				margin: 0;
 				padding: 0;
@@ -26,14 +71,23 @@
 				user-select: none;
 				position: fixed;
 				width: 100%;
-				height: 100%;
+				/* iOS Safari対応の高さ指定 */
+				height: 100vh;
+				height: -webkit-fill-available;
+				height: 100dvh;
+				/* Safe Areaの設定はマップコンテンツに影響しないように削除 */
+				box-sizing: border-box;
 			}
 
 			#map {
 				width: 100vw;
+				/* iOS Safari対応の高さ指定 */
 				height: 100vh;
+				height: -webkit-fill-available;
+				height: 100dvh;
 				/* iOS Safari用のタッチ操作最適化 */
 				touch-action: pan-x pan-y;
+				box-sizing: border-box;
 			}
 
 			#controls {
@@ -207,7 +261,7 @@
 				position: fixed;
 				top: 10px;
 				right: 10px;
-				width: 54px;
+				width: 58px;
 				height: 54px;
 				background: rgba(255, 255, 255, 0.9);
 				backdrop-filter: blur(4px);
@@ -219,7 +273,7 @@
 				z-index: 2100;
 				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 				transition: all 0.2s ease;
-				font-size: 24px;
+				color: rgba(0, 0, 0, 0.8);
 			}
 
 			.mobile-flight-plan-toggle:hover {
@@ -780,8 +834,31 @@
 				white-space: nowrap;
 			}
 
-			/* モバイル対応レスポンシブデザイン */
+			/* モバイルパフォーマンス最適化 */
 			@media (max-width: 768px) {
+				/* アニメーションとトランジション最適化 */
+				* {
+					-webkit-transform: translateZ(0);
+					-webkit-backface-visibility: hidden;
+					-webkit-perspective: 1000;
+				}
+
+				/* 重い効果の無効化 */
+				button {
+					transition: none;
+					box-shadow: none;
+				}
+
+				button:hover {
+					transform: none;
+					box-shadow: none;
+				}
+
+				.controls-toggle,
+				.mobile-flight-plan-toggle {
+					will-change: transform;
+				}
+
 				/* モバイル専用セクションを表示 */
 				.mobile-only {
 					display: block;
@@ -819,7 +896,7 @@
 					width: 85%;
 					max-width: 320px;
 					padding: 16px;
-					max-height: calc(100vh - 20px); /* フッター分を引いて余裕を持たせる */
+					max-height: calc(100vh - 40px); /* フッター分を引いて余裕を持たせる */
 					overflow-y: auto;
 					-webkit-overflow-scrolling: touch; /* iOS用スムーススクロール */
 					border-radius: 0 16px 16px 0;
@@ -970,7 +1047,7 @@
 					width: 90%;
 					max-width: 280px;
 					padding: 12px;
-					max-height: calc(100vh - 20px); /* フッター分を引く */
+					max-height: calc(100vh - 40px); /* フッター分を引く */
 					-webkit-overflow-scrolling: touch;
 					z-index: 2000;
 				}
@@ -1061,13 +1138,27 @@
 				left: 0;
 				right: 0;
 				bottom: 0;
-				background: rgba(0, 0, 0, 0.7);
-				backdrop-filter: blur(4px);
+				/* iOS Safari対応の高さ指定（優先順位順） */
+				height: var(--app-height); /* JavaScript動的計算値を優先 */
+				height: 100dvh; /* 動的ビューポート高（最新ブラウザ用） */
+				height: -webkit-fill-available; /* iOS Safari用フォールバック */
+				height: 100vh; /* 最終フォールバック */
+				background: rgba(0, 0, 0, 0.85); /* backdrop-filterを削除してパフォーマンス向上 */
 				z-index: 3000; /* 最前面 */
 				display: none;
 				align-items: center;
 				justify-content: center;
-				padding: 20px;
+				padding: 10px;
+				/* iOS Safe Area対応 */
+				padding-top: max(10px, env(safe-area-inset-top));
+				padding-bottom: max(10px, env(safe-area-inset-bottom));
+				padding-left: max(10px, env(safe-area-inset-left));
+				padding-right: max(10px, env(safe-area-inset-right));
+				overflow-y: auto;
+				-webkit-overflow-scrolling: touch; /* iOS用スムーススクロール */
+				/* iOS用の追加対策 */
+				box-sizing: border-box;
+				overscroll-behavior: contain; /* スクロール連鎖を防ぐ */
 			}
 
 			.mobile-flight-plan-modal-overlay.visible {
@@ -1075,14 +1166,22 @@
 			}
 
 			.mobile-flight-plan-modal {
-				background: rgba(255, 255, 255, 0.95);
-				backdrop-filter: blur(8px);
+				background: #ffffff;
 				border-radius: 16px;
-				max-width: 400px;
-				width: 100%;
-				padding: 24px;
-				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+				width: calc(100vw - 20px - env(safe-area-inset-left) - env(safe-area-inset-right));
+				max-width: 350px;
+				padding: 20px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 				position: relative;
+				box-sizing: border-box;
+				/* キーボードが出た時の対策 */
+				max-height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+				max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+				overflow-y: auto;
+				-webkit-overflow-scrolling: touch;
+				/* iOS用の調整 */
+				margin: auto;
+				flex-shrink: 0;
 			}
 
 			.mobile-flight-plan-modal-close {
@@ -1117,19 +1216,22 @@
 			.mobile-flight-plan-buttons {
 				display: flex;
 				flex-direction: column;
-				gap: 10px;
+				gap: 8px;
 			}
 
 			.mobile-fp-btn {
 				width: 100%;
-				padding: 12px 16px;
+				padding: 10px 12px;
 				border-radius: 8px;
 				font-size: 14px;
 				font-weight: 600;
 				border: none;
 				cursor: pointer;
 				transition: all 0.2s ease;
-				min-height: 44px; /* タッチターゲット */
+				min-height: 42px; /* タッチターゲット */
+				display: flex;
+				align-items: center;
+				justify-content: center;
 			}
 
 			.mobile-fp-start {
@@ -1174,6 +1276,36 @@
 			@media (min-width: 769px) {
 				.mobile-flight-plan-modal-overlay {
 					display: none !important;
+				}
+			}
+
+			/* より小さい画面用の調整 */
+			@media (max-width: 380px) {
+				.mobile-flight-plan-modal-overlay {
+					padding: 8px;
+					padding-top: max(8px, env(safe-area-inset-top));
+					padding-bottom: max(8px, env(safe-area-inset-bottom));
+					padding-left: max(8px, env(safe-area-inset-left));
+					padding-right: max(8px, env(safe-area-inset-right));
+				}
+
+				.mobile-flight-plan-modal {
+					padding: 16px;
+					width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+					max-height: calc(
+						var(--app-height) - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+					);
+				}
+
+				.mobile-flight-plan-modal h2 {
+					font-size: 16px !important;
+					margin: 0 0 16px 0;
+				}
+
+				.mobile-fp-btn {
+					font-size: 13px;
+					padding: 10px 12px;
+					min-height: 40px;
 				}
 			}
 
@@ -1308,8 +1440,9 @@
 			class="mobile-flight-plan-toggle"
 			id="mobileFlightPlanToggle"
 			data-tooltip="フライトプラン"
+			style="font-size: 10px; font-weight: 700; line-height: 1.2; padding: 4px; text-align: center"
 		>
-			🚁
+			DRONE<br />FLIGHT
 		</button>
 
 		<!-- モバイル専用ホームボタン（定位置に戻る） -->
@@ -1348,6 +1481,56 @@
 						/>
 					</svg>
 				</button>
+			</div>
+
+			<!-- マッププロバイダー選択セクション -->
+			<div class="control-section">
+				<div class="section-title">マッププロバイダー</div>
+				<div class="button-group">
+					<select
+						id="mapProviderSelect"
+						style="
+							width: 100%;
+							margin-bottom: 8px;
+							padding: 6px;
+							border-radius: 4px;
+							border: 1px solid rgba(0, 0, 0, 0.2);
+							background: rgba(255, 255, 255, 0.9);
+							font-size: 12px;
+						"
+					>
+						<option value="maplibre">MapLibre GL（推奨）</option>
+						<option value="mapbox">Mapbox GL</option>
+					</select>
+					<div id="mapboxTokenSection" style="display: none; margin-top: 8px">
+						<input
+							type="text"
+							id="mapboxTokenInput"
+							placeholder="Mapbox アクセストークン"
+							style="
+								width: 100%;
+								padding: 6px;
+								border-radius: 4px;
+								border: 1px solid rgba(0, 0, 0, 0.2);
+								font-size: 11px;
+								margin-bottom: 6px;
+							"
+						/>
+						<button
+							id="saveMapboxToken"
+							class="success"
+							style="width: 100%"
+							data-tooltip="トークンを保存してリロード"
+						>
+							トークン保存
+						</button>
+					</div>
+					<div
+						style="margin-top: 8px; font-size: 10px; color: rgba(0, 0, 0, 0.6); line-height: 1.4"
+					>
+						<div id="currentProviderInfo"></div>
+					</div>
+				</div>
 			</div>
 
 			<!-- サンプルデータセクション -->
@@ -1648,11 +1831,13 @@
 						id="mobileFlightPlanSelect"
 						style="
 							width: 100%;
-							padding: 10px;
+							padding: 12px;
 							border-radius: 6px;
 							border: 1px solid rgba(0, 0, 0, 0.2);
 							background: rgba(255, 255, 255, 0.9);
-							font-size: 14px;
+							font-size: 16px;
+							-webkit-appearance: none;
+							appearance: none;
 						"
 					>
 						<option value="tokyo-tower">東京タワー点検</option>
@@ -1664,18 +1849,77 @@
 				</div>
 
 				<div class="mobile-flight-plan-buttons">
-					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">▶ 開始</button>
+					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M8 5v14l11-7z" />
+						</svg>
+						<span>開始</span>
+					</button>
 					<button id="mobilePauseFlightPlan" class="mobile-fp-btn mobile-fp-pause">
-						⏸ 一時停止
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<rect x="6" y="4" width="4" height="16" />
+							<rect x="14" y="4" width="4" height="16" />
+						</svg>
+						<span>一時停止</span>
 					</button>
 					<button id="mobileEnableGameControl" class="mobile-fp-btn mobile-fp-manual">
-						🎮 手動操作
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<rect x="2" y="6" width="20" height="12" rx="2" />
+							<path d="M6 12h4m8 0h4M14 10v4M10 10v4" />
+						</svg>
+						<span>手動操作</span>
 					</button>
 					<button id="mobileExportFlightPlan" class="mobile-fp-btn mobile-fp-export">
-						📤 エクスポート
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="17 8 12 3 7 8" />
+							<line x1="12" y1="3" x2="12" y2="15" />
+						</svg>
+						<span>エクスポート</span>
 					</button>
 					<button id="mobileImportFlightPlan" class="mobile-fp-btn mobile-fp-import">
-						📥 インポート
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="7 10 12 15 17 10" />
+							<line x1="12" y1="15" x2="12" y2="3" />
+						</svg>
+						<span>インポート</span>
 					</button>
 				</div>
 			</div>
