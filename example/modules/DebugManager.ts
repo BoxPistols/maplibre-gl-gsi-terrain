@@ -38,6 +38,7 @@ export interface DebugEvent {
 export class DebugManager {
 	private map: MapLibreMap | null = null
 	private droneModel: DroneModel | null = null
+	// Note: flightController is stored for potential future use (e.g., direct flight control from debug panel)
 	private flightController: FlightController | null = null
 
 	private state: DebugState = {
@@ -72,8 +73,25 @@ export class DebugManager {
 	private overlay: HTMLElement | null = null
 	private toggleBtn: HTMLElement | null = null
 	private closeBtn: HTMLElement | null = null
+	private debugModeBtn: HTMLElement | null = null
+
+	// イベントハンドラー参照（クリーンアップ用）
+	private handleToggle: () => void
+	private handleClose: () => void
+	private handleToggleBtnClick: () => void
 
 	constructor() {
+		// イベントハンドラーをバインド
+		this.handleToggle = () => this.toggle()
+		this.handleClose = () => this.hide()
+		this.handleToggleBtnClick = () => {
+			if (this.overlay?.classList.contains('visible')) {
+				this.hide()
+			} else {
+				this.show()
+			}
+		}
+
 		this.initializeDOMElements()
 		this.setupEventListeners()
 	}
@@ -92,25 +110,34 @@ export class DebugManager {
 	 */
 	private setupEventListeners(): void {
 		// デバッグボタンのトグル（コントロールパネル内）
-		const debugModeBtn = document.getElementById('toggleDebugMode')
-		if (debugModeBtn) {
-			debugModeBtn.addEventListener('click', () => this.toggle())
+		this.debugModeBtn = document.getElementById('toggleDebugMode')
+		if (this.debugModeBtn) {
+			this.debugModeBtn.addEventListener('click', this.handleToggle)
 		}
 
 		// オーバーレイ右上の閉じるボタン
 		if (this.closeBtn) {
-			this.closeBtn.addEventListener('click', () => this.hide())
+			this.closeBtn.addEventListener('click', this.handleClose)
 		}
 
 		// フローティングトグルボタン
 		if (this.toggleBtn) {
-			this.toggleBtn.addEventListener('click', () => {
-				if (this.overlay?.classList.contains('visible')) {
-					this.hide()
-				} else {
-					this.show()
-				}
-			})
+			this.toggleBtn.addEventListener('click', this.handleToggleBtnClick)
+		}
+	}
+
+	/**
+	 * イベントリスナーを削除
+	 */
+	private removeEventListeners(): void {
+		if (this.debugModeBtn) {
+			this.debugModeBtn.removeEventListener('click', this.handleToggle)
+		}
+		if (this.closeBtn) {
+			this.closeBtn.removeEventListener('click', this.handleClose)
+		}
+		if (this.toggleBtn) {
+			this.toggleBtn.removeEventListener('click', this.handleToggleBtnClick)
 		}
 	}
 
@@ -314,9 +341,14 @@ export class DebugManager {
 		this.updateElement('debugCameraPitch', `${this.state.cameraPitch.toFixed(1)}`)
 		this.updateElement('debugCameraBearing', `${this.state.cameraBearing.toFixed(1)}`)
 
-		// フェーズデータ
-		if (this.state.currentPhaseData) {
-			this.updateElement('debugPhaseData', this.formatJSON(this.state.currentPhaseData))
+		// フェーズデータ（HTMLシンタックスハイライト付きなのでinnerHTMLを使用）
+		const phaseDataEl = document.getElementById('debugPhaseData')
+		if (phaseDataEl) {
+			if (this.state.currentPhaseData) {
+				phaseDataEl.innerHTML = this.formatJSON(this.state.currentPhaseData)
+			} else {
+				phaseDataEl.textContent = '-'
+			}
 		}
 
 		// 統計
@@ -369,15 +401,33 @@ export class DebugManager {
 	}
 
 	/**
+	 * HTMLエスケープ（XSS対策）
+	 */
+	private escapeHtml(str: string): string {
+		return str
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+	}
+
+	/**
 	 * JSONをフォーマット（シンタックスハイライト付き）
 	 */
 	private formatJSON(obj: any): string {
 		const json = JSON.stringify(obj, null, 2)
-		return json
-			.replace(/"([^"]+)":/g, '<span class="key">"$1"</span>:')
-			.replace(/: "([^"]+)"/g, ': <span class="string">"$1"</span>')
-			.replace(/: (\d+\.?\d*)/g, ': <span class="number">$1</span>')
+		// まずHTMLエスケープしてから、シンタックスハイライトを適用
+		const escaped = this.escapeHtml(json)
+		return escaped
+			// キー名（"key":）
+			.replace(/&quot;([^&]+)&quot;:/g, '<span class="key">&quot;$1&quot;</span>:')
+			// 文字列値（: "value"）
+			.replace(/: &quot;([^&]*)&quot;/g, ': <span class="string">&quot;$1&quot;</span>')
+			// 数値（コロン後、カンマ後、配列開始後の数値をハイライト）
+			.replace(/([:,\[]\s*)(-?\d+\.?\d*)/g, '$1<span class="number">$2</span>')
+			// 真偽値
 			.replace(/: (true|false)/g, ': <span class="boolean">$1</span>')
+			// null
 			.replace(/: null/g, ': <span class="null">null</span>')
 	}
 
@@ -471,6 +521,16 @@ export class DebugManager {
 	 */
 	destroy(): void {
 		this.stopUpdateLoop()
+		this.removeEventListeners()
 		this.events = []
+
+		// DOM参照をクリア
+		this.map = null
+		this.droneModel = null
+		this.flightController = null
+		this.overlay = null
+		this.toggleBtn = null
+		this.closeBtn = null
+		this.debugModeBtn = null
 	}
 }
