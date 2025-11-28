@@ -99,6 +99,7 @@ import { FlightController } from './modules/FlightController'
 import { DroneModel } from './modules/DroneModel'
 import { GameController } from './modules/GameController'
 import { TouchController } from './modules/TouchController'
+import { DebugManager } from './modules/DebugManager'
 import type { FlightPlanData, FlightPlanPhase } from './modules/types'
 
 // サンプルデータの定義
@@ -381,6 +382,7 @@ let flightController: FlightController
 let droneModel: DroneModel
 let gameController: GameController
 let touchController: TouchController
+let debugManager: DebugManager
 let gameControlActive = false
 let touchControlActive = false
 
@@ -2647,6 +2649,13 @@ const startFlightPlan = () => {
 	addFlightLog('システム', 'フライトプラン開始', `${currentFlightPlanName}を開始します`, 'success')
 	updateFlightLogDisplay() // ステータスバーを更新
 
+	// デバッグモード更新
+	if (debugManager?.isEnabled()) {
+		debugManager.setFlightStatus('FLYING')
+		debugManager.setTotalPhases(currentFlightPlan.length)
+		debugManager.logEvent('FLIGHT', `Started: ${currentFlightPlanName}`)
+	}
+
 	// ドローンオブジェクトを作成または更新
 	let drone = loadedObjects.find(obj => obj.type === 'drone')
 	if (!drone) {
@@ -2680,6 +2689,11 @@ const executeFlightPhase = () => {
 
 	const phase = currentFlightPlan[currentFlightPhase]
 	const drone = loadedObjects.find(obj => obj.type === 'drone')
+
+	// デバッグモード更新
+	if (debugManager?.isEnabled()) {
+		debugManager.setCurrentPhase(phase, currentFlightPhase, currentFlightPlan.length)
+	}
 
 	if (!drone) {
 		addFlightLog('エラー', 'ドローン不在', '点検ドローンが見つかりません', 'error')
@@ -2784,6 +2798,12 @@ const pauseFlightPlan = () => {
 		'warning'
 	)
 	updateFlightLogDisplay() // ステータスバーを更新
+
+	// デバッグモード更新
+	if (debugManager?.isEnabled()) {
+		debugManager.setFlightStatus('PAUSED')
+		debugManager.logEvent('PAUSE', `Paused at phase ${currentFlightPhase + 1}`)
+	}
 }
 
 const completeFlightPlan = () => {
@@ -2804,6 +2824,12 @@ const completeFlightPlan = () => {
 	)
 	updateFlightLogDisplay() // ステータスバーを更新
 	showToast('フライトプランが完了しました', 'success')
+
+	// デバッグモード更新
+	if (debugManager?.isEnabled()) {
+		debugManager.setFlightStatus('COMPLETED')
+		debugManager.logEvent('COMPLETE', `Finished: ${currentFlightPlanName}`)
+	}
 }
 
 const exportFlightPlan = () => {
@@ -3089,6 +3115,13 @@ map.on('load', () => {
 		// TouchControllerの初期化（モバイル用）
 		touchController = new TouchController(map, droneModel)
 		console.log('TouchController初期化完了')
+
+		// DebugManagerの初期化
+		debugManager = new DebugManager()
+		debugManager.setMap(map)
+		debugManager.setDroneModel(droneModel)
+		debugManager.setFlightController(flightController)
+		console.log('DebugManager初期化完了')
 
 		// モバイルデバイスの場合は自動でタッチコントロールを有効化
 		if (isMobileDevice()) {

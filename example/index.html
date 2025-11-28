@@ -1422,6 +1422,294 @@
 			.help-button:hover {
 				background: rgba(59, 130, 246, 0.4);
 			}
+
+			/* デバッグオーバーレイ */
+			.debug-overlay {
+				position: fixed;
+				top: 60px;
+				right: -420px;
+				width: 400px;
+				max-height: calc(100vh - 280px);
+				background: rgba(0, 0, 0, 0.85);
+				backdrop-filter: blur(8px);
+				border-radius: 12px 0 0 12px;
+				z-index: 2500;
+				transition: right 0.3s ease;
+				overflow: hidden;
+				box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+				font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+			}
+
+			.debug-overlay.visible {
+				right: 0;
+			}
+
+			.debug-overlay-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 12px 16px;
+				background: rgba(34, 197, 94, 0.2);
+				border-bottom: 1px solid rgba(34, 197, 94, 0.3);
+			}
+
+			.debug-overlay-title {
+				color: #22c55e;
+				font-weight: 700;
+				font-size: 13px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.debug-overlay-title::before {
+				content: '';
+				width: 8px;
+				height: 8px;
+				background: #22c55e;
+				border-radius: 50%;
+				animation: pulse 1.5s infinite;
+			}
+
+			.debug-overlay-close {
+				background: rgba(255, 255, 255, 0.1);
+				border: none;
+				color: rgba(255, 255, 255, 0.7);
+				width: 28px;
+				height: 28px;
+				min-width: 28px;
+				min-height: 28px;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				padding: 0;
+				margin: 0;
+			}
+
+			.debug-overlay-close:hover {
+				background: rgba(255, 255, 255, 0.2);
+				color: white;
+			}
+
+			.debug-overlay-content {
+				padding: 12px 16px;
+				overflow-y: auto;
+				max-height: calc(100vh - 340px);
+				scrollbar-width: thin;
+				scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+			}
+
+			.debug-overlay-content::-webkit-scrollbar {
+				width: 6px;
+			}
+
+			.debug-overlay-content::-webkit-scrollbar-track {
+				background: transparent;
+			}
+
+			.debug-overlay-content::-webkit-scrollbar-thumb {
+				background: rgba(255, 255, 255, 0.2);
+				border-radius: 3px;
+			}
+
+			.debug-section {
+				margin-bottom: 16px;
+			}
+
+			.debug-section-title {
+				color: #fbbf24;
+				font-weight: 600;
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				margin-bottom: 8px;
+				padding-bottom: 4px;
+				border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+			}
+
+			.debug-row {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 4px 0;
+				font-size: 11px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+			}
+
+			.debug-row:last-child {
+				border-bottom: none;
+			}
+
+			.debug-label {
+				color: rgba(255, 255, 255, 0.6);
+			}
+
+			.debug-value {
+				color: #60a5fa;
+				font-weight: 500;
+				text-align: right;
+				max-width: 200px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.debug-value.success {
+				color: #22c55e;
+			}
+
+			.debug-value.warning {
+				color: #fbbf24;
+			}
+
+			.debug-value.error {
+				color: #ef4444;
+			}
+
+			.debug-value.info {
+				color: #60a5fa;
+			}
+
+			.debug-json {
+				background: rgba(0, 0, 0, 0.3);
+				border-radius: 6px;
+				padding: 8px;
+				font-size: 10px;
+				color: rgba(255, 255, 255, 0.8);
+				max-height: 150px;
+				overflow-y: auto;
+				white-space: pre-wrap;
+				word-break: break-all;
+				line-height: 1.4;
+			}
+
+			.debug-json .key {
+				color: #fbbf24;
+			}
+
+			.debug-json .string {
+				color: #22c55e;
+			}
+
+			.debug-json .number {
+				color: #60a5fa;
+			}
+
+			.debug-json .boolean {
+				color: #f472b6;
+			}
+
+			.debug-json .null {
+				color: #9ca3af;
+			}
+
+			.debug-event-log {
+				max-height: 120px;
+				overflow-y: auto;
+				background: rgba(0, 0, 0, 0.3);
+				border-radius: 6px;
+				padding: 8px;
+			}
+
+			.debug-event {
+				display: flex;
+				gap: 8px;
+				padding: 3px 0;
+				font-size: 10px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+				animation: slideInFromRight 0.3s ease;
+			}
+
+			@keyframes slideInFromRight {
+				from {
+					opacity: 0;
+					transform: translateX(20px);
+				}
+				to {
+					opacity: 1;
+					transform: translateX(0);
+				}
+			}
+
+			.debug-event:last-child {
+				border-bottom: none;
+			}
+
+			.debug-event-time {
+				color: rgba(255, 255, 255, 0.4);
+				min-width: 60px;
+			}
+
+			.debug-event-type {
+				color: #fbbf24;
+				font-weight: 600;
+				min-width: 80px;
+			}
+
+			.debug-event-data {
+				color: rgba(255, 255, 255, 0.7);
+				flex: 1;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.debug-toggle-btn {
+				position: fixed;
+				top: 60px;
+				right: 10px;
+				width: 40px;
+				height: 40px;
+				background: rgba(251, 191, 36, 0.9);
+				border: none;
+				border-radius: 8px;
+				cursor: pointer;
+				display: none;
+				align-items: center;
+				justify-content: center;
+				z-index: 2501;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+				transition: all 0.2s ease;
+				color: #000;
+				font-weight: 700;
+				font-size: 12px;
+			}
+
+			.debug-toggle-btn:hover {
+				background: rgba(251, 191, 36, 1);
+				transform: scale(1.05);
+			}
+
+			.debug-toggle-btn.active {
+				display: flex;
+			}
+
+			/* モバイル対応 */
+			@media (max-width: 768px) {
+				.debug-overlay {
+					width: 100%;
+					right: -100%;
+					top: 0;
+					max-height: 50vh;
+					border-radius: 0 0 12px 12px;
+					top: auto;
+					bottom: -50vh;
+				}
+
+				.debug-overlay.visible {
+					right: 0;
+					bottom: 200px;
+				}
+
+				.debug-toggle-btn {
+					top: auto;
+					bottom: 250px;
+					right: 10px;
+				}
+			}
 		</style>
 	</head>
 
@@ -1537,10 +1825,8 @@
 			<div class="control-section">
 				<div class="section-title">コントローラー</div>
 				<div class="button-group">
-					<!-- <button id="loadPoints" class="success" title="3Dポイントデータのサンプルを読み込みます">ポイント</button>
-                <button id="loadMesh" class="info" title="3Dメッシュデータのサンプルを読み込みます">メッシュ</button>
-                <button id="loadBuilding" class="warning" title="建物点検データ（ポイント・メッシュ）のサンプルを読み込みます">建物点検</button> -->
-					<button id="toggle3D" class="info" data-tooltip="2D/3D表示を切り替えます">2D/3D</button>
+					<button id="toggle3D" class="info" data-tooltip="2D平面表示と3D地形表示を切り替えます">2D/3D</button>
+					<button id="toggleDebugMode" class="warning" data-tooltip="開発者向けデバッグモードを切り替えます。フライト中のデータの動きをリアルタイムで確認できます">デバッグ</button>
 				</div>
 			</div>
 
@@ -1551,35 +1837,35 @@
 					<button
 						id="loadDroneData"
 						class="success"
-						title="東京タワー周辺に点検ドローンを配置します"
+						data-tooltip="東京タワー周辺に点検ドローンを配置します。クリックすると3機のドローンが自動配置されます"
 					>
 						配置
 					</button>
 					<button
 						id="startSimulation"
 						class="info"
-						title="ドローンのランダム移動シミュレーションを開始/停止します"
+						data-tooltip="ドローンのランダム移動シミュレーションを開始/停止します。自動で周辺を飛行します"
 					>
 						シミュレーション
 					</button>
 					<button
 						id="toggleDrawMode"
 						class="warning"
-						title="マップ上でクリックして点検ポイントを追加するモードを切り替えます"
+						data-tooltip="マップ上をクリックして点検ポイントを追加するモード。もう一度押すと解除"
 					>
 						ポイント作成
 					</button>
 					<button
 						id="togglePolygonMode"
 						class="warning"
-						title="マップ上でクリックして多角形エリアを描画するモードを切り替えます"
+						data-tooltip="マップ上をクリックして多角形エリアを描画するモード。ダブルクリックで確定"
 					>
 						多角形作成
 					</button>
 					<button
 						id="toggleEditMode"
 						class="info"
-						title="オブジェクトの選択・移動・削除ができる編集モードを切り替えます"
+						data-tooltip="オブジェクトの選択・ドラッグ移動・削除ができる編集モード"
 					>
 						オブジェクト編集
 					</button>
@@ -1593,28 +1879,28 @@
 					<button
 						id="importCSV"
 						class="success"
-						title="CSVファイルから3Dポイント・メッシュ・ウェイポイントデータを読み込みます"
+						data-tooltip="CSVファイルから3Dポイント・メッシュ・ウェイポイントデータを読み込みます"
 					>
 						CSV入力
 					</button>
 					<button
 						id="importGeoJSON"
 						class="success"
-						title="GeoJSONファイルから地理データを読み込みます"
+						data-tooltip="GeoJSONファイルから地理データを読み込みます"
 					>
 						GeoJSON入力
 					</button>
-					<button id="exportCSV" class="info" title="現在のデータをCSV形式でエクスポートします">
+					<button id="exportCSV" class="info" data-tooltip="現在の全データをCSV形式でダウンロードします">
 						CSV出力
 					</button>
 					<button
 						id="exportGeoJSON"
 						class="info"
-						title="現在のデータをGeoJSON形式でエクスポートします"
+						data-tooltip="現在の全データをGeoJSON形式でダウンロードします"
 					>
 						GeoJSON出力
 					</button>
-					<button id="clearData" class="error" title="すべてのデータをクリアします">クリア</button>
+					<button id="clearData" class="error" data-tooltip="マップ上のすべてのデータをクリアします。元に戻せません">クリア</button>
 				</div>
 			</div>
 
@@ -1625,28 +1911,28 @@
 					<button
 						id="importFlightData"
 						class="success"
-						title="統一フライトデータ形式のCSV/GeoJSONファイルを読み込みます"
+						data-tooltip="統一フライトデータ形式のCSV/GeoJSONファイルを読み込みます"
 					>
 						フライト入力
 					</button>
 					<button
 						id="loadSampleFlightData"
 						class="success"
-						title="サンプルフライトデータを読み込みます"
+						data-tooltip="東京タワー点検のサンプルフライトデータを読み込みます。すぐに試せます"
 					>
 						サンプル
 					</button>
 					<button
 						id="exportFlightData"
 						class="info"
-						title="現在のフライトデータをCSV/GeoJSON形式でエクスポートします"
+						data-tooltip="現在のフライトデータをCSV/GeoJSON形式でダウンロードします"
 					>
 						フライト出力
 					</button>
 					<button
 						id="exportMission"
 						class="info"
-						title="現在のデータからフライトミッションをKML/JSON形式でエクスポートします"
+						data-tooltip="フライトミッションをKML/JSON形式でダウンロード。他のドローンソフトで使用可能"
 					>
 						ミッション出力
 					</button>
@@ -1660,28 +1946,28 @@
 					<button
 						id="importTrajectory"
 						class="success"
-						title="時系列軌跡データをCSV/GeoJSON形式で読み込みます"
+						data-tooltip="時系列軌跡データをCSV/GeoJSON形式で読み込みます"
 					>
 						軌跡入力
 					</button>
 					<button
 						id="loadSampleTrajectory"
 						class="success"
-						title="サンプル軌跡データを読み込みます"
+						data-tooltip="サンプル軌跡データを読み込みます。ドローンの飛行経路を確認できます"
 					>
 						サンプル
 					</button>
 					<button
 						id="exportTrajectory"
 						class="info"
-						title="現在の軌跡データをCSV/GeoJSON形式でエクスポートします"
+						data-tooltip="現在の軌跡データをCSV/GeoJSON形式でダウンロードします"
 					>
 						軌跡出力
 					</button>
 					<button
 						id="exportFlightLog"
 						class="info"
-						title="フライトログをCSV形式でエクスポートします"
+						data-tooltip="フライトログをCSV形式でダウンロード。飛行記録として保存できます"
 					>
 						ログ出力
 					</button>
@@ -1754,30 +2040,30 @@
 					<option value="kyoto-kinkakuji">京都金閣寺</option>
 					<option value="custom">カスタム...</option>
 				</select>
-				<button id="startFlightPlan" class="danger" title="現在のフライトプランを実行します">
+				<button id="startFlightPlan" class="danger" data-tooltip="選択したフライトプランを実行開始します。ドローンが自動で飛行します">
 					開始
 				</button>
-				<button id="pauseFlightPlan" class="warning" title="実行中のフライトプランを一時停止します">
+				<button id="pauseFlightPlan" class="warning" data-tooltip="実行中のフライトプランを一時停止/再開します">
 					一時停止
 				</button>
 				<button
 					id="enableGameControl"
 					class="info"
-					title="キーボード/ゲームパッドでドローンを操作します"
+					data-tooltip="キーボード(WASD)やゲームパッドでドローンを手動操作できます"
 				>
 					手動操作
 				</button>
 				<button
 					id="exportFlightPlan"
 					class="info"
-					title="現在のフライトプランをJSONファイルでエクスポートします"
+					data-tooltip="現在のフライトプランをJSONファイルでダウンロードします"
 				>
 					エクスポート
 				</button>
 				<button
 					id="importFlightPlan"
 					class="success"
-					title="JSONファイルからフライトプランをインポートします"
+					data-tooltip="JSONファイルからカスタムフライトプランを読み込みます"
 				>
 					インポート
 				</button>
@@ -1925,6 +2211,133 @@
 			</div>
 		</div>
 
+		<!-- デバッグオーバーレイ -->
+		<button class="debug-toggle-btn" id="debugToggleBtn" data-tooltip="デバッグパネルを開く">
+			<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+				<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6.3 1 .9 1 1.6v3.1c0 1-.8 1.8-1.8 1.8h-4c-1 0-1.8-.8-1.8-1.8v-3.1c0-.7.4-1.3 1-1.6V9.5C9.2 8.1 10.6 7 12 7zm0 1.5c-.7 0-1.3.5-1.3 1v1h2.6v-1c0-.5-.6-1-1.3-1z"/>
+			</svg>
+		</button>
+		<div class="debug-overlay" id="debugOverlay">
+			<div class="debug-overlay-header">
+				<div class="debug-overlay-title">DEBUG MODE</div>
+				<button class="debug-overlay-close" id="debugOverlayClose">
+					<svg viewBox="0 0 24 24" width="14" height="14">
+						<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+					</svg>
+				</button>
+			</div>
+			<div class="debug-overlay-content">
+				<!-- システム状態 -->
+				<div class="debug-section">
+					<div class="debug-section-title">System State</div>
+					<div class="debug-row">
+						<span class="debug-label">Flight Status</span>
+						<span class="debug-value" id="debugFlightStatus">STANDBY</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Current Phase</span>
+						<span class="debug-value" id="debugCurrentPhase">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Phase Index</span>
+						<span class="debug-value" id="debugPhaseIndex">0 / 0</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Elapsed Time</span>
+						<span class="debug-value" id="debugElapsedTime">00:00:00</span>
+					</div>
+				</div>
+
+				<!-- ドローン状態 -->
+				<div class="debug-section">
+					<div class="debug-section-title">Drone State</div>
+					<div class="debug-row">
+						<span class="debug-label">Position (lng, lat)</span>
+						<span class="debug-value" id="debugDronePosition">-, -</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Altitude (m)</span>
+						<span class="debug-value" id="debugDroneAltitude">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Heading (deg)</span>
+						<span class="debug-value" id="debugDroneHeading">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Speed (m/s)</span>
+						<span class="debug-value" id="debugDroneSpeed">-</span>
+					</div>
+				</div>
+
+				<!-- カメラ状態 -->
+				<div class="debug-section">
+					<div class="debug-section-title">Camera State</div>
+					<div class="debug-row">
+						<span class="debug-label">Center (lng, lat)</span>
+						<span class="debug-value" id="debugCameraCenter">-, -</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Zoom</span>
+						<span class="debug-value" id="debugCameraZoom">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Pitch</span>
+						<span class="debug-value" id="debugCameraPitch">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Bearing</span>
+						<span class="debug-value" id="debugCameraBearing">-</span>
+					</div>
+				</div>
+
+				<!-- 現在のフェーズデータ -->
+				<div class="debug-section">
+					<div class="debug-section-title">Current Phase Data</div>
+					<div class="debug-json" id="debugPhaseData">
+						{
+  "phase": "-",
+  "action": "-",
+  "position": [0, 0, 0],
+  "duration": 0
+}
+					</div>
+				</div>
+
+				<!-- イベントログ -->
+				<div class="debug-section">
+					<div class="debug-section-title">Event Log (Latest 10)</div>
+					<div class="debug-event-log" id="debugEventLog">
+						<div class="debug-event">
+							<span class="debug-event-time">--:--:--</span>
+							<span class="debug-event-type">INIT</span>
+							<span class="debug-event-data">Debug mode initialized</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- データ統計 -->
+				<div class="debug-section">
+					<div class="debug-section-title">Data Statistics</div>
+					<div class="debug-row">
+						<span class="debug-label">Total Objects</span>
+						<span class="debug-value" id="debugTotalObjects">0</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Total Phases</span>
+						<span class="debug-value" id="debugTotalPhases">0</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">FPS</span>
+						<span class="debug-value" id="debugFPS">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Memory (MB)</span>
+						<span class="debug-value" id="debugMemory">-</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<!-- ヘルプモーダル -->
 		<div class="help-modal-overlay" id="helpModalOverlay">
 			<div class="help-modal">
@@ -2043,9 +2456,9 @@
 			<div class="footer-header">
 				<div class="footer-title">リアルタイムログ</div>
 				<div class="footer-controls">
-					<button id="clearLog" title="フライトログをすべてクリアします">クリア</button>
-					<button id="exportLog" title="フライトログをCSVファイルでエクスポートします">出力</button>
-					<button id="toggleLog" title="フライトログの表示/非表示を切り替えます">表示切替</button>
+					<button id="clearLog" data-tooltip="フライトログをすべてクリアします">クリア</button>
+					<button id="exportLog" data-tooltip="フライトログをCSVファイルでダウンロードします">出力</button>
+					<button id="toggleLog" data-tooltip="フライトログの表示/非表示を切り替えます">表示切替</button>
 				</div>
 			</div>
 			<div id="flightStatus" class="flight-status"></div>
