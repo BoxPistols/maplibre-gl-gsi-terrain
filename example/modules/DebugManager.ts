@@ -418,17 +418,19 @@ export class DebugManager {
 		const json = JSON.stringify(obj, null, 2)
 		// まずHTMLエスケープしてから、シンタックスハイライトを適用
 		const escaped = this.escapeHtml(json)
-		return escaped
-			// キー名（"key":）
-			.replace(/&quot;([^&]+)&quot;:/g, '<span class="key">&quot;$1&quot;</span>:')
-			// 文字列値（: "value"）
-			.replace(/: &quot;([^&]*)&quot;/g, ': <span class="string">&quot;$1&quot;</span>')
-			// 数値（コロン後、カンマ後、配列開始後の数値をハイライト）
-			.replace(/([:,\[]\s*)(-?\d+\.?\d*)/g, '$1<span class="number">$2</span>')
-			// 真偽値
-			.replace(/: (true|false)/g, ': <span class="boolean">$1</span>')
-			// null
-			.replace(/: null/g, ': <span class="null">null</span>')
+		return (
+			escaped
+				// キー名（"key":）
+				.replace(/&quot;([^&]+)&quot;:/g, '<span class="key">&quot;$1&quot;</span>:')
+				// 文字列値（: "value"）
+				.replace(/: &quot;([^&]*)&quot;/g, ': <span class="string">&quot;$1&quot;</span>')
+				// 数値（コロン後、カンマ後、配列開始後の数値をハイライト）
+				.replace(/([:,\[]\s*)(-?\d+\.?\d*)/g, '$1<span class="number">$2</span>')
+				// 真偽値
+				.replace(/: (true|false)/g, ': <span class="boolean">$1</span>')
+				// null
+				.replace(/: null/g, ': <span class="null">null</span>')
+		)
 	}
 
 	/**
