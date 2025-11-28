@@ -2629,11 +2629,19 @@
 					}
 				}
 
+				// 安全にclosestを呼び出すヘルパー関数
+				function getTooltipTarget(e) {
+					if (e.target && typeof e.target.closest === 'function') {
+						return e.target.closest('[data-tooltip]')
+					}
+					return null
+				}
+
 				// イベントリスナーを設定
 				document.addEventListener(
 					'mouseenter',
 					function (e) {
-						const target = e.target.closest('[data-tooltip]')
+						const target = getTooltipTarget(e)
 						if (target) {
 							cancelShow()
 							if (hideTimeout) {
@@ -2652,7 +2660,7 @@
 				document.addEventListener(
 					'mouseleave',
 					function (e) {
-						const target = e.target.closest('[data-tooltip]')
+						const target = getTooltipTarget(e)
 						if (target) {
 							cancelShow()
 							if (target === currentTarget) {
@@ -2667,7 +2675,7 @@
 				document.addEventListener(
 					'focusin',
 					function (e) {
-						const target = e.target.closest('[data-tooltip]')
+						const target = getTooltipTarget(e)
 						if (target) {
 							cancelShow()
 							showTimeout = setTimeout(function () {
@@ -2681,7 +2689,7 @@
 				document.addEventListener(
 					'focusout',
 					function (e) {
-						const target = e.target.closest('[data-tooltip]')
+						const target = getTooltipTarget(e)
 						if (target) {
 							cancelShow()
 							hideTooltip()
@@ -2704,7 +2712,7 @@
 				document.addEventListener(
 					'click',
 					function (e) {
-						const target = e.target.closest('[data-tooltip]')
+						const target = getTooltipTarget(e)
 						if (target) {
 							cancelShow()
 							hideTooltip()
