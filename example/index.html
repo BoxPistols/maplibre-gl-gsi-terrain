@@ -168,34 +168,61 @@
 				position: relative;
 			}
 
-			button[data-tooltip]:hover::after {
-				content: attr(data-tooltip);
-				position: absolute;
-				top: calc(100% + 8px);
-				left: 50%;
-				transform: translateX(-50%);
-				background: rgba(0, 0, 0, 0.9);
+			/* Tooltipは JavaScript で動的に生成（モーダル/ドロワーのz-index問題を回避） */
+			.dynamic-tooltip {
+				position: fixed;
+				background: rgba(0, 0, 0, 0.95);
 				color: white;
-				padding: 8px 12px;
-				border-radius: 6px;
-				font-size: 11px;
+				padding: 10px 14px;
+				border-radius: 8px;
+				font-size: 12px;
 				font-weight: 400;
-				white-space: nowrap;
-				z-index: 10000;
+				max-width: 280px;
+				line-height: 1.5;
+				z-index: 99999;
 				pointer-events: none;
-				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+				box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+				opacity: 0;
+				transition: opacity 0.15s ease;
+				word-wrap: break-word;
 			}
 
-			button[data-tooltip]:hover::before {
+			.dynamic-tooltip.visible {
+				opacity: 1;
+			}
+
+			.dynamic-tooltip::before {
 				content: '';
 				position: absolute;
-				top: calc(100% + 2px);
+				border: 7px solid transparent;
+			}
+
+			.dynamic-tooltip.arrow-top::before {
+				top: -14px;
 				left: 50%;
 				transform: translateX(-50%);
-				border: 6px solid transparent;
-				border-bottom-color: rgba(0, 0, 0, 0.9);
-				z-index: 10000;
-				pointer-events: none;
+				border-bottom-color: rgba(0, 0, 0, 0.95);
+			}
+
+			.dynamic-tooltip.arrow-bottom::before {
+				bottom: -14px;
+				left: 50%;
+				transform: translateX(-50%);
+				border-top-color: rgba(0, 0, 0, 0.95);
+			}
+
+			.dynamic-tooltip.arrow-left::before {
+				left: -14px;
+				top: 50%;
+				transform: translateY(-50%);
+				border-right-color: rgba(0, 0, 0, 0.95);
+			}
+
+			.dynamic-tooltip.arrow-right::before {
+				right: -14px;
+				top: 50%;
+				transform: translateY(-50%);
+				border-left-color: rgba(0, 0, 0, 0.95);
 			}
 
 			button:hover {
@@ -2507,5 +2534,185 @@
 		</div>
 
 		<script type="module" src="./index.ts"></script>
+
+		<!-- 動的Tooltip初期化スクリプト -->
+		<script>
+			;(function () {
+				// Tooltip要素を作成
+				const tooltip = document.createElement('div')
+				tooltip.className = 'dynamic-tooltip'
+				tooltip.id = 'globalTooltip'
+				document.body.appendChild(tooltip)
+
+				let hideTimeout = null
+				let showTimeout = null
+				let currentTarget = null
+				const SHOW_DELAY = 800 // 表示までの待機時間（ミリ秒）
+
+				// Tooltipを表示
+				function showTooltip(target, text) {
+					if (!text) return
+
+					currentTarget = target
+					tooltip.textContent = text
+
+					// 矢印クラスをリセット
+					tooltip.classList.remove('arrow-top', 'arrow-bottom', 'arrow-left', 'arrow-right')
+
+					// 一旦表示して幅・高さを計算
+					tooltip.style.visibility = 'hidden'
+					tooltip.classList.add('visible')
+
+					const rect = target.getBoundingClientRect()
+					const tooltipRect = tooltip.getBoundingClientRect()
+					const padding = 12
+
+					let top, left
+					let arrowClass = 'arrow-top'
+
+					// デフォルト: ボタンの下に表示
+					top = rect.bottom + padding
+					left = rect.left + rect.width / 2 - tooltipRect.width / 2
+
+					// 下にスペースがない場合は上に表示
+					if (top + tooltipRect.height > window.innerHeight - padding) {
+						top = rect.top - tooltipRect.height - padding
+						arrowClass = 'arrow-bottom'
+					}
+
+					// 左端がはみ出る場合
+					if (left < padding) {
+						left = padding
+					}
+
+					// 右端がはみ出る場合
+					if (left + tooltipRect.width > window.innerWidth - padding) {
+						left = window.innerWidth - tooltipRect.width - padding
+					}
+
+					// 上下両方スペースがない場合は右に表示
+					if (top < padding && rect.top - tooltipRect.height - padding < padding) {
+						if (rect.right + tooltipRect.width + padding < window.innerWidth) {
+							top = rect.top + rect.height / 2 - tooltipRect.height / 2
+							left = rect.right + padding
+							arrowClass = 'arrow-left'
+						} else {
+							// 左に表示
+							top = rect.top + rect.height / 2 - tooltipRect.height / 2
+							left = rect.left - tooltipRect.width - padding
+							arrowClass = 'arrow-right'
+						}
+					}
+
+					// 上端がはみ出る場合
+					if (top < padding) {
+						top = padding
+					}
+
+					tooltip.style.top = top + 'px'
+					tooltip.style.left = left + 'px'
+					tooltip.style.visibility = 'visible'
+					tooltip.classList.add(arrowClass)
+				}
+
+				// Tooltipを非表示
+				function hideTooltip() {
+					tooltip.classList.remove('visible')
+					currentTarget = null
+				}
+
+				// 表示をキャンセル
+				function cancelShow() {
+					if (showTimeout) {
+						clearTimeout(showTimeout)
+						showTimeout = null
+					}
+				}
+
+				// イベントリスナーを設定
+				document.addEventListener(
+					'mouseenter',
+					function (e) {
+						const target = e.target.closest('[data-tooltip]')
+						if (target) {
+							cancelShow()
+							if (hideTimeout) {
+								clearTimeout(hideTimeout)
+								hideTimeout = null
+							}
+							// 遅延表示
+							showTimeout = setTimeout(function () {
+								showTooltip(target, target.getAttribute('data-tooltip'))
+							}, SHOW_DELAY)
+						}
+					},
+					true
+				)
+
+				document.addEventListener(
+					'mouseleave',
+					function (e) {
+						const target = e.target.closest('[data-tooltip]')
+						if (target) {
+							cancelShow()
+							if (target === currentTarget) {
+								hideTimeout = setTimeout(hideTooltip, 100)
+							}
+						}
+					},
+					true
+				)
+
+				// フォーカス時にも表示（アクセシビリティ対応）
+				document.addEventListener(
+					'focusin',
+					function (e) {
+						const target = e.target.closest('[data-tooltip]')
+						if (target) {
+							cancelShow()
+							showTimeout = setTimeout(function () {
+								showTooltip(target, target.getAttribute('data-tooltip'))
+							}, SHOW_DELAY)
+						}
+					},
+					true
+				)
+
+				document.addEventListener(
+					'focusout',
+					function (e) {
+						const target = e.target.closest('[data-tooltip]')
+						if (target) {
+							cancelShow()
+							hideTooltip()
+						}
+					},
+					true
+				)
+
+				// スクロール時は非表示
+				document.addEventListener(
+					'scroll',
+					function () {
+						cancelShow()
+						hideTooltip()
+					},
+					true
+				)
+
+				// クリック時は非表示（アクション実行時）
+				document.addEventListener(
+					'click',
+					function (e) {
+						const target = e.target.closest('[data-tooltip]')
+						if (target) {
+							cancelShow()
+							hideTooltip()
+						}
+					},
+					true
+				)
+			})()
+		</script>
 	</body>
 </html>
