@@ -263,13 +263,22 @@ export class DebugManager {
 
 		// ドローン状態
 		if (this.droneModel) {
-			const pos = this.droneModel.getPosition()
-			if (pos) {
-				this.state.dronePosition = { lng: pos[0], lat: pos[1] }
-				this.state.droneAltitude = pos[2] || 0
+			// getPositionメソッドが存在する場合のみ呼び出し
+			if (typeof this.droneModel.getPosition === 'function') {
+				const pos = this.droneModel.getPosition()
+				if (pos) {
+					this.state.dronePosition = { lng: pos[0], lat: pos[1] }
+					this.state.droneAltitude = pos[2] || 0
+				}
 			}
-			this.state.droneHeading = this.droneModel.getHeading()
-			this.state.droneSpeed = this.droneModel.getSpeed()
+			// getHeadingメソッドが存在する場合のみ呼び出し
+			if (typeof (this.droneModel as any).getHeading === 'function') {
+				this.state.droneHeading = (this.droneModel as any).getHeading()
+			}
+			// getSpeedメソッドが存在する場合のみ呼び出し
+			if (typeof (this.droneModel as any).getSpeed === 'function') {
+				this.state.droneSpeed = (this.droneModel as any).getSpeed()
+			}
 		}
 	}
 
