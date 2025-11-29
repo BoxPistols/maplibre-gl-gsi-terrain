@@ -20,10 +20,7 @@ async function generateIcon() {
 	const svgBuffer = readFileSync(svgPath)
 
 	// sharpでPNGに変換（180x180）
-	await sharp(svgBuffer)
-		.resize(180, 180)
-		.png()
-		.toFile(pngPath)
+	await sharp(svgBuffer).resize(180, 180).png().toFile(pngPath)
 
 	console.log(`✅ Generated: ${pngPath}`)
 }
