@@ -447,9 +447,8 @@
 				background: rgba(0, 0, 0, 0.75);
 				backdrop-filter: blur(8px);
 				color: rgba(255, 255, 255, 0.9);
-				padding: 16px;
 				/* iOS Safe Area対応 - ホームインジケーターと重ならないように */
-				padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+				padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
 				font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
 				font-size: 11px;
 				max-height: 180px;
@@ -993,9 +992,8 @@
 
 				/* フッターをモバイルでは最小限に */
 				.footer {
-					padding: 4px 6px;
 					/* iOS Safe Area対応 - ホームインジケーターと重ならないように */
-					padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+					padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px));
 					font-size: 7px;
 					max-height: calc(28px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
 					z-index: 1500; /* ジョイスティックより下、コントロールより下 */
@@ -1142,9 +1140,8 @@
 				}
 
 				.footer {
-					padding: 4px;
 					/* iOS Safe Area対応 */
-					padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+					padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
 					font-size: 7px;
 					max-height: calc(28px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
 					z-index: 1500;
