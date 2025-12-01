@@ -2,6 +2,11 @@
 	"name": "maplibre-gl-gsi-terrain",
 	"version": "2.2.2",
 	"type": "module",
+	"packageManager": "pnpm@10.23.0",
+	"engines": {
+		"node": ">=18.0.0",
+		"pnpm": ">=9.0.0"
+	},
 	"main": "./dist/terrain.js",
 	"types": "./dist/terrain.d.ts",
 	"files": [
@@ -31,8 +36,10 @@
 		"type-check": "tsc --noEmit",
 		"security:audit": "pnpm audit --audit-level moderate",
 		"security:snyk": "snyk test",
-		"ci:check": "pnpm lint && pnpm type-check && pnpm format:check && pnpm test:ci",
+		"check:pkg-manager": "node scripts/check-package-manager.mjs",
+		"ci:check": "pnpm check:pkg-manager && pnpm lint && pnpm type-check && pnpm format:check && pnpm test:ci",
 		"ci:build": "pnpm build && pnpm build:example",
+		"preinstall": "npx only-allow pnpm",
 		"postinstall": "husky"
 	},
 	"devDependencies": {
