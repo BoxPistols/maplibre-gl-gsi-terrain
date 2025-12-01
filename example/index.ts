@@ -686,7 +686,7 @@ const updateFlightLogDisplay = () => {
 	requestAnimationFrame(() => {
 		logScrollContainer.scrollTo({
 			top: logScrollContainer.scrollHeight,
-			behavior: 'smooth'
+			behavior: 'smooth',
 		})
 	})
 }
