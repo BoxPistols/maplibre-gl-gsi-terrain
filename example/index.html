@@ -49,6 +49,29 @@
 				if (window.visualViewport) {
 					window.visualViewport.addEventListener('resize', setAppHeight)
 				}
+
+				// iOS Safari ダブルタップズーム防止（CSS touch-action: manipulation の補完）
+				let lastTouchEnd = 0
+				document.addEventListener(
+					'touchend',
+					function (event) {
+						const now = Date.now()
+						if (now - lastTouchEnd <= 300) {
+							event.preventDefault()
+						}
+						lastTouchEnd = now
+					},
+					{ passive: false }
+				)
+
+				// gesturestart イベントでピンチズームも制御（ページ全体のズームを防止）
+				document.addEventListener(
+					'gesturestart',
+					function (event) {
+						event.preventDefault()
+					},
+					{ passive: false }
+				)
 			})()
 		</script>
 
@@ -70,6 +93,8 @@
 				-webkit-touch-callout: none;
 				-webkit-user-select: none;
 				user-select: none;
+				/* ダブルタップズーム防止（iOS Safari） */
+				touch-action: manipulation;
 				position: fixed;
 				width: 100%;
 				/* iOS Safari対応の高さ指定 */
@@ -86,8 +111,8 @@
 				height: 100vh;
 				height: -webkit-fill-available;
 				height: 100dvh;
-				/* iOS Safari用のタッチ操作最適化 */
-				touch-action: pan-x pan-y;
+				/* iOS Safari用のタッチ操作最適化 - ダブルタップズーム防止 */
+				touch-action: manipulation;
 				box-sizing: border-box;
 			}
 
@@ -97,9 +122,10 @@
 				left: -350px;
 				width: 280px;
 				height: 100vh;
-				background: rgba(255, 255, 255, 0.95);
-				backdrop-filter: blur(8px);
-				border-right: 1px solid rgba(255, 255, 255, 0.8);
+				background: rgba(255, 255, 255, 0.75);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				border-right: 1px solid rgba(255, 255, 255, 0.3);
 				padding: 20px;
 				z-index: 1000;
 				box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
@@ -117,9 +143,10 @@
 				left: 4px;
 				width: 44px;
 				height: 44px;
-				background: rgba(255, 255, 255, 0.9);
-				backdrop-filter: blur(4px);
-				border: 1px solid rgba(255, 255, 255, 0.8);
+				background: rgba(255, 255, 255, 0.7);
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
 				border-radius: 8px;
 				cursor: pointer;
 				display: flex;
@@ -155,9 +182,9 @@
 			}
 
 			button {
-				background: rgba(255, 255, 255, 0.7);
+				background: rgba(255, 255, 255, 0.6);
 				color: rgba(0, 0, 0, 0.8);
-				border: 1px solid rgba(255, 255, 255, 0.4);
+				border: 1px solid rgba(255, 255, 255, 0.3);
 				padding: 4px 8px;
 				border-radius: 4px;
 				cursor: pointer;
@@ -165,7 +192,8 @@
 				font-size: 11px;
 				font-weight: 700;
 				transition: all 0.2s ease;
-				backdrop-filter: blur(4px);
+				backdrop-filter: blur(8px);
+				-webkit-backdrop-filter: blur(8px);
 				position: relative;
 			}
 
@@ -317,9 +345,10 @@
 				right: 10px;
 				width: 54px;
 				height: 54px;
-				background: rgba(255, 255, 255, 0.9);
-				backdrop-filter: blur(4px);
-				border: 1px solid rgba(255, 255, 255, 0.8);
+				background: rgba(255, 255, 255, 0.7);
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
 				border-radius: 8px;
 				cursor: pointer;
 				align-items: center;
@@ -331,7 +360,7 @@
 			}
 
 			.mobile-home-button:hover {
-				background: rgba(255, 255, 255, 1);
+				background: rgba(255, 255, 255, 0.85);
 				transform: scale(1.05);
 			}
 
@@ -350,9 +379,10 @@
 				top: 20px;
 				right: -300px;
 				width: 280px;
-				background: rgba(255, 255, 255, 0.6);
-				backdrop-filter: blur(4px);
-				border: 1px solid rgba(255, 255, 255, 0.7);
+				background: rgba(255, 255, 255, 0.65);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
 				padding: 16px;
 				border-radius: 16px 0 0 16px;
 				z-index: 1000;
@@ -371,9 +401,10 @@
 				transform: translateY(-50%);
 				width: 40px;
 				height: 60px;
-				background: rgba(255, 255, 255, 0.6);
-				backdrop-filter: blur(4px);
-				border: 1px solid rgba(255, 255, 255, 0.7);
+				background: rgba(255, 255, 255, 0.65);
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
 				border-right: none;
 				border-radius: 8px 0 0 8px;
 				cursor: pointer;
@@ -422,7 +453,8 @@
 				background: rgba(0, 0, 0, 0.75);
 				backdrop-filter: blur(8px);
 				color: rgba(255, 255, 255, 0.9);
-				padding: 16px;
+				/* iOS Safe Area対応 - ホームインジケーターと重ならないように */
+				padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
 				font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
 				font-size: 11px;
 				max-height: 180px;
@@ -966,9 +998,10 @@
 
 				/* フッターをモバイルでは最小限に */
 				.footer {
-					padding: 4px 6px;
+					/* iOS Safe Area対応 - ホームインジケーターと重ならないように */
+					padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
 					font-size: 7px;
-					max-height: 28px; /* 非常にコンパクトに */
+					max-height: calc(32px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
 					z-index: 1500; /* ジョイスティックより下、コントロールより下 */
 				}
 
@@ -1113,9 +1146,10 @@
 				}
 
 				.footer {
-					padding: 4px;
+					/* iOS Safe Area対応 */
+					padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px));
 					font-size: 7px;
-					max-height: 28px; /* 非常に小さく */
+					max-height: calc(32px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
 					z-index: 1500;
 				}
 
@@ -1157,6 +1191,23 @@
 			.maplibregl-ctrl-group,
 			.maplibregl-ctrl {
 				z-index: 1100 !important;
+			}
+
+			/* MapLibre コントロールにグラスモーフィズムを適用 */
+			.maplibregl-ctrl-group {
+				background: rgba(255, 255, 255, 0.7) !important;
+				backdrop-filter: blur(12px) !important;
+				-webkit-backdrop-filter: blur(12px) !important;
+				border: 1px solid rgba(255, 255, 255, 0.3) !important;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+			}
+
+			.maplibregl-ctrl-group button {
+				background: transparent !important;
+			}
+
+			.maplibregl-ctrl-group button:hover {
+				background: rgba(255, 255, 255, 0.3) !important;
 			}
 
 			/* モバイルフライトプランモーダル */
@@ -1763,7 +1814,19 @@
 
 		<!-- モバイル専用ホームボタン（定位置に戻る） -->
 		<button class="mobile-home-button" id="mobileHomeButton" data-tooltip="ホーム位置に戻る">
-			🏠
+			<svg
+				viewBox="0 0 24 24"
+				xmlns="http://www.w3.org/2000/svg"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				style="width: 24px; height: 24px"
+			>
+				<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+				<polyline points="9 22 9 12 15 12 15 22"></polyline>
+			</svg>
 		</button>
 
 		<!-- メインコントロールパネル -->

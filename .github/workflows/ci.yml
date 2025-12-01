@@ -29,6 +29,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check package manager consistency
+        run: |
+          echo "Checking for npm/yarn usage in package.json scripts..."
+          if grep -E '"[^"]*":\s*"[^"]*\b(npm run|yarn run)\b' package.json; then
+            echo "ERROR: Found npm/yarn usage in package.json scripts. Use pnpm instead."
+            exit 1
+          fi
+          echo "Package manager check passed!"
+
       - name: Lint
         run: pnpm lint
 
