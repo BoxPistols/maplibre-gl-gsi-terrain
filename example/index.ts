@@ -682,9 +682,13 @@ const updateFlightLogDisplay = () => {
 	})
 
 	// 最新のログまでスクロール（スクロールコンテナに対して実行）
-	setTimeout(() => {
-		logScrollContainer.scrollTop = logScrollContainer.scrollHeight
-	}, 50) // 少し遅延させてDOMの更新を待つ
+	// スムーズスクロールで最新のログを表示
+	requestAnimationFrame(() => {
+		logScrollContainer.scrollTo({
+			top: logScrollContainer.scrollHeight,
+			behavior: 'smooth'
+		})
+	})
 }
 
 const clearFlightLog = () => {
