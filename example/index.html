@@ -993,9 +993,9 @@
 				/* フッターをモバイルでは最小限に */
 				.footer {
 					/* iOS Safe Area対応 - ホームインジケーターと重ならないように */
-					padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px));
+					padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
 					font-size: 7px;
-					max-height: calc(28px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
+					max-height: calc(32px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
 					z-index: 1500; /* ジョイスティックより下、コントロールより下 */
 				}
 
@@ -1141,9 +1141,9 @@
 
 				.footer {
 					/* iOS Safe Area対応 */
-					padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+					padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px));
 					font-size: 7px;
-					max-height: calc(28px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
+					max-height: calc(32px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
 					z-index: 1500;
 				}
 
@@ -1791,7 +1791,10 @@
 
 		<!-- モバイル専用ホームボタン（定位置に戻る） -->
 		<button class="mobile-home-button" id="mobileHomeButton" data-tooltip="ホーム位置に戻る">
-			🏠
+			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;">
+				<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+				<polyline points="9 22 9 12 15 12 15 22"></polyline>
+			</svg>
 		</button>
 
 		<!-- メインコントロールパネル -->
