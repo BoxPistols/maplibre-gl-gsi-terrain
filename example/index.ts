@@ -297,6 +297,7 @@ const map = new mapgl.Map({
 	}),
 	style: {
 		version: 8,
+		glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
 		sources: {
 			seamlessphoto: {
 				type: 'raster',
