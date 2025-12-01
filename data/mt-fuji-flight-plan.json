@@ -1,0 +1,125 @@
+{
+	"name": "富士山周遊フライト",
+	"description": "富士山を周遊するスペクタクルな3Dフライト",
+	"created": "2024-01-15T10:00:00Z",
+	"totalDuration": 60000,
+	"phases": [
+		{
+			"phase": "離陸",
+			"action": "富士山5合目から離陸",
+			"duration": 3000,
+			"position": [138.7274, 35.3606, 4000],
+			"pitch": 45,
+			"bearing": 0,
+			"zoom": 13
+		},
+		{
+			"phase": "上昇1",
+			"action": "頂上に向けて上昇",
+			"duration": 5000,
+			"position": [138.7274, 35.3606, 4300],
+			"pitch": 60,
+			"bearing": 45,
+			"zoom": 14
+		},
+		{
+			"phase": "頂上到達",
+			"action": "富士山頂上付近を飛行",
+			"duration": 4000,
+			"position": [138.7274, 35.3606, 4500],
+			"pitch": 70,
+			"bearing": 90,
+			"zoom": 15
+		},
+		{
+			"phase": "北側周遊1",
+			"action": "北側を周遊",
+			"duration": 5000,
+			"position": [138.7274, 35.37, 4400],
+			"pitch": 65,
+			"bearing": 135,
+			"zoom": 14
+		},
+		{
+			"phase": "北東側周遊",
+			"action": "北東側を周遊",
+			"duration": 5000,
+			"position": [138.74, 35.365, 4350],
+			"pitch": 65,
+			"bearing": 180,
+			"zoom": 14
+		},
+		{
+			"phase": "東側周遊",
+			"action": "東側を周遊",
+			"duration": 5000,
+			"position": [138.74, 35.3606, 4300],
+			"pitch": 65,
+			"bearing": 225,
+			"zoom": 14
+		},
+		{
+			"phase": "南東側周遊",
+			"action": "南東側を周遊",
+			"duration": 5000,
+			"position": [138.74, 35.355, 4250],
+			"pitch": 65,
+			"bearing": 270,
+			"zoom": 14
+		},
+		{
+			"phase": "南側周遊",
+			"action": "南側を周遊",
+			"duration": 5000,
+			"position": [138.7274, 35.35, 4200],
+			"pitch": 65,
+			"bearing": 315,
+			"zoom": 14
+		},
+		{
+			"phase": "南西側周遊",
+			"action": "南西側を周遊",
+			"duration": 5000,
+			"position": [138.715, 35.355, 4150],
+			"pitch": 65,
+			"bearing": 0,
+			"zoom": 14
+		},
+		{
+			"phase": "西側周遊",
+			"action": "西側を周遊",
+			"duration": 5000,
+			"position": [138.715, 35.3606, 4100],
+			"pitch": 65,
+			"bearing": 45,
+			"zoom": 14
+		},
+		{
+			"phase": "北西側周遊",
+			"action": "北西側を周遊",
+			"duration": 5000,
+			"position": [138.715, 35.365, 4050],
+			"pitch": 65,
+			"bearing": 90,
+			"zoom": 14
+		},
+		{
+			"phase": "着陸準備",
+			"action": "5合目に向けて下降",
+			"duration": 5000,
+			"position": [138.7274, 35.3606, 4100],
+			"pitch": 50,
+			"bearing": 135,
+			"zoom": 13
+		},
+		{
+			"phase": "着陸",
+			"action": "5合目に着陸",
+			"duration": 4000,
+			"position": [138.7274, 35.3606, 4000],
+			"pitch": 30,
+			"bearing": 180,
+			"zoom": 13
+		}
+	]
+}

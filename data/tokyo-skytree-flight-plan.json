@@ -1,0 +1,116 @@
+{
+	"name": "東京スカイツリー点検フライト",
+	"description": "東京スカイツリーを様々な角度から点検",
+	"created": "2024-01-15T11:00:00Z",
+	"totalDuration": 48000,
+	"phases": [
+		{
+			"phase": "離陸",
+			"action": "スカイツリー展望台から離陸",
+			"duration": 3000,
+			"position": [139.8107, 35.7101, 700],
+			"pitch": 45,
+			"bearing": 0,
+			"zoom": 16
+		},
+		{
+			"phase": "上昇",
+			"action": "最上部に向けて上昇",
+			"duration": 4000,
+			"position": [139.8107, 35.7101, 750],
+			"pitch": 60,
+			"bearing": 45,
+			"zoom": 17
+		},
+		{
+			"phase": "頂上点検",
+			"action": "アンテナ部分を点検",
+			"duration": 3000,
+			"position": [139.8107, 35.7101, 750],
+			"pitch": 70,
+			"bearing": 90,
+			"zoom": 18
+		},
+		{
+			"phase": "北側周遊1",
+			"action": "北側を周遊",
+			"duration": 4000,
+			"position": [139.8107, 35.711, 730],
+			"pitch": 65,
+			"bearing": 135,
+			"zoom": 17
+		},
+		{
+			"phase": "北東側周遊",
+			"action": "北東側を周遊",
+			"duration": 4000,
+			"position": [139.812, 35.7108, 720],
+			"pitch": 65,
+			"bearing": 180,
+			"zoom": 17
+		},
+		{
+			"phase": "東側周遊",
+			"action": "東側を周遊",
+			"duration": 4000,
+			"position": [139.812, 35.7101, 710],
+			"pitch": 65,
+			"bearing": 225,
+			"zoom": 17
+		},
+		{
+			"phase": "南東側周遊",
+			"action": "南東側を周遊",
+			"duration": 4000,
+			"position": [139.812, 35.7094, 700],
+			"pitch": 65,
+			"bearing": 270,
+			"zoom": 17
+		},
+		{
+			"phase": "南側周遊",
+			"action": "南側を周遊",
+			"duration": 4000,
+			"position": [139.8107, 35.7092, 710],
+			"pitch": 65,
+			"bearing": 315,
+			"zoom": 17
+		},
+		{
+			"phase": "南西側周遊",
+			"action": "南西側を周遊",
+			"duration": 4000,
+			"position": [139.8094, 35.7094, 720],
+			"pitch": 65,
+			"bearing": 0,
+			"zoom": 17
+		},
+		{
+			"phase": "西側周遊",
+			"action": "西側を周遊",
+			"duration": 4000,
+			"position": [139.8094, 35.7101, 730],
+			"pitch": 65,
+			"bearing": 45,
+			"zoom": 17
+		},
+		{
+			"phase": "北西側周遊",
+			"action": "北西側を周遊",
+			"duration": 4000,
+			"position": [139.8094, 35.7108, 740],
+			"pitch": 65,
+			"bearing": 90,
+			"zoom": 17
+		},
+		{
+			"phase": "着陸",
+			"action": "展望台に着陸",
+			"duration": 4000,
+			"position": [139.8107, 35.7101, 700],
+			"pitch": 45,
+			"bearing": 135,
+			"zoom": 16
+		}
+	]
+}
