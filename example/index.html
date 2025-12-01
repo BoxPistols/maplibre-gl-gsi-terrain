@@ -49,6 +49,29 @@
 				if (window.visualViewport) {
 					window.visualViewport.addEventListener('resize', setAppHeight)
 				}
+
+				// iOS Safari ダブルタップズーム防止（CSS touch-action: manipulation の補完）
+				let lastTouchEnd = 0
+				document.addEventListener(
+					'touchend',
+					function (event) {
+						const now = Date.now()
+						if (now - lastTouchEnd <= 300) {
+							event.preventDefault()
+						}
+						lastTouchEnd = now
+					},
+					{ passive: false }
+				)
+
+				// gesturestart イベントでピンチズームも制御（ページ全体のズームを防止）
+				document.addEventListener(
+					'gesturestart',
+					function (event) {
+						event.preventDefault()
+					},
+					{ passive: false }
+				)
 			})()
 		</script>
 
@@ -70,6 +93,8 @@
 				-webkit-touch-callout: none;
 				-webkit-user-select: none;
 				user-select: none;
+				/* ダブルタップズーム防止（iOS Safari） */
+				touch-action: manipulation;
 				position: fixed;
 				width: 100%;
 				/* iOS Safari対応の高さ指定 */
@@ -86,8 +111,8 @@
 				height: 100vh;
 				height: -webkit-fill-available;
 				height: 100dvh;
-				/* iOS Safari用のタッチ操作最適化 */
-				touch-action: pan-x pan-y;
+				/* iOS Safari用のタッチ操作最適化 - ダブルタップズーム防止 */
+				touch-action: manipulation;
 				box-sizing: border-box;
 			}
 
