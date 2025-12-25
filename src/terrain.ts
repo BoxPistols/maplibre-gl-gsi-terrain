@@ -155,8 +155,16 @@ export const useGsiTerrainSource = (
  * const map = new Map({container: 'app', style: {sources: {terrain: gsiTerrainSource}}});
  */
 export const getGsiDemProtocolAction = (customProtocol: string): AddProtocolAction => {
+	// Pre-compile RegExp patterns for better performance (called for every tile request)
+	const protocolPattern = new RegExp(`^${customProtocol}:(?://)?`)
+	const urlFixPattern = /^(https?:)\/\/\/+/
+
 	return (params, abortController) => {
-		const urlWithoutProtocol = params.url.replace(customProtocol + '://', '')
+		// Handle both old format (gsidem://https://...) and new format (gsidem:https://...)
+		// Also handle URLs that may have been normalized with extra slashes
+		let urlWithoutProtocol = params.url.replace(protocolPattern, '')
+		// Fix URLs that got extra slashes from URL normalization (https:/// -> https://)
+		urlWithoutProtocol = urlWithoutProtocol.replace(urlFixPattern, '$1//')
 		return workerProtocol.request(urlWithoutProtocol, abortController)
 	}
 }

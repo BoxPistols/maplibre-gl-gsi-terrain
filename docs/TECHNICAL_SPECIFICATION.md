@@ -442,6 +442,8 @@ maplibregl.addProtocol('gsidem', protocolAction)
 tiles: ['gsidem://https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png']
 ```
 
+> **Note**: プロトコルハンドラはURL正規化による余分なスラッシュ（例: `https:///`）を自動的に修正します。
+
 ---
 
 ## パフォーマンス仕様
