@@ -101,7 +101,7 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 					},
 					gsidem: {
 						type: 'raster-dem',
-						tiles: ['gsidem:https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
+						tiles: ['gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
 						tileSize: 256,
 						maxzoom: 14,
 					},

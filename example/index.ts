@@ -205,7 +205,7 @@ try {
 
 	gsiTerrainSource = {
 		type: 'raster-dem' as const,
-		tiles: ['gsidem:https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png'],
+		tiles: ['gsidem://https://tiles.gsj.jp/tiles/elev/mixed/{z}/{y}/{x}.png'],
 		tileSize: 256,
 		encoding: 'terrarium' as const,
 		minzoom: 1,

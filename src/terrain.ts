@@ -126,7 +126,7 @@ export const useGsiTerrainSource = (
 
 	return {
 		type: 'raster-dem',
-		tiles: [`gsidem:${tileUrl}`],
+		tiles: [`gsidem://${tileUrl}`],
 		tileSize: 256,
 		encoding: 'terrarium',
 		minzoom: options.minzoom ?? 1,
@@ -146,7 +146,7 @@ export const useGsiTerrainSource = (
  * addProtocol('gsidem', protocolAction);
  * const rasterDemSource = {
  *   type: 'raster-dem',
- *   tiles: ['gsidem:https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
+ *   tiles: ['gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
  *   tileSize: 256,
  *   minzoom: 1,
  *   maxzoom: 14,
