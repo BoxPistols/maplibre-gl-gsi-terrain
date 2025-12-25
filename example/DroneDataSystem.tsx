@@ -79,7 +79,8 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 				canvas.toBlob(blob => blob!.arrayBuffer().then(arr => callback(null, arr, null, null)))
 			}
 			image.onerror = () => callback(new Error('DEM読み込みエラー'))
-			image.src = params.url.replace('gsidem://', '')
+			// Handle both old format (gsidem://https://...) and new format (gsidem:https://...)
+			image.src = params.url.replace(/^gsidem:(?:\/\/)?/, '')
 			return { cancel: () => {} }
 		})
 
@@ -100,7 +101,7 @@ const DroneDataSystem: React.FC<{ className?: string }> = ({ className = '' }) =
 					},
 					gsidem: {
 						type: 'raster-dem',
-						tiles: ['gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
+						tiles: ['gsidem:https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
 						tileSize: 256,
 						maxzoom: 14,
 					},

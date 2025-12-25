@@ -126,7 +126,7 @@ export const useGsiTerrainSource = (
 
 	return {
 		type: 'raster-dem',
-		tiles: [`gsidem://${tileUrl}`],
+		tiles: [`gsidem:${tileUrl}`],
 		tileSize: 256,
 		encoding: 'terrarium',
 		minzoom: options.minzoom ?? 1,
@@ -146,7 +146,7 @@ export const useGsiTerrainSource = (
  * addProtocol('gsidem', protocolAction);
  * const rasterDemSource = {
  *   type: 'raster-dem',
- *   tiles: ['gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
+ *   tiles: ['gsidem:https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png'],
  *   tileSize: 256,
  *   minzoom: 1,
  *   maxzoom: 14,
@@ -156,7 +156,12 @@ export const useGsiTerrainSource = (
  */
 export const getGsiDemProtocolAction = (customProtocol: string): AddProtocolAction => {
 	return (params, abortController) => {
-		const urlWithoutProtocol = params.url.replace(customProtocol + '://', '')
+		// Handle both old format (gsidem://https://...) and new format (gsidem:https://...)
+		// Also handle URLs that may have been normalized with extra slashes
+		const protocolPattern = new RegExp(`^${customProtocol}:(?://)?`)
+		let urlWithoutProtocol = params.url.replace(protocolPattern, '')
+		// Fix URLs that got extra slashes from URL normalization (https:/// -> https://)
+		urlWithoutProtocol = urlWithoutProtocol.replace(/^(https?:)\/\/\/+/, '$1//')
 		return workerProtocol.request(urlWithoutProtocol, abortController)
 	}
 }
