@@ -13,10 +13,10 @@
 		"dist"
 	],
 	"scripts": {
-		"dev": "vite -c vite.config.example.ts",
+		"dev": "pnpm exec vite -c vite.config.example.ts",
 		"generate:icons": "node scripts/generate-icons.mjs",
-		"build:example": "pnpm run generate:icons && vite build -c vite.config.example.ts",
-		"build": "vite build && tsc",
+		"build:example": "pnpm run generate:icons && pnpm exec vite build -c vite.config.example.ts",
+		"build": "pnpm exec vite build && pnpm exec tsc",
 		"vercel-build": "pnpm run build:example",
 		"prepare": "pnpm run build",
 		"test": "vitest src --coverage --coverage.provider=v8",
