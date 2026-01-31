@@ -1,0 +1,2791 @@
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+		/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<title>ドローン飛行シミュレーター</title>
+		<link rel="icon" type="image/svg+xml" href="/assets/favicon-BIPbj7i5.svg" />
+		<link rel="apple-touch-icon" href="/assets/apple-touch-icon-DMUP4oCg.png" />
+		<!-- MapLibre GL CSSはindex.tsでimportされるため、ここでの読み込みは不要 -->
+
+		<!-- モバイル判定とファイル分岐 -->
+		<script>
+			// モバイルデバイス判定（User-Agent + 画面サイズ）
+			;(function () {
+				const isMobile =
+					/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+						navigator.userAgent
+					) || window.innerWidth <= 768
+
+				// モバイルフラグをグローバルに設定
+				window.IS_MOBILE_DEVICE = isMobile
+
+				console.log('Device type:', isMobile ? 'MOBILE' : 'DESKTOP')
+				console.log('User-Agent:', navigator.userAgent)
+				console.log('Screen width:', window.innerWidth)
+
+				// iOS Safari用の実際のビューポート高さを設定
+				const setAppHeight = () => {
+					const doc = document.documentElement
+					// window.innerHeightは実際の表示領域の高さを返す
+					doc.style.setProperty('--app-height', `${window.innerHeight}px`)
+				}
+
+				// 初期設定
+				setAppHeight()
+
+				// リサイズ時とオリエンテーション変更時に再計算
+				window.addEventListener('resize', setAppHeight)
+				window.addEventListener('orientationchange', () => {
+					setTimeout(setAppHeight, 100) // オリエンテーション変更後に少し待つ
+				})
+
+				// iOS用の追加対策: ビジュアルビューポート変更時
+				if (window.visualViewport) {
+					window.visualViewport.addEventListener('resize', setAppHeight)
+				}
+
+				// iOS Safari ダブルタップズーム防止（CSS touch-action: manipulation の補完）
+				let lastTouchEnd = 0
+				document.addEventListener(
+					'touchend',
+					function (event) {
+						const now = Date.now()
+						if (now - lastTouchEnd <= 300) {
+							event.preventDefault()
+						}
+						lastTouchEnd = now
+					},
+					{ passive: false }
+				)
+
+				// gesturestart イベントでピンチズームも制御（ページ全体のズームを防止）
+				document.addEventListener(
+					'gesturestart',
+					function (event) {
+						event.preventDefault()
+					},
+					{ passive: false }
+				)
+			})()
+		</script>
+
+		<style>
+			/* CSS変数でビューポート高さを管理 */
+			:root {
+				--app-height: 100vh;
+			}
+
+			body {
+				margin: 0;
+				padding: 0;
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+				overflow: hidden;
+				background: #000;
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+				/* iOS Safari用のタッチ操作最適化 */
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				user-select: none;
+				/* ダブルタップズーム防止（iOS Safari） */
+				touch-action: manipulation;
+				position: fixed;
+				width: 100%;
+				/* iOS Safari対応の高さ指定 */
+				height: 100vh;
+				height: -webkit-fill-available;
+				height: 100dvh;
+				/* Safe Areaの設定はマップコンテンツに影響しないように削除 */
+				box-sizing: border-box;
+			}
+
+			#map {
+				width: 100vw;
+				/* iOS Safari対応の高さ指定 */
+				height: 100vh;
+				height: -webkit-fill-available;
+				height: 100dvh;
+				/* iOS Safari用のタッチ操作最適化 - ダブルタップズーム防止 */
+				touch-action: manipulation;
+				box-sizing: border-box;
+			}
+
+			#controls {
+				position: fixed;
+				top: 0;
+				left: -350px;
+				width: 280px;
+				height: 100vh;
+				background: rgba(255, 255, 255, 0.75);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				border-right: 1px solid rgba(255, 255, 255, 0.3);
+				padding: 20px;
+				z-index: 1000;
+				box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+				overflow-y: auto;
+				transition: left 0.3s ease;
+			}
+
+			#controls.visible {
+				left: 0;
+			}
+
+			.controls-toggle {
+				position: fixed;
+				top: 4px;
+				left: 4px;
+				width: 44px;
+				height: 44px;
+				background: rgba(255, 255, 255, 0.7);
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				border-radius: 8px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 1001;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				transition: all 0.2s ease;
+			}
+
+			.controls-toggle:hover {
+				background: rgba(255, 255, 255, 1);
+				transform: scale(1.05);
+			}
+
+			.controls-toggle svg {
+				width: 24px;
+				height: 24px;
+				stroke: rgba(0, 0, 0, 0.8);
+			}
+
+			.control-section {
+				margin-bottom: 16px;
+			}
+
+			.section-title {
+				font-weight: 700;
+				margin-bottom: 4px;
+				color: rgba(0, 0, 0, 0.8);
+				font-size: 12px;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+			}
+
+			button {
+				background: rgba(255, 255, 255, 0.6);
+				color: rgba(0, 0, 0, 0.8);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				padding: 4px 8px;
+				border-radius: 4px;
+				cursor: pointer;
+				margin: 2px;
+				font-size: 11px;
+				font-weight: 700;
+				transition: all 0.2s ease;
+				backdrop-filter: blur(8px);
+				-webkit-backdrop-filter: blur(8px);
+				position: relative;
+			}
+
+			/* Tooltipは JavaScript で動的に生成（モーダル/ドロワーのz-index問題を回避） */
+			.dynamic-tooltip {
+				position: fixed;
+				background: rgba(0, 0, 0, 0.95);
+				color: white;
+				padding: 10px 14px;
+				border-radius: 8px;
+				font-size: 12px;
+				font-weight: 400;
+				max-width: 280px;
+				line-height: 1.5;
+				z-index: 99999;
+				pointer-events: none;
+				box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+				opacity: 0;
+				transition: opacity 0.15s ease;
+				word-wrap: break-word;
+			}
+
+			.dynamic-tooltip.visible {
+				opacity: 1;
+			}
+
+			.dynamic-tooltip::before {
+				content: '';
+				position: absolute;
+				border: 7px solid transparent;
+			}
+
+			.dynamic-tooltip.arrow-top::before {
+				top: -14px;
+				left: 50%;
+				transform: translateX(-50%);
+				border-bottom-color: rgba(0, 0, 0, 0.95);
+			}
+
+			.dynamic-tooltip.arrow-bottom::before {
+				bottom: -14px;
+				left: 50%;
+				transform: translateX(-50%);
+				border-top-color: rgba(0, 0, 0, 0.95);
+			}
+
+			.dynamic-tooltip.arrow-left::before {
+				left: -14px;
+				top: 50%;
+				transform: translateY(-50%);
+				border-right-color: rgba(0, 0, 0, 0.95);
+			}
+
+			.dynamic-tooltip.arrow-right::before {
+				right: -14px;
+				top: 50%;
+				transform: translateY(-50%);
+				border-left-color: rgba(0, 0, 0, 0.95);
+			}
+
+			button:hover {
+				background: rgba(255, 255, 255, 0.5);
+				transform: translateY(-1px);
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+			}
+
+			button.success {
+				background: rgba(34, 197, 94, 0.3);
+				border-color: rgba(34, 197, 94, 0.6);
+				color: #166534;
+			}
+
+			button.success:hover {
+				background: rgba(34, 197, 94, 0.4);
+			}
+
+			button.error {
+				background: rgba(239, 68, 68, 0.3);
+				border-color: rgba(239, 68, 68, 0.6);
+				color: #991b1b;
+			}
+
+			button.error:hover {
+				background: rgba(239, 68, 68, 0.4);
+			}
+
+			button.info {
+				background: rgba(59, 130, 246, 0.3);
+				border-color: rgba(59, 130, 246, 0.6);
+				color: #1e40af;
+			}
+
+			button.info:hover {
+				background: rgba(59, 130, 246, 0.4);
+			}
+
+			button.warning {
+				background: rgba(245, 158, 11, 0.3);
+				border-color: rgba(245, 158, 11, 0.6);
+				color: #92400e;
+			}
+
+			button.warning:hover {
+				background: rgba(245, 158, 11, 0.4);
+			}
+
+			.button-group {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 4px;
+			}
+
+			/* モバイル専用セクション（デスクトップでは非表示） */
+			.mobile-only {
+				display: none;
+			}
+
+			/* モバイル専用フライトプランボタン（デスクトップでは非表示） */
+			.mobile-flight-plan-toggle {
+				display: none;
+				position: fixed;
+				top: 10px;
+				right: 10px;
+				width: 58px;
+				height: 54px;
+				background: rgba(255, 255, 255, 0.9);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.8);
+				border-radius: 8px;
+				cursor: pointer;
+				align-items: center;
+				justify-content: center;
+				z-index: 2100;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				transition: all 0.2s ease;
+				color: rgba(0, 0, 0, 0.8);
+			}
+
+			.mobile-flight-plan-toggle:hover {
+				background: rgba(255, 255, 255, 1);
+				transform: scale(1.05);
+			}
+
+			/* モバイル専用ホームボタン（デスクトップでは非表示） */
+			.mobile-home-button {
+				display: none;
+				position: fixed;
+				top: 74px;
+				right: 10px;
+				width: 54px;
+				height: 54px;
+				background: rgba(255, 255, 255, 0.7);
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				border-radius: 8px;
+				cursor: pointer;
+				align-items: center;
+				justify-content: center;
+				z-index: 2100;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				transition: all 0.2s ease;
+				font-size: 24px;
+			}
+
+			.mobile-home-button:hover {
+				background: rgba(255, 255, 255, 0.85);
+				transform: scale(1.05);
+			}
+
+			#status {
+				margin-top: 12px;
+				font-size: 11px;
+				color: rgba(0, 0, 0, 0.7);
+				padding: 4px 8px;
+				background: rgba(255, 255, 255, 0.7);
+				border-radius: 4px;
+				border: 1px solid rgba(255, 255, 255, 0.3);
+			}
+
+			.info-panel {
+				position: absolute;
+				top: 20px;
+				right: -300px;
+				width: 280px;
+				background: rgba(255, 255, 255, 0.65);
+				backdrop-filter: blur(16px);
+				-webkit-backdrop-filter: blur(16px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				padding: 16px;
+				border-radius: 16px 0 0 16px;
+				z-index: 1000;
+				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+				transition: right 0.3s ease;
+			}
+
+			.info-panel.visible {
+				right: 0;
+			}
+
+			.info-panel-toggle {
+				position: absolute;
+				left: -40px;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 40px;
+				height: 60px;
+				background: rgba(255, 255, 255, 0.65);
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				border-right: none;
+				border-radius: 8px 0 0 8px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.15);
+				z-index: 1;
+				padding: 0;
+			}
+
+			.info-panel-toggle:hover {
+				background: rgba(255, 255, 255, 0.8);
+				transform: translateY(-50%) translateX(-2px);
+			}
+
+			.info-panel-toggle svg {
+				width: 20px;
+				height: 20px;
+				fill: rgba(0, 0, 0, 0.7);
+			}
+
+			.info-title {
+				font-weight: 700;
+				/* margin-bottom: 2px; */
+				color: rgba(0, 0, 0, 0.8);
+				font-size: 13px;
+			}
+
+			.info-list {
+				font-size: 13px;
+				color: rgba(0, 0, 0, 0.7);
+				line-height: 1.5;
+			}
+
+			.info-list li {
+				margin-bottom: 6px;
+			}
+
+			.footer {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background: rgba(0, 0, 0, 0.75);
+				backdrop-filter: blur(8px);
+				color: rgba(255, 255, 255, 0.9);
+				/* iOS Safe Area対応 - ホームインジケーターと重ならないように */
+				padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+				font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+				font-size: 11px;
+				max-height: 180px;
+				overflow-y: auto;
+				z-index: 1000;
+				border-top: 1px solid rgba(255, 255, 255, 0.2);
+				/* 初期状態は表示 */
+			}
+
+			.footer-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 12px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+				padding-bottom: 8px;
+			}
+
+			.footer-title {
+				font-weight: 600;
+				color: #22c55e;
+				font-size: 12px;
+			}
+
+			.footer-controls {
+				display: flex;
+				gap: 8px;
+			}
+
+			.footer-controls button {
+				background: rgba(255, 255, 255, 0.2);
+				color: rgba(255, 255, 255, 0.9);
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				padding: 4px 8px;
+				font-size: 10px;
+				cursor: pointer;
+				border-radius: 6px;
+			}
+
+			.footer-controls button:hover {
+				background: rgba(255, 255, 255, 0.3);
+			}
+
+			/* フライトステータス（固定表示） */
+			.flight-status {
+				padding: 8px 12px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+			}
+
+			/* ログコンテナ（スクロール可能） */
+			.flight-log-container {
+				flex: 1;
+				overflow-y: auto;
+				overflow-x: hidden;
+				max-height: 180px;
+				transition: all 0.3s ease;
+				scrollbar-width: thin;
+				scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);
+			}
+
+			.flight-log-container::-webkit-scrollbar {
+				width: 6px;
+			}
+
+			.flight-log-container::-webkit-scrollbar-track {
+				background: rgba(0, 0, 0, 0.2);
+			}
+
+			.flight-log-container::-webkit-scrollbar-thumb {
+				background: rgba(255, 255, 255, 0.3);
+				border-radius: 3px;
+			}
+
+			.flight-log-container::-webkit-scrollbar-thumb:hover {
+				background: rgba(255, 255, 255, 0.5);
+			}
+
+			.flight-log-container.hidden {
+				display: none;
+			}
+
+			.flight-log-container.visible {
+				display: block;
+			}
+
+			.flight-log {
+				display: flex;
+				flex-direction: column;
+				gap: 3px;
+				padding: 8px 12px;
+			}
+
+			.log-entry {
+				display: flex;
+				gap: 12px;
+				padding: 4px 0;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+				font-size: 10px;
+			}
+
+			.log-timestamp {
+				color: rgba(255, 255, 255, 0.6);
+				min-width: 70px;
+			}
+
+			.log-phase {
+				color: #22c55e;
+				font-weight: 600;
+				min-width: 90px;
+			}
+
+			.log-action {
+				color: #fbbf24;
+			}
+
+			.log-details {
+				color: rgba(255, 255, 255, 0.8);
+			}
+
+			.log-error {
+				color: #ef4444;
+			}
+
+			.log-success {
+				color: #22c55e;
+			}
+
+			/* フライトステータスバー */
+			.flight-status-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 8px 12px;
+				margin-bottom: 8px;
+				background: rgba(59, 130, 246, 0.15);
+				border-radius: 6px;
+				border: 1px solid rgba(59, 130, 246, 0.3);
+			}
+
+			.status-indicator {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				animation: pulse 2s infinite;
+			}
+
+			.status-indicator.active .status-dot {
+				background: #22c55e;
+				box-shadow: 0 0 8px #22c55e;
+			}
+
+			.status-indicator.standby .status-dot {
+				background: #fbbf24;
+				box-shadow: 0 0 8px #fbbf24;
+			}
+
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.5;
+				}
+			}
+
+			.status-text {
+				color: rgba(255, 255, 255, 0.9);
+				font-size: 11px;
+				font-weight: 600;
+			}
+
+			.current-phase {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+				font-size: 10px;
+			}
+
+			.phase-label {
+				color: rgba(255, 255, 255, 0.7);
+			}
+
+			.phase-name {
+				color: #22c55e;
+				font-weight: 600;
+			}
+
+			.phase-number {
+				color: rgba(255, 255, 255, 0.6);
+			}
+
+			/* 最新のログエントリ */
+			.log-entry-latest {
+				background: rgba(34, 197, 94, 0.1);
+				border-left: 3px solid #22c55e;
+				padding-left: 8px;
+				animation: highlight 1s ease-in-out;
+			}
+
+			@keyframes highlight {
+				0% {
+					background: rgba(34, 197, 94, 0.3);
+				}
+				100% {
+					background: rgba(34, 197, 94, 0.1);
+				}
+			}
+
+			.log-entry-recent {
+				opacity: 1;
+				background: rgba(255, 255, 255, 0.02);
+			}
+
+			.latest-indicator {
+				color: #22c55e;
+				font-size: 8px;
+				margin-right: 4px;
+				animation: blink 1.5s infinite;
+			}
+
+			@keyframes blink {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.3;
+				}
+			}
+
+			@keyframes slideIn {
+				from {
+					transform: translateX(400px);
+					opacity: 0;
+				}
+				to {
+					transform: translateX(0);
+					opacity: 1;
+				}
+			}
+
+			/* 位置情報・カメラ情報の拡張表示 */
+			.log-entry {
+				flex-wrap: wrap;
+			}
+
+			.log-extended-info {
+				width: 100%;
+				margin-top: 4px;
+				padding-left: 86px;
+				font-size: 9px;
+				display: flex;
+				flex-direction: column;
+				gap: 2px;
+			}
+
+			.log-position-info,
+			.log-camera-info {
+				display: flex;
+				gap: 8px;
+				align-items: center;
+			}
+
+			.info-label {
+				color: rgba(255, 255, 255, 0.5);
+				font-weight: 600;
+				min-width: 50px;
+			}
+
+			.info-value {
+				color: rgba(255, 255, 255, 0.7);
+				background: rgba(255, 255, 255, 0.05);
+				padding: 2px 6px;
+				border-radius: 3px;
+				font-family: 'Courier New', monospace;
+			}
+
+			.flight-plan-export {
+				position: absolute;
+				bottom: 200px;
+				right: -280px;
+				width: 260px;
+				background: rgba(255, 255, 255, 0.6);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.7);
+				padding: 16px;
+				border-radius: 12px 0 0 12px;
+				z-index: 1000;
+				box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+				transition: right 0.3s ease;
+			}
+
+			.flight-plan-export.visible {
+				right: 0;
+			}
+
+			.flight-plan-toggle {
+				position: absolute;
+				left: -40px;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 40px;
+				height: 60px;
+				background: rgba(255, 255, 255, 0.6);
+				backdrop-filter: blur(4px);
+				border: 1px solid rgba(255, 255, 255, 0.7);
+				border-right: none;
+				border-radius: 8px 0 0 8px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.15);
+				z-index: 1;
+				padding: 0;
+			}
+
+			.flight-plan-toggle:hover {
+				background: rgba(255, 255, 255, 0.8);
+				transform: translateY(-50%) translateX(-2px);
+			}
+
+			.flight-plan-toggle svg {
+				width: 20px;
+				height: 20px;
+				fill: rgba(0, 0, 0, 0.7);
+			}
+
+			.flight-plan-title {
+				font-weight: 700;
+				margin-bottom: 8px;
+				color: rgba(0, 0, 0, 0.8);
+				font-size: 13px;
+			}
+
+			.flight-plan-buttons {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+			}
+
+			.flight-plan-buttons button {
+				background: rgba(255, 255, 255, 0.3);
+				color: rgba(0, 0, 0, 0.8);
+				border: 1px solid rgba(255, 255, 255, 0.4);
+				padding: 6px 8px;
+				border-radius: 6px;
+				cursor: pointer;
+				font-size: 11px;
+				font-weight: 700;
+				transition: all 0.2s ease;
+			}
+
+			.flight-plan-buttons button:hover {
+				background: rgba(255, 255, 255, 0.5);
+				transform: translateY(-1px);
+			}
+
+			.flight-plan-buttons button.success {
+				background: rgba(34, 197, 94, 0.3);
+				border-color: rgba(34, 197, 94, 0.6);
+				color: #166534;
+			}
+
+			.flight-plan-buttons button.danger {
+				background: rgba(239, 68, 68, 0.3);
+				border-color: rgba(239, 68, 68, 0.6);
+				color: #991b1b;
+			}
+
+			.flight-plan-buttons button.warning {
+				background: rgba(245, 158, 11, 0.3);
+				border-color: rgba(245, 158, 11, 0.6);
+				color: #92400e;
+			}
+
+			.flight-plan-buttons button.info {
+				background: rgba(59, 130, 246, 0.3);
+				border-color: rgba(59, 130, 246, 0.6);
+				color: #1e40af;
+			}
+
+			/* 仮想ジョイスティック */
+			.virtual-joystick {
+				position: fixed;
+				bottom: 40px;
+				width: 140px;
+				height: 140px;
+				background: rgba(255, 255, 255, 0.15);
+				border: 2px solid rgba(255, 255, 255, 0.3);
+				border-radius: 50%;
+				display: none;
+				justify-content: center;
+				align-items: center;
+				z-index: 2000;
+				touch-action: none;
+				user-select: none;
+				backdrop-filter: blur(8px);
+			}
+
+			.virtual-joystick.left {
+				left: 40px;
+			}
+
+			.virtual-joystick.right {
+				right: 40px;
+			}
+
+			.joystick-knob {
+				width: 60px;
+				height: 60px;
+				background: rgba(255, 255, 255, 0.4);
+				border: 2px solid rgba(255, 255, 255, 0.6);
+				border-radius: 50%;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+				transition: opacity 0.2s ease;
+				opacity: 0.5;
+			}
+
+			.joystick-label {
+				position: absolute;
+				top: -30px;
+				left: 50%;
+				transform: translateX(-50%);
+				font-size: 10px;
+				font-weight: 600;
+				color: rgba(255, 255, 255, 0.8);
+				text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+				white-space: nowrap;
+			}
+
+			/* モバイルパフォーマンス最適化 */
+			@media (max-width: 768px) {
+				/* アニメーションとトランジション最適化 */
+				* {
+					-webkit-transform: translateZ(0);
+					-webkit-backface-visibility: hidden;
+					-webkit-perspective: 1000;
+				}
+
+				/* 重い効果の無効化 */
+				button {
+					transition: none;
+					box-shadow: none;
+				}
+
+				button:hover {
+					transform: none;
+					box-shadow: none;
+				}
+
+				.controls-toggle,
+				.mobile-flight-plan-toggle {
+					will-change: transform;
+				}
+
+				/* モバイル専用セクションを表示 */
+				.mobile-only {
+					display: block;
+				}
+
+				/* モバイル専用フライトプランボタンを表示 */
+				.mobile-flight-plan-toggle {
+					display: flex;
+				}
+
+				/* モバイル専用ホームボタンを表示 */
+				.mobile-home-button {
+					display: flex;
+				}
+
+				/* コントロールトグルボタンを大きく、タップしやすく */
+				.controls-toggle {
+					width: 54px;
+					height: 54px;
+					top: 10px;
+					left: 10px;
+					z-index: 2100; /* コントロールパネルより上に配置 */
+					position: fixed; /* 常に同じ位置に固定 */
+				}
+
+				.controls-toggle svg {
+					width: 28px;
+					height: 28px;
+				}
+
+				#controls {
+					top: 0;
+					left: -100%;
+					right: auto;
+					width: 85%;
+					max-width: 320px;
+					padding: 16px;
+					max-height: calc(100vh - 40px); /* フッター分を引いて余裕を持たせる */
+					overflow-y: auto;
+					-webkit-overflow-scrolling: touch; /* iOS用スムーススクロール */
+					border-radius: 0 16px 16px 0;
+					z-index: 2000; /* フッターより上に */
+				}
+
+				#controls.visible {
+					left: 0;
+				}
+
+				#controls h3 {
+					font-size: 14px !important;
+					margin: 0 0 12px 0 !important;
+				}
+
+				.control-section {
+					margin-bottom: 12px;
+				}
+
+				.section-title {
+					font-size: 11px;
+				}
+
+				button {
+					padding: 8px 12px;
+					font-size: 11px;
+					margin: 3px;
+					min-width: 70px;
+					min-height: 40px;
+				}
+
+				.info-panel {
+					display: none !important; /* モバイルでは完全非表示 */
+				}
+
+				.flight-plan-export {
+					display: none !important; /* モバイルでは完全非表示 */
+				}
+
+				/* フッターをモバイルでは最小限に */
+				.footer {
+					/* iOS Safe Area対応 - ホームインジケーターと重ならないように */
+					padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+					font-size: 7px;
+					max-height: calc(32px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
+					z-index: 1500; /* ジョイスティックより下、コントロールより下 */
+				}
+
+				.footer-header {
+					margin-bottom: 2px;
+					padding-bottom: 2px;
+				}
+
+				.footer-title {
+					font-size: 8px;
+				}
+
+				.footer-controls {
+					display: flex;
+					gap: 4px;
+				}
+
+				.footer-controls button {
+					padding: 2px 4px;
+					font-size: 7px;
+				}
+
+				.flight-status {
+					display: none; /* モバイルでは非表示 */
+				}
+
+				.flight-log-container {
+					display: none; /* モバイルではログを非表示にしてスペース確保 */
+				}
+
+				.log-entry {
+					font-size: 7px;
+					gap: 4px;
+					padding: 2px 0;
+				}
+
+				.log-timestamp {
+					min-width: 40px;
+					font-size: 7px;
+				}
+
+				.log-phase {
+					min-width: 50px;
+					font-size: 7px;
+				}
+
+				.log-action {
+					font-size: 7px;
+				}
+
+				.log-details {
+					font-size: 7px;
+				}
+
+				.log-extended-info {
+					display: none; /* モバイルでは詳細情報を非表示 */
+				}
+
+				#gameControlHelp {
+					display: none !important; /* モバイルでは非表示 */
+				}
+
+				/* 仮想ジョイスティックをモバイルで表示、フッターと重ならないように */
+				.virtual-joystick {
+					width: 120px;
+					height: 120px;
+					z-index: 1800; /* フッターより上、コントロールより下 */
+				}
+
+				.virtual-joystick.left {
+					left: 20px;
+					bottom: 40px; /* フッターが小さくなったので調整 */
+				}
+
+				.virtual-joystick.right {
+					right: 20px;
+					bottom: 40px; /* フッターが小さくなったので調整 */
+				}
+
+				.joystick-knob {
+					width: 50px;
+					height: 50px;
+				}
+			}
+
+			@media (max-width: 480px) {
+				.controls-toggle {
+					width: 50px;
+					height: 50px;
+					top: 8px;
+					left: 8px;
+					z-index: 2100; /* コントロールパネルより上に配置 */
+					position: fixed;
+				}
+
+				.controls-toggle svg {
+					width: 26px;
+					height: 26px;
+				}
+
+				#controls {
+					top: 0;
+					left: -100%;
+					width: 90%;
+					max-width: 280px;
+					padding: 12px;
+					max-height: calc(100vh - 40px); /* フッター分を引く */
+					-webkit-overflow-scrolling: touch;
+					z-index: 2000;
+				}
+
+				#controls h3 {
+					font-size: 13px !important;
+				}
+
+				button {
+					padding: 7px 10px;
+					font-size: 10px;
+					min-width: 65px;
+					min-height: 38px;
+				}
+
+				.virtual-joystick {
+					width: 100px;
+					height: 100px;
+					z-index: 1800;
+				}
+
+				.virtual-joystick.left {
+					left: 10px;
+					bottom: 35px; /* フッターが小さくなったので調整 */
+				}
+
+				.virtual-joystick.right {
+					right: 10px;
+					bottom: 35px; /* フッターが小さくなったので調整 */
+				}
+
+				.joystick-knob {
+					width: 40px;
+					height: 40px;
+				}
+
+				.footer {
+					/* iOS Safe Area対応 */
+					padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+					font-size: 7px;
+					max-height: calc(32px + env(safe-area-inset-bottom, 0px)); /* Safe Area分を追加 */
+					z-index: 1500;
+				}
+
+				.footer-title {
+					font-size: 7px;
+				}
+
+				.footer-controls button {
+					padding: 2px 3px;
+					font-size: 6px;
+				}
+
+				.flight-log-container {
+					display: none; /* 完全非表示 */
+				}
+
+				.flight-status {
+					display: none; /* 完全非表示 */
+				}
+
+				.log-entry {
+					font-size: 6px;
+				}
+			}
+
+			/* タッチデバイス用の調整 */
+			@media (hover: none) and (pointer: coarse) {
+				button {
+					min-height: 36px;
+					min-width: 70px;
+				}
+
+				.virtual-joystick {
+					display: flex;
+				}
+			}
+
+			/* MapLibre controls should be above info panels */
+			.maplibregl-ctrl-group,
+			.maplibregl-ctrl {
+				z-index: 1100 !important;
+			}
+
+			/* MapLibre コントロールにグラスモーフィズムを適用 */
+			.maplibregl-ctrl-group {
+				background: rgba(255, 255, 255, 0.7) !important;
+				backdrop-filter: blur(12px) !important;
+				-webkit-backdrop-filter: blur(12px) !important;
+				border: 1px solid rgba(255, 255, 255, 0.3) !important;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+			}
+
+			.maplibregl-ctrl-group button {
+				background: transparent !important;
+			}
+
+			.maplibregl-ctrl-group button:hover {
+				background: rgba(255, 255, 255, 0.3) !important;
+			}
+
+			/* モバイルフライトプランモーダル */
+			.mobile-flight-plan-modal-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				/* iOS Safari対応の高さ指定（優先順位順） */
+				height: var(--app-height); /* JavaScript動的計算値を優先 */
+				height: 100dvh; /* 動的ビューポート高（最新ブラウザ用） */
+				height: -webkit-fill-available; /* iOS Safari用フォールバック */
+				height: 100vh; /* 最終フォールバック */
+				background: rgba(0, 0, 0, 0.85); /* backdrop-filterを削除してパフォーマンス向上 */
+				z-index: 3000; /* 最前面 */
+				display: none;
+				align-items: center;
+				justify-content: center;
+				padding: 10px;
+				/* iOS Safe Area対応 */
+				padding-top: max(10px, env(safe-area-inset-top));
+				padding-bottom: max(10px, env(safe-area-inset-bottom));
+				padding-left: max(10px, env(safe-area-inset-left));
+				padding-right: max(10px, env(safe-area-inset-right));
+				overflow-y: auto;
+				-webkit-overflow-scrolling: touch; /* iOS用スムーススクロール */
+				/* iOS用の追加対策 */
+				box-sizing: border-box;
+				overscroll-behavior: contain; /* スクロール連鎖を防ぐ */
+			}
+
+			.mobile-flight-plan-modal-overlay.visible {
+				display: flex;
+			}
+
+			.mobile-flight-plan-modal {
+				background: #ffffff;
+				border-radius: 16px;
+				width: calc(100vw - 20px - env(safe-area-inset-left) - env(safe-area-inset-right));
+				max-width: 350px;
+				padding: 20px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+				position: relative;
+				box-sizing: border-box;
+				/* キーボードが出た時の対策 */
+				max-height: calc(100vh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+				max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+				overflow-y: auto;
+				-webkit-overflow-scrolling: touch;
+				/* iOS用の調整 */
+				margin: auto;
+				flex-shrink: 0;
+			}
+
+			.mobile-flight-plan-modal-close {
+				position: absolute;
+				top: 12px;
+				right: 12px;
+				width: 32px;
+				height: 32px;
+				min-width: 32px;
+				min-height: 32px;
+				background: rgba(0, 0, 0, 0.1);
+				border: none;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				padding: 0;
+			}
+
+			.mobile-flight-plan-modal-close:hover {
+				background: rgba(0, 0, 0, 0.2);
+				transform: rotate(90deg);
+			}
+
+			.mobile-flight-plan-modal-close svg {
+				width: 16px;
+				height: 16px;
+			}
+
+			.mobile-flight-plan-buttons {
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+			}
+
+			.mobile-fp-btn {
+				width: 100%;
+				padding: 10px 12px;
+				border-radius: 8px;
+				font-size: 14px;
+				font-weight: 600;
+				border: none;
+				cursor: pointer;
+				transition: all 0.2s ease;
+				min-height: 42px; /* タッチターゲット */
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.mobile-fp-start {
+				background: #ef4444;
+				color: white;
+			}
+
+			.mobile-fp-start:hover {
+				background: #dc2626;
+			}
+
+			.mobile-fp-pause {
+				background: #f59e0b;
+				color: white;
+			}
+
+			.mobile-fp-pause:hover {
+				background: #d97706;
+			}
+
+			.mobile-fp-manual {
+				background: #3b82f6;
+				color: white;
+			}
+
+			.mobile-fp-manual:hover {
+				background: #2563eb;
+			}
+
+			.mobile-fp-export,
+			.mobile-fp-import {
+				background: #10b981;
+				color: white;
+			}
+
+			.mobile-fp-export:hover,
+			.mobile-fp-import:hover {
+				background: #059669;
+			}
+
+			/* デスクトップでは非表示 */
+			@media (min-width: 769px) {
+				.mobile-flight-plan-modal-overlay {
+					display: none !important;
+				}
+			}
+
+			/* より小さい画面用の調整 */
+			@media (max-width: 380px) {
+				.mobile-flight-plan-modal-overlay {
+					padding: 8px;
+					padding-top: max(8px, env(safe-area-inset-top));
+					padding-bottom: max(8px, env(safe-area-inset-bottom));
+					padding-left: max(8px, env(safe-area-inset-left));
+					padding-right: max(8px, env(safe-area-inset-right));
+				}
+
+				.mobile-flight-plan-modal {
+					padding: 16px;
+					width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+					max-height: calc(
+						var(--app-height) - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+					);
+				}
+
+				.mobile-flight-plan-modal h2 {
+					font-size: 16px !important;
+					margin: 0 0 16px 0;
+				}
+
+				.mobile-fp-btn {
+					font-size: 13px;
+					padding: 10px 12px;
+					min-height: 40px;
+				}
+			}
+
+			/* Help Modal */
+			.help-modal-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0, 0, 0, 0.7);
+				backdrop-filter: blur(4px);
+				z-index: 10000;
+				display: none;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.help-modal-overlay.visible {
+				display: flex;
+			}
+
+			.help-modal {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(8px);
+				border-radius: 16px;
+				max-width: 800px;
+				max-height: 80vh;
+				overflow-y: auto;
+				padding: 32px;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+				position: relative;
+			}
+
+			.help-modal-close {
+				position: absolute;
+				top: 16px;
+				right: 16px;
+				width: 32px;
+				height: 32px;
+				min-width: 32px; /* モバイルのbuttonスタイルを上書き */
+				min-height: 32px; /* モバイルのbuttonスタイルを上書き */
+				background: rgba(0, 0, 0, 0.1);
+				border: none;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				padding: 0; /* モバイルのbuttonスタイルを上書き */
+			}
+
+			.help-modal-close:hover {
+				background: rgba(0, 0, 0, 0.2);
+				transform: rotate(90deg);
+			}
+
+			.help-modal-close svg {
+				width: 16px;
+				height: 16px;
+			}
+
+			.help-modal h2 {
+				margin: 0 0 24px 0;
+				font-size: 24px;
+				font-weight: 700;
+				color: rgba(0, 0, 0, 0.9);
+			}
+
+			.help-section {
+				margin-bottom: 24px;
+			}
+
+			.help-section h3 {
+				font-size: 16px;
+				font-weight: 700;
+				margin: 0 0 12px 0;
+				color: rgba(0, 0, 0, 0.8);
+				border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+				padding-bottom: 8px;
+			}
+
+			.help-section p {
+				margin: 0 0 12px 0;
+				line-height: 1.6;
+				color: rgba(0, 0, 0, 0.7);
+				font-size: 13px;
+			}
+
+			.help-section ul {
+				margin: 0;
+				padding-left: 20px;
+			}
+
+			.help-section li {
+				margin-bottom: 8px;
+				line-height: 1.6;
+				color: rgba(0, 0, 0, 0.7);
+				font-size: 13px;
+			}
+
+			.help-section strong {
+				color: rgba(0, 0, 0, 0.9);
+				font-weight: 700;
+			}
+
+			.help-button {
+				background: rgba(59, 130, 246, 0.3);
+				border-color: rgba(59, 130, 246, 0.6);
+				color: #1e40af;
+			}
+
+			.help-button:hover {
+				background: rgba(59, 130, 246, 0.4);
+			}
+
+			/* デバッグオーバーレイ */
+			.debug-overlay {
+				position: fixed;
+				top: 60px;
+				right: -420px;
+				width: 400px;
+				max-height: calc(100vh - 280px);
+				background: rgba(0, 0, 0, 0.85);
+				backdrop-filter: blur(8px);
+				border-radius: 12px 0 0 12px;
+				z-index: 2500;
+				transition: right 0.3s ease;
+				overflow: hidden;
+				box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+				font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+			}
+
+			.debug-overlay.visible {
+				right: 0;
+			}
+
+			.debug-overlay-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 12px 16px;
+				background: rgba(34, 197, 94, 0.2);
+				border-bottom: 1px solid rgba(34, 197, 94, 0.3);
+			}
+
+			.debug-overlay-title {
+				color: #22c55e;
+				font-weight: 700;
+				font-size: 13px;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+
+			.debug-overlay-title::before {
+				content: '';
+				width: 8px;
+				height: 8px;
+				background: #22c55e;
+				border-radius: 50%;
+				animation: pulse 1.5s infinite;
+			}
+
+			.debug-overlay-close {
+				background: rgba(255, 255, 255, 0.1);
+				border: none;
+				color: rgba(255, 255, 255, 0.7);
+				width: 28px;
+				height: 28px;
+				min-width: 28px;
+				min-height: 28px;
+				border-radius: 50%;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all 0.2s ease;
+				padding: 0;
+				margin: 0;
+			}
+
+			.debug-overlay-close:hover {
+				background: rgba(255, 255, 255, 0.2);
+				color: white;
+			}
+
+			.debug-overlay-content {
+				padding: 12px 16px;
+				overflow-y: auto;
+				max-height: calc(100vh - 340px);
+				scrollbar-width: thin;
+				scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+			}
+
+			.debug-overlay-content::-webkit-scrollbar {
+				width: 6px;
+			}
+
+			.debug-overlay-content::-webkit-scrollbar-track {
+				background: transparent;
+			}
+
+			.debug-overlay-content::-webkit-scrollbar-thumb {
+				background: rgba(255, 255, 255, 0.2);
+				border-radius: 3px;
+			}
+
+			.debug-section {
+				margin-bottom: 16px;
+			}
+
+			.debug-section-title {
+				color: #fbbf24;
+				font-weight: 600;
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+				margin-bottom: 8px;
+				padding-bottom: 4px;
+				border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+			}
+
+			.debug-row {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 4px 0;
+				font-size: 11px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+			}
+
+			.debug-row:last-child {
+				border-bottom: none;
+			}
+
+			.debug-label {
+				color: rgba(255, 255, 255, 0.6);
+			}
+
+			.debug-value {
+				color: #60a5fa;
+				font-weight: 500;
+				text-align: right;
+				max-width: 200px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.debug-value.success {
+				color: #22c55e;
+			}
+
+			.debug-value.warning {
+				color: #fbbf24;
+			}
+
+			.debug-value.error {
+				color: #ef4444;
+			}
+
+			.debug-value.info {
+				color: #60a5fa;
+			}
+
+			.debug-json {
+				background: rgba(0, 0, 0, 0.3);
+				border-radius: 6px;
+				padding: 8px;
+				font-size: 10px;
+				color: rgba(255, 255, 255, 0.8);
+				max-height: 150px;
+				overflow-y: auto;
+				white-space: pre-wrap;
+				word-break: break-all;
+				line-height: 1.4;
+			}
+
+			.debug-json .key {
+				color: #fbbf24;
+			}
+
+			.debug-json .string {
+				color: #22c55e;
+			}
+
+			.debug-json .number {
+				color: #60a5fa;
+			}
+
+			.debug-json .boolean {
+				color: #f472b6;
+			}
+
+			.debug-json .null {
+				color: #9ca3af;
+			}
+
+			.debug-event-log {
+				max-height: 120px;
+				overflow-y: auto;
+				background: rgba(0, 0, 0, 0.3);
+				border-radius: 6px;
+				padding: 8px;
+			}
+
+			.debug-event {
+				display: flex;
+				gap: 8px;
+				padding: 3px 0;
+				font-size: 10px;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+				animation: slideInFromRight 0.3s ease;
+			}
+
+			@keyframes slideInFromRight {
+				from {
+					opacity: 0;
+					transform: translateX(20px);
+				}
+				to {
+					opacity: 1;
+					transform: translateX(0);
+				}
+			}
+
+			.debug-event:last-child {
+				border-bottom: none;
+			}
+
+			.debug-event-time {
+				color: rgba(255, 255, 255, 0.4);
+				min-width: 60px;
+			}
+
+			.debug-event-type {
+				color: #fbbf24;
+				font-weight: 600;
+				min-width: 80px;
+			}
+
+			.debug-event-data {
+				color: rgba(255, 255, 255, 0.7);
+				flex: 1;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.debug-toggle-btn {
+				position: fixed;
+				top: 60px;
+				right: 10px;
+				width: 40px;
+				height: 40px;
+				background: rgba(251, 191, 36, 0.9);
+				border: none;
+				border-radius: 8px;
+				cursor: pointer;
+				display: none;
+				align-items: center;
+				justify-content: center;
+				z-index: 2501;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+				transition: all 0.2s ease;
+				color: #000;
+				font-weight: 700;
+				font-size: 12px;
+			}
+
+			.debug-toggle-btn:hover {
+				background: rgba(251, 191, 36, 1);
+				transform: scale(1.05);
+			}
+
+			.debug-toggle-btn.active {
+				display: flex;
+			}
+
+			/* モバイル対応 */
+			@media (max-width: 768px) {
+				.debug-overlay {
+					width: 100%;
+					right: -100%;
+					top: 0;
+					max-height: 50vh;
+					border-radius: 0 0 12px 12px;
+					top: auto;
+					bottom: -50vh;
+				}
+
+				.debug-overlay.visible {
+					right: 0;
+					bottom: 200px;
+				}
+
+				.debug-toggle-btn {
+					top: auto;
+					bottom: 250px;
+					right: 10px;
+				}
+			}
+		</style>
+		<script type="module" crossorigin src="/assets/index-CinmSLAT.js"></script>
+		<link rel="stylesheet" crossorigin href="/assets/index-CjMhM4Xz.css">
+	</head>
+
+	<body>
+		<div id="map"></div>
+
+		<!-- コントロールトグルボタン -->
+		<button class="controls-toggle" id="controlsToggle" data-tooltip="コントロールパネル">
+			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
+				<path d="M3 12h18M3 6h18M3 18h18" stroke-width="2" stroke-linecap="round" />
+			</svg>
+		</button>
+
+		<!-- モバイル専用フライトプランボタン -->
+		<button
+			class="mobile-flight-plan-toggle"
+			id="mobileFlightPlanToggle"
+			data-tooltip="フライトプラン"
+			style="font-size: 10px; font-weight: 700; line-height: 1.2; padding: 4px; text-align: center"
+		>
+			DRONE<br />FLIGHT
+		</button>
+
+		<!-- モバイル専用ホームボタン（定位置に戻る） -->
+		<button class="mobile-home-button" id="mobileHomeButton" data-tooltip="ホーム位置に戻る">
+			<svg
+				viewBox="0 0 24 24"
+				xmlns="http://www.w3.org/2000/svg"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				style="width: 24px; height: 24px"
+			>
+				<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+				<polyline points="9 22 9 12 15 12 15 22"></polyline>
+			</svg>
+		</button>
+
+		<!-- メインコントロールパネル -->
+		<div id="controls">
+			<div
+				style="
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					margin-bottom: 16px;
+				"
+			>
+				<h3
+					style="
+						margin: 0 0 0 32px;
+						color: rgba(55, 55, 55, 0.9);
+						font-size: 14px;
+						font-weight: 600;
+					"
+				>
+					ドローン飛行シミュレーター
+				</h3>
+				<button id="helpButton" class="help-button" data-tooltip="ヘルプを表示">
+					<svg
+						viewBox="0 0 24 24"
+						xmlns="http://www.w3.org/2000/svg"
+						style="width: 14px; height: 14px; fill: currentColor"
+					>
+						<path
+							d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"
+						/>
+					</svg>
+				</button>
+			</div>
+
+			<!-- マッププロバイダー選択セクション -->
+			<div class="control-section">
+				<div class="section-title">マッププロバイダー</div>
+				<div class="button-group">
+					<select
+						id="mapProviderSelect"
+						style="
+							width: 100%;
+							margin-bottom: 8px;
+							padding: 6px;
+							border-radius: 4px;
+							border: 1px solid rgba(0, 0, 0, 0.2);
+							background: rgba(255, 255, 255, 0.9);
+							font-size: 12px;
+						"
+					>
+						<option value="maplibre">MapLibre GL（推奨）</option>
+						<option value="mapbox">Mapbox GL</option>
+					</select>
+					<div id="mapboxTokenSection" style="display: none; margin-top: 8px">
+						<input
+							type="text"
+							id="mapboxTokenInput"
+							placeholder="Mapbox アクセストークン"
+							style="
+								width: 100%;
+								padding: 6px;
+								border-radius: 4px;
+								border: 1px solid rgba(0, 0, 0, 0.2);
+								font-size: 11px;
+								margin-bottom: 6px;
+							"
+						/>
+						<button
+							id="saveMapboxToken"
+							class="success"
+							style="width: 100%"
+							data-tooltip="トークンを保存してリロード"
+						>
+							トークン保存
+						</button>
+					</div>
+					<div
+						style="margin-top: 8px; font-size: 10px; color: rgba(0, 0, 0, 0.6); line-height: 1.4"
+					>
+						<div id="currentProviderInfo"></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- サンプルデータセクション -->
+			<div class="control-section">
+				<div class="section-title">コントローラー</div>
+				<div class="button-group">
+					<button id="toggle3D" class="info" data-tooltip="2D平面表示と3D地形表示を切り替えます">
+						2D/3D
+					</button>
+					<button
+						id="toggleDebugMode"
+						class="warning"
+						data-tooltip="開発者向けデバッグモードを切り替えます。フライト中のデータの動きをリアルタイムで確認できます"
+					>
+						デバッグ
+					</button>
+				</div>
+			</div>
+
+			<!-- ドローン点検セクション -->
+			<div class="control-section">
+				<div class="section-title">ドローン点検</div>
+				<div class="button-group">
+					<button
+						id="loadDroneData"
+						class="success"
+						data-tooltip="東京タワー周辺に点検ドローンを配置します。クリックすると3機のドローンが自動配置されます"
+					>
+						配置
+					</button>
+					<button
+						id="startSimulation"
+						class="info"
+						data-tooltip="ドローンのランダム移動シミュレーションを開始/停止します。自動で周辺を飛行します"
+					>
+						シミュレーション
+					</button>
+					<button
+						id="toggleDrawMode"
+						class="warning"
+						data-tooltip="マップ上をクリックして点検ポイントを追加するモード。もう一度押すと解除"
+					>
+						ポイント作成
+					</button>
+					<button
+						id="togglePolygonMode"
+						class="warning"
+						data-tooltip="マップ上をクリックして多角形エリアを描画するモード。ダブルクリックで確定"
+					>
+						多角形作成
+					</button>
+					<button
+						id="toggleEditMode"
+						class="info"
+						data-tooltip="オブジェクトの選択・ドラッグ移動・削除ができる編集モード"
+					>
+						オブジェクト編集
+					</button>
+				</div>
+			</div>
+
+			<!-- データ管理セクション -->
+			<div class="control-section">
+				<div class="section-title">データ管理</div>
+				<div class="button-group">
+					<button
+						id="importCSV"
+						class="success"
+						data-tooltip="CSVファイルから3Dポイント・メッシュ・ウェイポイントデータを読み込みます"
+					>
+						CSV入力
+					</button>
+					<button
+						id="importGeoJSON"
+						class="success"
+						data-tooltip="GeoJSONファイルから地理データを読み込みます"
+					>
+						GeoJSON入力
+					</button>
+					<button
+						id="exportCSV"
+						class="info"
+						data-tooltip="現在の全データをCSV形式でダウンロードします"
+					>
+						CSV出力
+					</button>
+					<button
+						id="exportGeoJSON"
+						class="info"
+						data-tooltip="現在の全データをGeoJSON形式でダウンロードします"
+					>
+						GeoJSON出力
+					</button>
+					<button
+						id="clearData"
+						class="error"
+						data-tooltip="マップ上のすべてのデータをクリアします。元に戻せません"
+					>
+						クリア
+					</button>
+				</div>
+			</div>
+
+			<!-- フライトデータ管理セクション -->
+			<div class="control-section">
+				<div class="section-title">フライトデータ</div>
+				<div class="button-group">
+					<button
+						id="importFlightData"
+						class="success"
+						data-tooltip="統一フライトデータ形式のCSV/GeoJSONファイルを読み込みます"
+					>
+						フライト入力
+					</button>
+					<button
+						id="loadSampleFlightData"
+						class="success"
+						data-tooltip="東京タワー点検のサンプルフライトデータを読み込みます。すぐに試せます"
+					>
+						サンプル
+					</button>
+					<button
+						id="exportFlightData"
+						class="info"
+						data-tooltip="現在のフライトデータをCSV/GeoJSON形式でダウンロードします"
+					>
+						フライト出力
+					</button>
+					<button
+						id="exportMission"
+						class="info"
+						data-tooltip="フライトミッションをKML/JSON形式でダウンロード。他のドローンソフトで使用可能"
+					>
+						ミッション出力
+					</button>
+				</div>
+			</div>
+
+			<!-- 時系列データ管理セクション -->
+			<div class="control-section">
+				<div class="section-title">軌跡データ</div>
+				<div class="button-group">
+					<button
+						id="importTrajectory"
+						class="success"
+						data-tooltip="時系列軌跡データをCSV/GeoJSON形式で読み込みます"
+					>
+						軌跡入力
+					</button>
+					<button
+						id="loadSampleTrajectory"
+						class="success"
+						data-tooltip="サンプル軌跡データを読み込みます。ドローンの飛行経路を確認できます"
+					>
+						サンプル
+					</button>
+					<button
+						id="exportTrajectory"
+						class="info"
+						data-tooltip="現在の軌跡データをCSV/GeoJSON形式でダウンロードします"
+					>
+						軌跡出力
+					</button>
+					<button
+						id="exportFlightLog"
+						class="info"
+						data-tooltip="フライトログをCSV形式でダウンロード。飛行記録として保存できます"
+					>
+						ログ出力
+					</button>
+				</div>
+			</div>
+
+			<div id="status">地図読み込み中...</div>
+			<!-- ステータス表示 -->
+		</div>
+
+		<!-- 情報パネル -->
+		<div class="info-panel visible" id="infoPanel">
+			<button class="info-panel-toggle" id="infoPanelToggle">
+				<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path
+						d="M18 6L6 18M6 6l12 12"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+					/>
+				</svg>
+			</button>
+			<div class="info-title">点検ワークフロー</div>
+			<ul class="info-list">
+				<li><strong>1. 離陸</strong>: 南側から開始</li>
+				<li><strong>2. 外側旋回</strong>: 4つの角でホバリング・撮影</li>
+				<li><strong>3. 内側旋回</strong>: 詳細撮影のため内側旋回</li>
+				<li><strong>4. 中心部撮影</strong>: 中心部で詳細撮影</li>
+				<li><strong>5. 着陸</strong>: 離陸地点に戻って着陸</li>
+			</ul>
+			<div class="info-title" style="margin-top: 12px">データインポート</div>
+			<ul class="info-list">
+				<li><strong>サンプル</strong>: 各機能のサンプルデータを1クリックで読み込み</li>
+				<li>
+					<strong>フライトプランインポート</strong>: JSONファイルから新しいフライトプランを読み込み
+				</li>
+				<li><strong>データインポート</strong>: CSV/GeoJSONファイルから3Dデータを読み込み</li>
+			</ul>
+		</div>
+
+		<!-- フライトプランエクスポートパネル -->
+		<div class="flight-plan-export visible" id="flightPlanExport">
+			<button class="flight-plan-toggle" id="flightPlanToggle">
+				<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path
+						d="M18 6L6 18M6 6l12 12"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+					/>
+				</svg>
+			</button>
+			<div class="flight-plan-title">フライトプラン</div>
+			<div class="flight-plan-buttons">
+				<select
+					id="flightPlanSelect"
+					style="
+						width: 100%;
+						padding: 6px;
+						margin-bottom: 8px;
+						border-radius: 6px;
+						border: 1px solid rgba(0, 0, 0, 0.2);
+						background: rgba(255, 255, 255, 0.8);
+						font-size: 11px;
+					"
+				>
+					<option value="tokyo-tower">東京タワー点検</option>
+					<option value="mt-fuji">富士山周遊</option>
+					<option value="tokyo-skytree">東京スカイツリー</option>
+					<option value="kyoto-kinkakuji">京都金閣寺</option>
+					<option value="custom">カスタム...</option>
+				</select>
+				<button
+					id="startFlightPlan"
+					class="danger"
+					data-tooltip="選択したフライトプランを実行開始します。ドローンが自動で飛行します"
+				>
+					開始
+				</button>
+				<button
+					id="pauseFlightPlan"
+					class="warning"
+					data-tooltip="実行中のフライトプランを一時停止/再開します"
+				>
+					一時停止
+				</button>
+				<button
+					id="enableGameControl"
+					class="info"
+					data-tooltip="キーボード(WASD)やゲームパッドでドローンを手動操作できます"
+				>
+					手動操作
+				</button>
+				<button
+					id="exportFlightPlan"
+					class="info"
+					data-tooltip="現在のフライトプランをJSONファイルでダウンロードします"
+				>
+					エクスポート
+				</button>
+				<button
+					id="importFlightPlan"
+					class="success"
+					data-tooltip="JSONファイルからカスタムフライトプランを読み込みます"
+				>
+					インポート
+				</button>
+			</div>
+		</div>
+
+		<!-- ゲームコントロールヘルプパネル -->
+		<div
+			id="gameControlHelp"
+			class="info-panel"
+			style="bottom: 220px; top: auto; right: 20px; display: none"
+		>
+			<div class="info-title">ゲームコントロール</div>
+			<ul class="info-list" style="font-size: 10px; line-height: 1.4">
+				<li><strong>W/↑</strong>: 前進</li>
+				<li><strong>S/↓</strong>: 後退</li>
+				<li><strong>A/←</strong>: 左移動</li>
+				<li><strong>D/→</strong>: 右移動</li>
+				<li><strong>Space</strong>: 上昇</li>
+				<li><strong>Shift</strong>: 下降</li>
+				<li><strong>Q</strong>: 左回転</li>
+				<li><strong>E</strong>: 右回転</li>
+				<li><strong>Ctrl</strong>: ターボ</li>
+			</ul>
+			<button id="disableGameControl" class="error" style="width: 100%; margin-top: 8px">
+				手動操作終了
+			</button>
+		</div>
+
+		<!-- モバイル専用フライトプランモーダル -->
+		<div class="mobile-flight-plan-modal-overlay" id="mobileFlightPlanModalOverlay">
+			<div class="mobile-flight-plan-modal">
+				<button class="mobile-flight-plan-modal-close" id="mobileFlightPlanModalClose">
+					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M18 6L6 18M6 6l12 12"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
+					</svg>
+				</button>
+
+				<h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700">フライトプラン</h2>
+
+				<div style="margin-bottom: 16px">
+					<label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px"
+						>プラン選択</label
+					>
+					<select
+						id="mobileFlightPlanSelect"
+						style="
+							width: 100%;
+							padding: 12px;
+							border-radius: 6px;
+							border: 1px solid rgba(0, 0, 0, 0.2);
+							background: rgba(255, 255, 255, 0.9);
+							font-size: 16px;
+							-webkit-appearance: none;
+							appearance: none;
+						"
+					>
+						<option value="tokyo-tower">東京タワー点検</option>
+						<option value="mt-fuji">富士山周遊</option>
+						<option value="tokyo-skytree">東京スカイツリー</option>
+						<option value="kyoto-kinkakuji">京都金閣寺</option>
+						<option value="custom">カスタム...</option>
+					</select>
+				</div>
+
+				<div class="mobile-flight-plan-buttons">
+					<button id="mobileStartFlightPlan" class="mobile-fp-btn mobile-fp-start">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M8 5v14l11-7z" />
+						</svg>
+						<span>開始</span>
+					</button>
+					<button id="mobilePauseFlightPlan" class="mobile-fp-btn mobile-fp-pause">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="currentColor"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<rect x="6" y="4" width="4" height="16" />
+							<rect x="14" y="4" width="4" height="16" />
+						</svg>
+						<span>一時停止</span>
+					</button>
+					<button id="mobileEnableGameControl" class="mobile-fp-btn mobile-fp-manual">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<rect x="2" y="6" width="20" height="12" rx="2" />
+							<path d="M6 12h4m8 0h4M14 10v4M10 10v4" />
+						</svg>
+						<span>手動操作</span>
+					</button>
+					<button id="mobileExportFlightPlan" class="mobile-fp-btn mobile-fp-export">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="17 8 12 3 7 8" />
+							<line x1="12" y1="3" x2="12" y2="15" />
+						</svg>
+						<span>エクスポート</span>
+					</button>
+					<button id="mobileImportFlightPlan" class="mobile-fp-btn mobile-fp-import">
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							style="margin-right: 6px; flex-shrink: 0"
+						>
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+							<polyline points="7 10 12 15 17 10" />
+							<line x1="12" y1="15" x2="12" y2="3" />
+						</svg>
+						<span>インポート</span>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- デバッグオーバーレイ -->
+		<button class="debug-toggle-btn" id="debugToggleBtn" data-tooltip="デバッグパネルを開く">
+			<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+				<path
+					d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6.3 1 .9 1 1.6v3.1c0 1-.8 1.8-1.8 1.8h-4c-1 0-1.8-.8-1.8-1.8v-3.1c0-.7.4-1.3 1-1.6V9.5C9.2 8.1 10.6 7 12 7zm0 1.5c-.7 0-1.3.5-1.3 1v1h2.6v-1c0-.5-.6-1-1.3-1z"
+				/>
+			</svg>
+		</button>
+		<div class="debug-overlay" id="debugOverlay">
+			<div class="debug-overlay-header">
+				<div class="debug-overlay-title">DEBUG MODE</div>
+				<button class="debug-overlay-close" id="debugOverlayClose">
+					<svg viewBox="0 0 24 24" width="14" height="14">
+						<path
+							d="M18 6L6 18M6 6l12 12"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
+					</svg>
+				</button>
+			</div>
+			<div class="debug-overlay-content">
+				<!-- システム状態 -->
+				<div class="debug-section">
+					<div class="debug-section-title">System State</div>
+					<div class="debug-row">
+						<span class="debug-label">Flight Status</span>
+						<span class="debug-value" id="debugFlightStatus">STANDBY</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Current Phase</span>
+						<span class="debug-value" id="debugCurrentPhase">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Phase Index</span>
+						<span class="debug-value" id="debugPhaseIndex">0 / 0</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Elapsed Time</span>
+						<span class="debug-value" id="debugElapsedTime">00:00:00</span>
+					</div>
+				</div>
+
+				<!-- ドローン状態 -->
+				<div class="debug-section">
+					<div class="debug-section-title">Drone State</div>
+					<div class="debug-row">
+						<span class="debug-label">Position (lng, lat)</span>
+						<span class="debug-value" id="debugDronePosition">-, -</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Altitude (m)</span>
+						<span class="debug-value" id="debugDroneAltitude">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Heading (deg)</span>
+						<span class="debug-value" id="debugDroneHeading">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Speed (m/s)</span>
+						<span class="debug-value" id="debugDroneSpeed">-</span>
+					</div>
+				</div>
+
+				<!-- カメラ状態 -->
+				<div class="debug-section">
+					<div class="debug-section-title">Camera State</div>
+					<div class="debug-row">
+						<span class="debug-label">Center (lng, lat)</span>
+						<span class="debug-value" id="debugCameraCenter">-, -</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Zoom</span>
+						<span class="debug-value" id="debugCameraZoom">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Pitch</span>
+						<span class="debug-value" id="debugCameraPitch">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Bearing</span>
+						<span class="debug-value" id="debugCameraBearing">-</span>
+					</div>
+				</div>
+
+				<!-- 現在のフェーズデータ -->
+				<div class="debug-section">
+					<div class="debug-section-title">Current Phase Data</div>
+					<div class="debug-json" id="debugPhaseData">
+						{ "phase": "-", "action": "-", "position": [0, 0, 0], "duration": 0 }
+					</div>
+				</div>
+
+				<!-- イベントログ -->
+				<div class="debug-section">
+					<div class="debug-section-title">Event Log (Latest 10)</div>
+					<div class="debug-event-log" id="debugEventLog">
+						<div class="debug-event">
+							<span class="debug-event-time">--:--:--</span>
+							<span class="debug-event-type">INIT</span>
+							<span class="debug-event-data">Debug mode initialized</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- データ統計 -->
+				<div class="debug-section">
+					<div class="debug-section-title">Data Statistics</div>
+					<div class="debug-row">
+						<span class="debug-label">Total Objects</span>
+						<span class="debug-value" id="debugTotalObjects">0</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Total Phases</span>
+						<span class="debug-value" id="debugTotalPhases">0</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">FPS</span>
+						<span class="debug-value" id="debugFPS">-</span>
+					</div>
+					<div class="debug-row">
+						<span class="debug-label">Memory (MB)</span>
+						<span class="debug-value" id="debugMemory">-</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ヘルプモーダル -->
+		<div class="help-modal-overlay" id="helpModalOverlay">
+			<div class="help-modal">
+				<button class="help-modal-close" id="helpModalClose">
+					<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M18 6L6 18M6 6l12 12"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+						/>
+					</svg>
+				</button>
+
+				<h2>ドローン飛行シミュレーター - ヘルプ</h2>
+
+				<div class="help-section">
+					<h3>システム概要</h3>
+					<p>
+						このシステムは、ドローンを使用した建物点検をシミュレーションするための3D可視化プラットフォームです。国土地理院の地形データとMapLibre
+						GLを使用して、リアルな3D環境でドローンの飛行計画を作成・実行できます。
+					</p>
+				</div>
+
+				<div class="help-section">
+					<h3>基本操作</h3>
+					<ul>
+						<li><strong>2D/3D切り替え</strong>: マップビューを2Dと3Dで切り替えます</li>
+						<li><strong>配置</strong>: ドローンを東京タワー周辺に配置します</li>
+						<li>
+							<strong>シミュレーション</strong>: ランダム移動シミュレーションを開始/停止します
+						</li>
+						<li><strong>ポイント作成</strong>: マップをクリックして点検ポイントを追加します</li>
+						<li><strong>多角形作成</strong>: マップをクリックして点検エリアを描画します</li>
+						<li><strong>オブジェクト編集</strong>: オブジェクトの選択・移動・削除ができます</li>
+					</ul>
+				</div>
+
+				<div class="help-section">
+					<h3>データ管理</h3>
+					<ul>
+						<li>
+							<strong>CSV入力/出力</strong>:
+							3Dポイント・メッシュ・ウェイポイントデータをCSV形式で入出力
+						</li>
+						<li><strong>GeoJSON入力/出力</strong>: 地理データをGeoJSON形式で入出力</li>
+						<li><strong>フライト入力</strong>: 統一フライトデータ形式のCSV/GeoJSONを読み込み</li>
+						<li><strong>ミッション出力</strong>: フライトミッションをKML/JSON形式でエクスポート</li>
+					</ul>
+				</div>
+
+				<div class="help-section">
+					<h3>フライトプラン</h3>
+					<ul>
+						<li>
+							<strong>プラン選択</strong>:
+							東京タワー、富士山、スカイツリー、京都金閣寺などのプリセットプランを選択
+						</li>
+						<li><strong>開始</strong>: 選択したフライトプランを実行します</li>
+						<li><strong>一時停止</strong>: 実行中のフライトプランを一時停止します</li>
+						<li><strong>手動操作</strong>: キーボード/ゲームパッドでドローンを手動操作します</li>
+						<li>
+							<strong>エクスポート/インポート</strong>: フライトプランをJSONファイルで保存・読み込み
+						</li>
+					</ul>
+				</div>
+
+				<div class="help-section">
+					<h3>手動操作（キーボード）</h3>
+					<ul>
+						<li><strong>W/↑</strong>: 前進</li>
+						<li><strong>S/↓</strong>: 後退</li>
+						<li><strong>A/←</strong>: 左移動</li>
+						<li><strong>D/→</strong>: 右移動</li>
+						<li><strong>Space</strong>: 上昇</li>
+						<li><strong>Shift</strong>: 下降</li>
+						<li><strong>Q</strong>: 左回転</li>
+						<li><strong>E</strong>: 右回転</li>
+						<li><strong>Ctrl</strong>: ターボ（速度アップ）</li>
+					</ul>
+				</div>
+
+				<div class="help-section">
+					<h3>トラブルシューティング</h3>
+					<ul>
+						<li>
+							<strong>ドローンが表示されない</strong>:
+							「配置」ボタンをクリックしてドローンを配置してください
+						</li>
+						<li>
+							<strong>フライトプランが動作しない</strong>:
+							プランを選択してから「開始」ボタンをクリックしてください
+						</li>
+						<li>
+							<strong>3D表示が重い</strong>:
+							2D表示に切り替えるか、ブラウザのハードウェアアクセラレーションを確認してください
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<!-- 仮想ジョイスティック（モバイル用） -->
+		<div id="leftJoystick" class="virtual-joystick left">
+			<div class="joystick-label">移動</div>
+			<div id="leftJoystickKnob" class="joystick-knob"></div>
+		</div>
+
+		<div id="rightJoystick" class="virtual-joystick right">
+			<div class="joystick-label">回転・高度</div>
+			<div id="rightJoystickKnob" class="joystick-knob"></div>
+		</div>
+
+		<!-- フライトログFooter -->
+		<div class="footer">
+			<div class="footer-header">
+				<div class="footer-title">リアルタイムログ</div>
+				<div class="footer-controls">
+					<button id="clearLog" data-tooltip="フライトログをすべてクリアします">クリア</button>
+					<button id="exportLog" data-tooltip="フライトログをCSVファイルでダウンロードします">
+						出力
+					</button>
+					<button id="toggleLog" data-tooltip="フライトログの表示/非表示を切り替えます">
+						表示切替
+					</button>
+				</div>
+			</div>
+			<div id="flightStatus" class="flight-status"></div>
+			<div id="flightLogContainer" class="flight-log-container">
+				<div id="flightLog" class="flight-log">
+					<div class="log-entry">
+						<span class="log-timestamp">--:--:--</span>
+						<span class="log-phase">システム</span>
+						<span class="log-action">初期化</span>
+						<span class="log-details">ドローン飛行シミュレーター準備完了</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- 動的Tooltip初期化スクリプト -->
+		<script>
+			;(function () {
+				// Tooltip要素を作成
+				const tooltip = document.createElement('div')
+				tooltip.className = 'dynamic-tooltip'
+				tooltip.id = 'globalTooltip'
+				document.body.appendChild(tooltip)
+
+				let hideTimeout = null
+				let showTimeout = null
+				let currentTarget = null
+				const SHOW_DELAY = 800 // 表示までの待機時間（ミリ秒）
+
+				// Tooltipを表示
+				function showTooltip(target, text) {
+					if (!text) return
+
+					currentTarget = target
+					tooltip.textContent = text
+
+					// 矢印クラスをリセット
+					tooltip.classList.remove('arrow-top', 'arrow-bottom', 'arrow-left', 'arrow-right')
+
+					// 一旦表示して幅・高さを計算
+					tooltip.style.visibility = 'hidden'
+					tooltip.classList.add('visible')
+
+					const rect = target.getBoundingClientRect()
+					const tooltipRect = tooltip.getBoundingClientRect()
+					const padding = 12
+
+					let top, left
+					let arrowClass = 'arrow-top'
+
+					// デフォルト: ボタンの下に表示
+					top = rect.bottom + padding
+					left = rect.left + rect.width / 2 - tooltipRect.width / 2
+
+					// 下にスペースがない場合は上に表示
+					if (top + tooltipRect.height > window.innerHeight - padding) {
+						top = rect.top - tooltipRect.height - padding
+						arrowClass = 'arrow-bottom'
+					}
+
+					// 左端がはみ出る場合
+					if (left < padding) {
+						left = padding
+					}
+
+					// 右端がはみ出る場合
+					if (left + tooltipRect.width > window.innerWidth - padding) {
+						left = window.innerWidth - tooltipRect.width - padding
+					}
+
+					// 上下両方スペースがない場合は右に表示
+					if (top < padding && rect.top - tooltipRect.height - padding < padding) {
+						if (rect.right + tooltipRect.width + padding < window.innerWidth) {
+							top = rect.top + rect.height / 2 - tooltipRect.height / 2
+							left = rect.right + padding
+							arrowClass = 'arrow-left'
+						} else {
+							// 左に表示
+							top = rect.top + rect.height / 2 - tooltipRect.height / 2
+							left = rect.left - tooltipRect.width - padding
+							arrowClass = 'arrow-right'
+						}
+					}
+
+					// 上端がはみ出る場合
+					if (top < padding) {
+						top = padding
+					}
+
+					tooltip.style.top = top + 'px'
+					tooltip.style.left = left + 'px'
+					tooltip.style.visibility = 'visible'
+					tooltip.classList.add(arrowClass)
+				}
+
+				// Tooltipを非表示
+				function hideTooltip() {
+					tooltip.classList.remove('visible')
+					currentTarget = null
+				}
+
+				// 表示をキャンセル
+				function cancelShow() {
+					if (showTimeout) {
+						clearTimeout(showTimeout)
+						showTimeout = null
+					}
+				}
+
+				// 安全にclosestを呼び出すヘルパー関数
+				function getTooltipTarget(e) {
+					if (e.target && typeof e.target.closest === 'function') {
+						return e.target.closest('[data-tooltip]')
+					}
+					return null
+				}
+
+				// イベントリスナーを設定
+				document.addEventListener(
+					'mouseenter',
+					function (e) {
+						const target = getTooltipTarget(e)
+						if (target) {
+							cancelShow()
+							if (hideTimeout) {
+								clearTimeout(hideTimeout)
+								hideTimeout = null
+							}
+							// 遅延表示
+							showTimeout = setTimeout(function () {
+								showTooltip(target, target.getAttribute('data-tooltip'))
+							}, SHOW_DELAY)
+						}
+					},
+					true
+				)
+
+				document.addEventListener(
+					'mouseleave',
+					function (e) {
+						const target = getTooltipTarget(e)
+						if (target) {
+							cancelShow()
+							if (target === currentTarget) {
+								hideTimeout = setTimeout(hideTooltip, 100)
+							}
+						}
+					},
+					true
+				)
+
+				// フォーカス時にも表示（アクセシビリティ対応）
+				document.addEventListener(
+					'focusin',
+					function (e) {
+						const target = getTooltipTarget(e)
+						if (target) {
+							cancelShow()
+							showTimeout = setTimeout(function () {
+								showTooltip(target, target.getAttribute('data-tooltip'))
+							}, SHOW_DELAY)
+						}
+					},
+					true
+				)
+
+				document.addEventListener(
+					'focusout',
+					function (e) {
+						const target = getTooltipTarget(e)
+						if (target) {
+							cancelShow()
+							hideTooltip()
+						}
+					},
+					true
+				)
+
+				// スクロール時は非表示
+				document.addEventListener(
+					'scroll',
+					function () {
+						cancelShow()
+						hideTooltip()
+					},
+					true
+				)
+
+				// クリック時は非表示（アクション実行時）
+				document.addEventListener(
+					'click',
+					function (e) {
+						const target = getTooltipTarget(e)
+						if (target) {
+							cancelShow()
+							hideTooltip()
+						}
+					},
+					true
+				)
+			})()
+		</script>
+	</body>
+</html>
