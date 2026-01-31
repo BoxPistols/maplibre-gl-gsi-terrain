@@ -201,7 +201,9 @@ try {
 	}
 
 	const protocolAction = getGsiDemProtocolAction('gsidem')
+	console.log('[DEBUG] Protocol action created:', typeof protocolAction)
 	maplibregl.addProtocol('gsidem', protocolAction)
+	console.log('[DEBUG] addProtocol called')
 
 	gsiTerrainSource = {
 		type: 'raster-dem' as const,
@@ -214,6 +216,7 @@ try {
 	}
 
 	console.log('[SUCCESS] 地理院DEMプロトコル登録完了')
+	console.log('[DEBUG] Terrain source tiles:', gsiTerrainSource.tiles)
 } catch (error) {
 	console.error('[ERROR] 地理院DEMプロトコル登録失敗:', error)
 
@@ -362,7 +365,7 @@ map.on('error', e => {
 	// タイルフェッチエラーは警告レベルで表示（アプリは使用可能）
 	if (errorMessage.includes('Failed to fetch')) {
 		showErrorToast('タイル読み込みエラー', 'コンソールで詳細を確認してください', 'warning')
-		updateStatus(`警告: タイル読み込みエラー`)
+		updateStatus('警告: タイル読み込みエラー')
 	} else {
 		// その他の重大なエラーはエラーレベルで表示
 		showErrorToast('エラーが発生しました', errorMessage, 'error')

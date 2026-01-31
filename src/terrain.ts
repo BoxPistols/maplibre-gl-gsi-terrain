@@ -160,14 +160,16 @@ export const useGsiTerrainSource = (
 export const getGsiDemProtocolAction = (customProtocol: string): AddProtocolAction => {
 	// Pre-compile RegExp patterns for better performance (called for every tile request)
 	const protocolPattern = new RegExp(`^${customProtocol}:(?://)?`)
-	const urlFixPattern = /^(https?:)\/\/\/+/
 
 	return (params, abortController) => {
 		// Handle both old format (gsidem://https://...) and new format (gsidem:https://...)
 		// Also handle URLs that may have been normalized with extra slashes
 		let urlWithoutProtocol = params.url.replace(protocolPattern, '')
-		// Fix URLs that got extra slashes from URL normalization (https:/// -> https://)
-		urlWithoutProtocol = urlWithoutProtocol.replace(urlFixPattern, '$1//')
+		// Fix URLs that got extra slashes or missing colons from URL normalization
+		// https:/// -> https://
+		// https// -> https://
+		// http// -> http://
+		urlWithoutProtocol = urlWithoutProtocol.replace(/^(https?)\/{2,}/, '$1://')
 		console.log('[GSI DEM] Original URL:', params.url)
 		console.log('[GSI DEM] Processed URL:', urlWithoutProtocol)
 		return workerProtocol.request(urlWithoutProtocol, abortController)

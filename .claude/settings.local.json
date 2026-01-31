@@ -31,7 +31,10 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(cat:*)",
-      "Bash(gh pr merge:*)"
+      "Bash(gh pr merge:*)",
+      "WebFetch(domain:maplibre-flight.vercel.app)",
+      "Bash(pnpm build:*)",
+      "Bash(the document 's Content Security Policy\"\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": [],
     "ask": []
