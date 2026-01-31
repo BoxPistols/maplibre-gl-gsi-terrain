@@ -2,6 +2,12 @@
 	"buildCommand": "pnpm install && pnpm build:example",
 	"outputDirectory": "demo",
 	"installCommand": "pnpm install",
+	"git": {
+		"deploymentEnabled": {
+			"main": true,
+			"gh-pages": false
+		}
+	},
 	"headers": [
 		{
 			"source": "/(.*)",
