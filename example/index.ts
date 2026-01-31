@@ -3152,7 +3152,7 @@ map.on('load', () => {
 			description: '東京タワー周辺を体系的に点検',
 			created: new Date().toISOString(),
 			totalDuration: 39000,
-			phases: currentFlightPlan,
+			phases: defaultFlightPlan,
 		}
 		flightController.setFlightPlan(defaultPlan)
 		updateFlightPlanVisualization(defaultPlan.phases)
