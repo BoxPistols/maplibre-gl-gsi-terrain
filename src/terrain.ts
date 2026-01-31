@@ -58,10 +58,15 @@ class WorkerProtocol {
 
 	private handleMessage = (e: MessageEvent) => {
 		const { url, buffer, error } = e.data
+		const request = this.pendingRequests.get(url)
+
 		if (error) {
 			console.error(`Error processing tile ${url}:`, error)
+			if (request) {
+				request.reject(new Error(error))
+				this.pendingRequests.delete(url)
+			}
 		} else {
-			const request = this.pendingRequests.get(url)
 			if (request) {
 				request.resolve({ data: new Uint8Array(buffer) })
 				this.pendingRequests.delete(url)

@@ -34,7 +34,16 @@
       "Bash(gh pr merge:*)",
       "WebFetch(domain:maplibre-flight.vercel.app)",
       "Bash(pnpm build:*)",
-      "Bash(the document 's Content Security Policy\"\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(the document 's Content Security Policy\"\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(vercel ls:*)",
+      "Bash(xargs:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(git log:*)",
+      "Bash(pnpm build:example:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(pnpm ci:check:*)"
     ],
     "deny": [],
     "ask": []

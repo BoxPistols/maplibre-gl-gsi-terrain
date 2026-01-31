@@ -258,6 +258,8 @@ export class MapStyleManager {
 			'drawing-polygon',
 			'selected-object',
 			'drone-trail',
+			'flight-plan-waypoints',
+			'flight-plan-path',
 		]
 
 		for (const [sourceId, source] of Object.entries(currentSources)) {
