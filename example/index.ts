@@ -1053,7 +1053,7 @@ const updateFlightPlanVisualization = (flightPlan: FlightPlanPhase[]) => {
 		type: 'Feature' as const,
 		geometry: {
 			type: 'Point' as const,
-			coordinates: [phase.position[0], phase.position[1]],
+			coordinates: [phase.position[0], phase.position[1], phase.position[2]],
 		},
 		properties: {
 			id: `waypoint-${index}`,
