@@ -358,8 +358,16 @@ const map = new mapgl.Map({
 map.on('error', e => {
 	console.error('マップエラー:', e)
 	const errorMessage = e.error?.message || 'マップのロードに失敗しました'
-	alert(`エラーが発生しました: ${errorMessage}\n\nコンソールで詳細を確認してください。`)
-	updateStatus(`エラー: ${errorMessage}`)
+
+	// タイルフェッチエラーは警告レベルで表示（アプリは使用可能）
+	if (errorMessage.includes('Failed to fetch')) {
+		showErrorToast('タイル読み込みエラー', 'コンソールで詳細を確認してください', 'warning')
+		updateStatus(`警告: タイル読み込みエラー`)
+	} else {
+		// その他の重大なエラーはエラーレベルで表示
+		showErrorToast('エラーが発生しました', errorMessage, 'error')
+		updateStatus(`エラー: ${errorMessage}`)
+	}
 })
 
 console.log('マップ初期化完了 - loadイベント待機中...')

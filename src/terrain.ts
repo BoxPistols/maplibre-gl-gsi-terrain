@@ -5,14 +5,17 @@ import { workerCode } from './worker'
 const loadImage = async (src: string, signal: AbortSignal): Promise<ImageBitmap | null> => {
 	let response: Response
 	try {
+		console.log('[GSI DEM] Fetching:', src)
 		response = await fetch(src, { signal })
+		console.log('[GSI DEM] Fetch success:', response.status, response.statusText)
 	} catch (e) {
 		if (!signal.aborted) {
-			console.error(`Failed to fetch image: ${e}`)
+			console.error(`[GSI DEM] Failed to fetch image from ${src}:`, e)
 		}
 		return null
 	}
 	if (!response.ok) {
+		console.error(`[GSI DEM] Response not OK: ${response.status} ${response.statusText}`)
 		return null
 	}
 	return await createImageBitmap(await response.blob())
@@ -165,6 +168,8 @@ export const getGsiDemProtocolAction = (customProtocol: string): AddProtocolActi
 		let urlWithoutProtocol = params.url.replace(protocolPattern, '')
 		// Fix URLs that got extra slashes from URL normalization (https:/// -> https://)
 		urlWithoutProtocol = urlWithoutProtocol.replace(urlFixPattern, '$1//')
+		console.log('[GSI DEM] Original URL:', params.url)
+		console.log('[GSI DEM] Processed URL:', urlWithoutProtocol)
 		return workerProtocol.request(urlWithoutProtocol, abortController)
 	}
 }
