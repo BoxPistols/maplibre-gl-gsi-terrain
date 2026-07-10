@@ -181,6 +181,13 @@
 
 ## 6. 改善ロードマップ(フェーズ別)
 
+> **📘 各フェーズの実装レベル詳細仕様(Before/Afterコード案・受け入れ基準・テスト方法・PR分割・見積もり)は以下を参照:**
+>
+> - [Phase 1 詳細: 安定化クイックウィン](./improvement/PHASE1_STABILITY.md)
+> - [Phase 2 詳細: ライブラリ信頼性 + パッケージング + 実装一本化](./improvement/PHASE2_LIBRARY.md)
+> - [Phase 3 詳細: UI/UX 改善(S1〜S4スプリント)](./improvement/PHASE3_UIUX.md)
+> - [Phase 4 詳細: テスト・品質基盤](./improvement/PHASE4_QUALITY.md)
+
 ### Phase 1: 安定化クイックウィン(目安1週間・リスク低)
 
 「挙動が不安定」の体感を直接改善する。既存構造のまま最小差分で修正可能。
