@@ -8,6 +8,7 @@ import mapboxgl from 'mapbox-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import './styles/tokens.css'
+import './styles/app.css'
 
 import { loadProviderConfig, saveProviderConfig, type MapProviderConfig } from './map-provider'
 import { safeStorage } from './modules/safe-storage'
@@ -80,6 +81,8 @@ import { DroneModel } from './modules/DroneModel'
 import { GameController } from './modules/GameController'
 import { TouchController } from './modules/TouchController'
 import { DebugManager } from './modules/DebugManager'
+import { PlanPanel } from './modules/PlanPanel'
+import { MobileHud } from './modules/MobileHud'
 import type { FlightPlanData, FlightPlanPhase } from './modules/types'
 
 // サンプルデータの定義
@@ -473,6 +476,28 @@ const stopActiveFlightForSwitch = () => {
 let currentFlightPlan: FlightPlanPhase[] = []
 let currentFlightPlanName = ''
 let currentFlightPlanDescription = ''
+
+// ===== 新UI: PC用プランパネル / モバイル用ゲームHUD =====
+let planPanel: PlanPanel | null = null
+let mobileHud: MobileHud | null = null
+
+/** プランパネルへ現在のプランを反映する（プラン読込/切替時に呼ぶ） */
+const syncPlanPanel = () => {
+	planPanel?.setPlan(currentFlightPlanName, currentFlightPlan)
+}
+
+/** モバイルHUDへフライト実行状態を反映する */
+const syncHudFlightState = () => {
+	mobileHud?.setFlightState({
+		active: flightPlanActive,
+		phaseIndex:
+			currentFlightPlan.length > 0
+				? Math.min(currentFlightPhase, currentFlightPlan.length - 1)
+				: null,
+		totalPhases: currentFlightPlan.length,
+		planName: currentFlightPlanName,
+	})
+}
 
 // デフォルトのフライトプラン定義（東京タワー）
 const defaultFlightPlan: FlightPlanPhase[] = [
@@ -2734,6 +2759,12 @@ const executeFlightPhase = () => {
 
 	updateDisplay()
 
+	// 新UIへ実行状態を反映（PC: タイムライン/行ハイライト、モバイル: HUD）
+	refreshObjectElevation(drone, 'asl')
+	planPanel?.setActivePhase(currentFlightPhase)
+	syncHudFlightState()
+	mobileHud?.setTelemetry(elevationOf(drone), bearing)
+
 	// 次のフェーズへ（タイマーIDを保持し、pause/停止でキャンセルできるようにする）
 	flightPhaseTimer = setTimeout(() => {
 		flightPhaseTimer = null
@@ -2792,6 +2823,8 @@ const pauseFlightPlan = () => {
 		debugManager.setFlightStatus('PAUSED')
 		debugManager.logEvent('PAUSE', `Paused at phase ${currentFlightPhase + 1}`)
 	}
+
+	syncHudFlightState()
 }
 
 const completeFlightPlan = () => {
@@ -2821,6 +2854,10 @@ const completeFlightPlan = () => {
 		debugManager.setFlightStatus('COMPLETED')
 		debugManager.logEvent('COMPLETE', `Finished: ${currentFlightPlanName}`)
 	}
+
+	// 新UI: ハイライト解除・HUDを待機状態へ
+	planPanel?.setActivePhase(null)
+	syncHudFlightState()
 }
 
 const exportFlightPlan = () => {
@@ -2878,6 +2915,8 @@ const importFlightPlan = () => {
 
 					// フライトプランの可視化を更新
 					updateFlightPlanVisualization(planData.phases)
+					syncPlanPanel()
+					syncHudFlightState()
 
 					addFlightLog(
 						'システム',
@@ -3044,6 +3083,66 @@ window.addEventListener('pagehide', () => {
 	clearFlightPhaseTimer()
 })
 
+// ===== 新UI（PC: プランエディタ / モバイル: ゲームHUD）の初期化 =====
+// map の 'load' は回線不良やタイル取得失敗で発火しないことがある
+// （単一障害点）。UI 自体はタイルに依存しないため、'load' から呼ぶのに
+// 加えてフォールバックタイマーでも初期化し、地図が完全に読み込めなくても
+// プラン編集・開始/停止操作を可能にする。冪等（2回目以降は no-op）。
+let newUiInitialized = false
+const initNewUi = () => {
+	if (newUiInitialized) return
+	newUiInitialized = true
+
+	if (!isMobileDevice()) {
+		// DJI Flight Hub 風エディタを既存フライトプランパネル内にマウント
+		const planHost = document.getElementById('flightPlanExport')
+		if (planHost) {
+			planPanel = new PlanPanel(planHost, {
+				getGround: (lng, lat) => queryGroundElevation(map, lng, lat),
+				onChange: phases => {
+					// 実行中の編集は安全のため飛行を停止してから反映する
+					stopActiveFlightForSwitch()
+					currentFlightPlan = phases
+					updateFlightPlanVisualization(phases)
+					// フォールバック初期化時は flightController が未生成のことがある
+					flightController?.setFlightPlan({
+						name: currentFlightPlanName,
+						description: currentFlightPlanDescription,
+						created: new Date().toISOString(),
+						totalDuration: phases.reduce((s, p) => s + p.duration, 0),
+						phases,
+					})
+					syncHudFlightState()
+				},
+				onFlyTo: (_i, p) => {
+					map.flyTo({
+						center: [p.position[0], p.position[1]],
+						zoom: p.zoom ?? 17,
+						pitch: p.pitch ?? 60,
+						duration: 800,
+					})
+				},
+			})
+			syncPlanPanel()
+		}
+	} else {
+		// ゲーム風HUD（テレメトリ + 開始/一時停止）
+		mobileHud = new MobileHud(document.body, {
+			onStartPause: () => {
+				if (flightPlanActive) {
+					pauseFlightPlan()
+				} else {
+					startFlightPlan()
+				}
+			},
+		})
+		syncHudFlightState()
+	}
+}
+
+// 'load' 未発火時のフォールバック（回線不良・タイルブロック環境）
+setTimeout(initNewUi, 5000)
+
 // 地図の読み込み完了
 map.on('load', () => {
 	console.log('map.on("load") イベント開始')
@@ -3126,6 +3225,9 @@ map.on('load', () => {
 		}
 		flightController.setFlightPlan(defaultPlan)
 		updateFlightPlanVisualization(defaultPlan.phases)
+
+		// 新UI初期化（PC=プランエディタ / モバイル=ゲームHUD）
+		initNewUi()
 
 		addFlightLog(
 			'システム',
@@ -3213,6 +3315,8 @@ map.on('load', () => {
 
 						flightController.setFlightPlan(defaultPlan)
 						updateFlightPlanVisualization(defaultPlan.phases)
+						syncPlanPanel()
+						syncHudFlightState()
 						showToast('東京タワー点検フライトプランを読み込みました', 'success')
 
 						// カメラを東京タワーに移動
@@ -3253,6 +3357,8 @@ map.on('load', () => {
 
 						flightController.setFlightPlan(planData)
 						updateFlightPlanVisualization(planData.phases)
+						syncPlanPanel()
+						syncHudFlightState()
 						showToast(`${planData.name}を読み込みました`, 'success')
 
 						// カメラを開始位置に移動

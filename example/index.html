@@ -896,12 +896,9 @@
 
 			/* モバイルパフォーマンス最適化 */
 			@media (max-width: 768px) {
-				/* アニメーションとトランジション最適化 */
-				* {
-					-webkit-transform: translateZ(0);
-					-webkit-backface-visibility: hidden;
-					-webkit-perspective: 1000;
-				}
+				/* NOTE: 以前ここにあった `* { translateZ(0) }` の全要素レイヤー昇格ハックは
+				   低スペック端末でメモリ圧を逆に高めるため削除（必要な要素にのみ
+				   will-change を個別指定する。styles/app.css 参照） */
 
 				/* 重い効果の無効化 */
 				button {
