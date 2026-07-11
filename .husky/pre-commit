@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Check that package.json uses pnpm (not npm/yarn)
 pnpm run check:pkg-manager
 

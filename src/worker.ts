@@ -58,6 +58,9 @@ let gl = null;
 let program = null;
 let positionBuffer = null;
 let heightMapLocation = null;
+// 標高タイルは常に256x256なので、テクスチャは1枚だけ生成して使い回す
+// (タイルごとに createTexture するとGPUテクスチャがリークする)
+let heightMapTexture = null;
 
 const initWebGL = (canvas) => {
 	gl = canvas.getContext('webgl2');
@@ -120,30 +123,46 @@ const initWebGL = (canvas) => {
 	gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
 	heightMapLocation = gl.getUniformLocation(program, 'u_height_map');
+
+	// テクスチャを1度だけ生成（以降は texImage2D で中身だけ差し替える）
+	heightMapTexture = gl.createTexture();
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, heightMapTexture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 };
 
 const canvas = new OffscreenCanvas(256, 256);
 
+// GLコンテキストロスト時は状態を破棄し、次のメッセージで再初期化させる
+if (typeof canvas.addEventListener === 'function') {
+	canvas.addEventListener('webglcontextlost', (event) => {
+		event.preventDefault();
+		gl = null;
+		program = null;
+		positionBuffer = null;
+		heightMapLocation = null;
+		heightMapTexture = null;
+	});
+}
+
 self.onmessage = async (e) => {
-	const { url, image } = e.data;
+	const { id, url, image } = e.data;
 
 	try {
 		if (!gl) {
 			initWebGL(canvas);
 		}
 
-		if (!gl || !program || !positionBuffer || !heightMapLocation) {
+		if (!gl || !program || !positionBuffer || !heightMapLocation || !heightMapTexture) {
 			throw new Error('WebGL initialization failed');
 		}
 
-		const heightMap = gl.createTexture();
 		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, heightMap);
+		gl.bindTexture(gl.TEXTURE_2D, heightMapTexture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
 		gl.useProgram(program);
 		gl.uniform1i(heightMapLocation, 0);
@@ -156,10 +175,22 @@ self.onmessage = async (e) => {
 			throw new Error('Failed to convert canvas to blob');
 		}
 		const buffer = await blob.arrayBuffer();
-		self.postMessage({ url, buffer });
+		// buffer は transfer list で渡してコピーを回避
+		self.postMessage({ id, url, buffer }, [buffer]);
 	} catch (error) {
-		if (error instanceof Error) {
-			self.postMessage({ url, error: error.message });
+		// Error 以外（文字列・DOMException 等）が throw されても必ず応答を返す
+		// （返さないと呼び出し側の Promise が永久にハングする）
+		const message =
+			error instanceof Error
+				? error.message
+				: typeof error === 'string'
+					? error
+					: 'Unknown worker error';
+		self.postMessage({ id, url, error: message });
+	} finally {
+		// ImageBitmap のメモリを即時解放
+		if (image && typeof image.close === 'function') {
+			image.close();
 		}
 	}
 };
