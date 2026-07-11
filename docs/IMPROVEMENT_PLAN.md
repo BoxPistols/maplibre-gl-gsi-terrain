@@ -6,6 +6,36 @@
 
 ---
 
+## 実装状況（2026-07-11 更新）
+
+Phase 1（安定化クイックウィン）と Phase 2 のライブラリ本体部分を実装・テスト済み。
+ユニット/モジュールテスト68件・lint・type-check・デモビルドすべてグリーン。
+
+**実装済み:**
+
+| 課題 | 内容 | 対応 |
+|------|------|------|
+| H1/M4 | フライトプランタイマー多重実行 | `flightPhaseTimer` を保持し pause/停止/切替で `clearTimeout`。pause→再開が現在フェーズから継続。select 切替の TOCTOU も含めガード |
+| H2 | ランダムウォークとの座標競合 | `stopDroneSimulation()` を開始側から呼び排他。実行中の開始をブロック |
+| H3 | localStorage 起動時クラッシュ | `example/modules/safe-storage.ts`（メモリフォールバック付き）に集約。例外を投げる環境でも起動可 |
+| H4 | Worker GPUテクスチャリーク | テクスチャを1枚だけ生成し `texImage2D` で再利用 |
+| H5 | 非Error throw で永久ハング | どの throw でも必ずエラー応答を返す |
+| H6 | fetch/Worker タイムアウトなし | リクエストごとにタイムアウト＋確実な後始末 |
+| H7 | Worker死亡後に再生成されない | error イベントで自動再生成（サーキットブレーカー付き） |
+| H8 | import時副作用（テスト不能） | Worker を初回利用時に遅延生成。maplibre-gl を型のみ import |
+| H13(一部) | テストカバレッジ実質0% | terrain.ts に実テスト19件（worker.ts 100%）、GameController 5件、safe-storage 2件 |
+| H15 | 存在しないIDへのハンドラ | `#loadPoints/#loadMesh/#loadBuilding/#importMission` と未使用 import を削除 |
+| M1 | map.on('error') 二重登録 | 1つに統合＋タイルエラー集約、トースト洪水デバウンス |
+| M2 | GameController キーリスナーリーク | `destroy()`＋enabledガード＋入力欄フォーカス保護 |
+| M3 | ドラッグ編集で操作が固まる | 後始末を無条件・冪等化し削除/Escape/編集終了から呼ぶ |
+| M8 | 同一URL同時リクエスト競合 | pendingRequests を採番IDキーに変更 |
+| M9 | タイルホットパスの console.log | 削除 |
+| — | husky v9 非推奨行 | pre-commit/pre-push から除去 |
+
+**未実装（次段階）:** Phase 2-5（パッケージング/mapbox-gl依存整理）、2-6（data-import-export 移設・共通パーサ）、2-7（実装3系統の一本化）、Phase 3（UI/UX 全般）、Phase 4（e2e同期・CI強化・CSP厳格化）。詳細は各フェーズ仕様書を参照。
+
+---
+
 ## 目次
 
 1. [エグゼクティブサマリー](#1-エグゼクティブサマリー)
