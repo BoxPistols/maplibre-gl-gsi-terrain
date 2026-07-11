@@ -7,9 +7,18 @@ import maplibregl from 'maplibre-gl'
 import mapboxgl from 'mapbox-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import './styles/tokens.css'
 
 import { loadProviderConfig, saveProviderConfig, type MapProviderConfig } from './map-provider'
 import { safeStorage } from './modules/safe-storage'
+import { applyDeviceAttributes, detectDeviceProfile } from './modules/device-profile'
+import {
+	formatElevation,
+	makeElevation,
+	queryGroundElevation,
+	setGround,
+	type ElevationTriple,
+} from './modules/elevation'
 
 // マッププロバイダー設定をロード
 const PROVIDER_CONFIG: MapProviderConfig = loadProviderConfig()
@@ -29,46 +38,18 @@ if (PROVIDER_CONFIG.provider === 'mapbox') {
 	console.log('[OK] MapLibre GL を使用')
 }
 
-// モバイルデバイス判定（HTMLで設定されたフラグを使用）
-const IS_MOBILE = (window as any).IS_MOBILE_DEVICE || false
-
-// モバイル用軽量設定
-const MOBILE_CONFIG = {
-	maxZoom: 16, // モバイルは16まで
-	pitch: 0, // モバイルは2D（パフォーマンス優先）
-	maxPitch: 30, // 最大でも30度まで
-	zoom: 14, // 初期ズームを下げる
-	tileSize: 512, // タイルサイズを大きく（リクエスト数削減）
-	enableTerrain: false, // 地形無効化（パフォーマンス優先）
-	terrainExaggeration: 0, // 地形の誇張なし
-	fadeDuration: 0, // フェードアニメーション無効
-	enableDroneTrail: false, // ドローン軌跡を無効化
-	// 追加最適化
-	pixelRatio: Math.min(window.devicePixelRatio, 2), // 高解像度ディスプレイでも最大2倍まで
-	roundZoomLevel: true, // ズームレベルを整数に丸める
-	collectResourceTiming: false, // パフォーマンス計測無効化
-}
-
-// デスクトップ用通常設定
-const DESKTOP_CONFIG = {
-	maxZoom: 18,
-	pitch: 60,
-	maxPitch: 85,
-	zoom: 15,
-	tileSize: 256,
-	enableTerrain: true,
-	terrainExaggeration: 1.2,
-	fadeDuration: 300,
-	enableDroneTrail: true,
-}
-
-// 使用する設定を選択
-const CONFIG = IS_MOBILE ? MOBILE_CONFIG : DESKTOP_CONFIG
+// デバイス判定とレンダリング設定を単一の DeviceProfile に統一
+// （UA/画面幅/タッチの3系統に分裂していた判定を一元化。狭いだけのPC窓を
+//  モバイル誤判定しないため、分類はタッチ端末に限定する = PC/モバイルの明確な最適化）
+const deviceProfile = detectDeviceProfile()
+applyDeviceAttributes(deviceProfile)
+const IS_MOBILE = deviceProfile.kind === 'mobile'
+const CONFIG = deviceProfile.render
 
 console.log('='.repeat(60))
 console.log('ドローン飛行シミュレーター初期化')
-console.log('デバイスタイプ:', IS_MOBILE ? 'モバイル（軽量版）' : 'デスクトップ（通常版）')
-console.log('設定:', CONFIG)
+console.log('デバイスタイプ:', deviceProfile.kind, '| touch:', deviceProfile.isTouch)
+console.log('レンダリング設定:', CONFIG)
 console.log('='.repeat(60))
 
 import {
@@ -296,14 +277,14 @@ const map = new mapgl.Map({
 	refreshExpiredTiles: false, // パフォーマンス向上
 	fadeDuration: CONFIG.fadeDuration, // モバイルはアニメーション無効化
 	trackResize: true, // ウィンドウリサイズ追跡
-	// モバイル用追加最適化
+	// モバイル用追加最適化（値は DeviceProfile に一元化）
 	...(IS_MOBILE && {
-		maxTileCacheSize: 50, // タイルキャッシュを削減
-		renderWorldCopies: false, // 世界地図の複製無効化
-		crossSourceCollisions: false, // 衝突判定無効化（パフォーマンス向上）
-		pixelRatio: CONFIG.pixelRatio, // 高解像度ディスプレイでも最大2倍まで
-		collectResourceTiming: false, // パフォーマンス計測無効化
-		antialias: false, // アンチエイリアス無効化（パフォーマンス向上）
+		maxTileCacheSize: CONFIG.maxTileCacheSize,
+		renderWorldCopies: CONFIG.renderWorldCopies,
+		crossSourceCollisions: CONFIG.crossSourceCollisions,
+		pixelRatio: CONFIG.pixelRatio,
+		collectResourceTiming: CONFIG.collectResourceTiming,
+		antialias: CONFIG.antialias,
 	}),
 	style: {
 		version: 8,
@@ -1625,7 +1606,13 @@ const endDragObject = (notify = false) => {
 	enableMapInteraction()
 
 	if (notify && wasDragging && moved && movedObject) {
-		showToast(`「${movedObject.name}」を移動しました`, 'success')
+		// 移動先の地表標高を取り込み直し、対地高度(AGL)を再計算する（海抜は保持）
+		refreshObjectElevation(movedObject, 'asl')
+		updateSelectedObjectDisplay()
+		showToast(
+			`「${movedObject.name}」を移動しました（${formatElevation(elevationOf(movedObject))}）`,
+			'success'
+		)
 	}
 }
 
@@ -1649,21 +1636,56 @@ const deleteSelectedObject = () => {
 	}
 }
 
+// ===== 3D標高（標高/海抜/対地）CRUD ヘルパー =====
+// altitude を海抜(ASL)とみなし、地表標高(標高)を GSI DEM から取得して
+// 対地高度(AGL)を導く。不変条件 asl = ground + agl を常に保つ。
+
+/** オブジェクトの高度を ElevationTriple として解決する */
+const elevationOf = (obj: DroneObject): ElevationTriple => {
+	const ground = obj.groundElevation ?? queryGroundElevation(map, obj.longitude, obj.latitude) ?? 0
+	const agl = obj.relativeAltitude ?? obj.altitude - ground
+	return makeElevation(ground, { agl })
+}
+
+/** 3値をオブジェクトへ書き戻す（altitude=海抜, 標高, 対地を同期） */
+const applyElevation = (obj: DroneObject, t: ElevationTriple): void => {
+	obj.altitude = t.asl
+	obj.groundElevation = t.ground
+	obj.relativeAltitude = t.agl
+}
+
+/**
+ * オブジェクトの標高を現在座標の GSI DEM から取り込み直し、3値を整合させる。
+ *  - keep='asl'（既定）: 海抜を保持し対地を再計算（ドラッグしても表示高さ不変）
+ *  - keep='agl': 対地を保持し海抜を再計算（DJI風の地形追従）
+ * terrain 無効/未読込のときは何もしない。
+ */
+const refreshObjectElevation = (obj: DroneObject, keep: 'asl' | 'agl' = 'asl'): void => {
+	const ground = queryGroundElevation(map, obj.longitude, obj.latitude)
+	if (ground === null) return
+	applyElevation(obj, setGround(elevationOf(obj), ground, keep))
+}
+
 // オブジェクト追加
 const addObjectAtLocation = (lngLat: mapgl.LngLat) => {
+	// 手動配置は「地表から150〜250m上空(対地/AGL)」として海抜を算出する
+	const ground = queryGroundElevation(map, lngLat.lng, lngLat.lat) ?? 0
+	const elev = makeElevation(ground, { agl: 150 + Math.random() * 100 })
 	const newObject: DroneObject = {
 		id: `manual_${Date.now()}`,
 		name: `点検ポイント_${loadedObjects.filter(obj => obj.type === 'manual').length + 1}`,
 		longitude: lngLat.lng,
 		latitude: lngLat.lat,
-		altitude: 150 + Math.random() * 100,
+		altitude: elev.asl,
+		groundElevation: elev.ground,
+		relativeAltitude: elev.agl,
 		type: 'manual',
 		source: 'manual_draw',
 	}
 
 	loadedObjects.push(newObject)
 	updateDisplay()
-	showToast(`点検ポイントを追加: ${newObject.name}`, 'success')
+	showToast(`点検ポイントを追加: ${newObject.name}（${formatElevation(elev)}）`, 'success')
 }
 
 // 2D/3D切り替え
@@ -3535,22 +3557,8 @@ map.on('load', () => {
 }) // map.on('load')の終了
 
 /**
- * モバイルデバイスかどうかを判定
+ * モバイルデバイスかどうかを判定（DeviceProfile に一元化）
  */
 function isMobileDevice(): boolean {
-	// タッチサポートチェック
-	const hasTouchScreen =
-		'ontouchstart' in window ||
-		navigator.maxTouchPoints > 0 ||
-		(navigator as any).msMaxTouchPoints > 0
-
-	// ユーザーエージェントチェック
-	const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-		navigator.userAgent
-	)
-
-	// 画面サイズチェック
-	const isSmallScreen = window.innerWidth <= 768
-
-	return (hasTouchScreen && isMobileUA) || (hasTouchScreen && isSmallScreen)
+	return deviceProfile.kind === 'mobile'
 }
