@@ -211,7 +211,10 @@ test.describe('3D Flight Simulator', () => {
 		await page.waitForTimeout(500)
 	})
 
-	test('should display map style control', async ({ page }) => {
+	// NOTE: MapStyleManager.createStyleControl() は現在 index.ts でコメントアウト
+	// されており .map-style-control は DOM に存在しない（機能未提供）。
+	// スタイル切替UIを復活させる際に skip を解除すること（改善計画 Phase 2-7）。
+	test.skip('should display map style control', async ({ page }) => {
 		// マップスタイルコントロールが表示されることを確認
 		const styleControl = page.locator('.map-style-control')
 		await expect(styleControl).toBeVisible()
@@ -222,7 +225,7 @@ test.describe('3D Flight Simulator', () => {
 		expect(count).toBeGreaterThan(0)
 	})
 
-	test('should switch map styles', async ({ page }) => {
+	test.skip('should switch map styles', async ({ page }) => {
 		// マップスタイルコントロールを探す
 		const styleControl = page.locator('.map-style-control')
 
@@ -241,7 +244,8 @@ test.describe('3D Flight Simulator', () => {
 		}
 	})
 
-	test('should handle terrain exaggeration slider', async ({ page }) => {
+	// 地形誇張度スライダーも style control 内にあり現状未提供のため skip（同上）
+	test.skip('should handle terrain exaggeration slider', async ({ page }) => {
 		// 地形誇張度スライダーを探す
 		const slider = page.locator('input[type="range"]')
 		await expect(slider).toBeVisible()

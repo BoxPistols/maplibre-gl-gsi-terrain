@@ -26,6 +26,13 @@
 	font-family: var(--font-ui);
 }
 
+/* 折りたたみ時は幅(360px + padding/border ≈ 394px)を完全に画面外へ退避させる
+   （既定の -280px だと 80px、-390px でも約4px はみ出すため余裕をもって -420px）。
+   :not(.visible) 限定なので .visible 時の right:0 は維持される */
+:root[data-device='desktop'] .flight-plan-export:not(.visible) {
+	right: -420px;
+}
+
 .plan-panel {
 	margin-top: var(--space-3);
 	border-top: 1px solid var(--surface-border);

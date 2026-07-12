@@ -1,0 +1,34 @@
+{
+	"//": "本ブランチで追加した example/modules の型チェック専用。本体 tsconfig は src/terrain.ts のみ対象で example/ が未検査のため、新規コードだけでも型検査を CI に載せる。既存モジュール(DroneModel/MapStyleManager 等)には別途の型負債があり本ファイルの対象外（改善計画 Phase 2-6/2-7 で解消予定）。未使用変数検査は ESLint が担うため無効化。",
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"types": ["vite/client"],
+		"strict": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noImplicitReturns": true,
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"skipLibCheck": true,
+		"useDefineForClassFields": true,
+		"noEmit": true
+	},
+	"files": [
+		"example/modules/elevation.ts",
+		"example/modules/device-profile.ts",
+		"example/modules/flight-plan-editor.ts",
+		"example/modules/PlanPanel.ts",
+		"example/modules/MobileHud.ts",
+		"example/modules/safe-storage.ts",
+		"example/modules/elevation.test.ts",
+		"example/modules/device-profile.test.ts",
+		"example/modules/flight-plan-editor.test.ts",
+		"example/modules/PlanPanel.test.ts",
+		"example/modules/MobileHud.test.ts",
+		"example/modules/safe-storage.test.ts"
+	]
+}

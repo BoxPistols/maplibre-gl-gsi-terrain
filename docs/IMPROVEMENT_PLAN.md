@@ -32,7 +32,19 @@ Phase 1（安定化クイックウィン）と Phase 2 のライブラリ本体�
 | M9 | タイルホットパスの console.log | 削除 |
 | — | husky v9 非推奨行 | pre-commit/pre-push から除去 |
 
-**未実装（次段階）:** Phase 2-5（パッケージング/mapbox-gl依存整理）、2-6（data-import-export 移設・共通パーサ）、2-7（実装3系統の一本化）、Phase 3（UI/UX 全般）、Phase 4（e2e同期・CI強化・CSP厳格化）。詳細は各フェーズ仕様書を参照。
+**実装済み（追加分・UI刷新とマージ準備）:**
+
+| 課題 | 内容 | 対応 |
+|------|------|------|
+| 3D CRUD | 標高/海抜/対地の3D高度モデル | `elevation.ts`（不変条件 asl=ground+agl・GSI DEM連携・テスト18件）。オブジェクト配置/ドラッグ/フライトプラン編集に統合 |
+| PC最適化 | DJI Flight Hub 2 風プランエディタ | `PlanPanel.ts`＋`flight-plan-editor.ts`（WP CRUD・タイムライン・インライン高度編集・テスト計28件） |
+| モバイル最適化 | iPhone 3Dゲーム風HUD | `MobileHud.ts`（テレメトリ/開始停止・44px・Safe Area・テスト7件） |
+| デバイス判定統一 | PC/モバイルの明確な分岐 | `device-profile.ts`（単一判定源・テスト7件・`<html data-device>`） |
+| デザイン基盤 | flight-ops デザイントークン | `tokens.css`＋`app.css`（z-index階層・ダーク配色・focus-visible・全要素translateZハック撤廃） |
+| 型検査ギャップ | example が型未検査 | 新規モジュール用 `tsconfig.modules.json` を `type-check` に追加（CI で検査） |
+| e2e ドリフト | 未提供UIを参照するテスト | マップスタイル切替系テストを skip 化（機能復活時に解除） |
+
+**未実装（次段階）:** Phase 2-5（パッケージング/mapbox-gl依存整理）、2-6（data-import-export 移設・共通パーサ）、2-7（実装3系統の一本化・既存モジュールの型負債解消）、Phase 3 残り（パネル3層情報設計・アクセシビリティ全般）、Phase 4（e2e全面同期・CSP厳格化）、マップスタイル切替UIの復活。詳細は各フェーズ仕様書を参照。
 
 ---
 
