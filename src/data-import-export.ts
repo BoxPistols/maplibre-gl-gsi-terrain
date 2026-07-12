@@ -67,7 +67,12 @@ export interface DroneObject {
 	name: string
 	longitude: number
 	latitude: number
+	/** 海抜高度 (ASL/MSL) [m]。3D表示・高度線の基準に使う */
 	altitude: number
+	/** 地表標高 (標高) [m]。GSI DEM から取得（terrain 無効時は未設定） */
+	groundElevation?: number
+	/** 相対高度 (AGL) [m]。altitude - groundElevation。地表からの対地高度 */
+	relativeAltitude?: number
 	type:
 		| 'drone'
 		| 'base'

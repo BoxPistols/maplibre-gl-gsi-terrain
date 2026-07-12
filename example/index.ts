@@ -7,8 +7,19 @@ import maplibregl from 'maplibre-gl'
 import mapboxgl from 'mapbox-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import './styles/tokens.css'
+import './styles/app.css'
 
 import { loadProviderConfig, saveProviderConfig, type MapProviderConfig } from './map-provider'
+import { safeStorage } from './modules/safe-storage'
+import { applyDeviceAttributes, detectDeviceProfile } from './modules/device-profile'
+import {
+	formatElevation,
+	makeElevation,
+	queryGroundElevation,
+	setGround,
+	type ElevationTriple,
+} from './modules/elevation'
 
 // マッププロバイダー設定をロード
 const PROVIDER_CONFIG: MapProviderConfig = loadProviderConfig()
@@ -28,46 +39,18 @@ if (PROVIDER_CONFIG.provider === 'mapbox') {
 	console.log('[OK] MapLibre GL を使用')
 }
 
-// モバイルデバイス判定（HTMLで設定されたフラグを使用）
-const IS_MOBILE = (window as any).IS_MOBILE_DEVICE || false
-
-// モバイル用軽量設定
-const MOBILE_CONFIG = {
-	maxZoom: 16, // モバイルは16まで
-	pitch: 0, // モバイルは2D（パフォーマンス優先）
-	maxPitch: 30, // 最大でも30度まで
-	zoom: 14, // 初期ズームを下げる
-	tileSize: 512, // タイルサイズを大きく（リクエスト数削減）
-	enableTerrain: false, // 地形無効化（パフォーマンス優先）
-	terrainExaggeration: 0, // 地形の誇張なし
-	fadeDuration: 0, // フェードアニメーション無効
-	enableDroneTrail: false, // ドローン軌跡を無効化
-	// 追加最適化
-	pixelRatio: Math.min(window.devicePixelRatio, 2), // 高解像度ディスプレイでも最大2倍まで
-	roundZoomLevel: true, // ズームレベルを整数に丸める
-	collectResourceTiming: false, // パフォーマンス計測無効化
-}
-
-// デスクトップ用通常設定
-const DESKTOP_CONFIG = {
-	maxZoom: 18,
-	pitch: 60,
-	maxPitch: 85,
-	zoom: 15,
-	tileSize: 256,
-	enableTerrain: true,
-	terrainExaggeration: 1.2,
-	fadeDuration: 300,
-	enableDroneTrail: true,
-}
-
-// 使用する設定を選択
-const CONFIG = IS_MOBILE ? MOBILE_CONFIG : DESKTOP_CONFIG
+// デバイス判定とレンダリング設定を単一の DeviceProfile に統一
+// （UA/画面幅/タッチの3系統に分裂していた判定を一元化。狭いだけのPC窓を
+//  モバイル誤判定しないため、分類はタッチ端末に限定する = PC/モバイルの明確な最適化）
+const deviceProfile = detectDeviceProfile()
+applyDeviceAttributes(deviceProfile)
+const IS_MOBILE = deviceProfile.kind === 'mobile'
+const CONFIG = deviceProfile.render
 
 console.log('='.repeat(60))
 console.log('ドローン飛行シミュレーター初期化')
-console.log('デバイスタイプ:', IS_MOBILE ? 'モバイル（軽量版）' : 'デスクトップ（通常版）')
-console.log('設定:', CONFIG)
+console.log('デバイスタイプ:', deviceProfile.kind, '| touch:', deviceProfile.isTouch)
+console.log('レンダリング設定:', CONFIG)
 console.log('='.repeat(60))
 
 import {
@@ -82,9 +65,7 @@ import {
 	exportUnifiedFlightDataToCSV,
 	exportUnifiedFlightDataToGeoJSON,
 	generateSampleDroneData,
-	importDataFromFile,
 	parseDroneCSV,
-	parseFlightMissionJSON,
 	parseGeoJSON,
 	parseUnifiedFlightDataCSV,
 	parseUnifiedFlightDataGeoJSON,
@@ -100,6 +81,8 @@ import { DroneModel } from './modules/DroneModel'
 import { GameController } from './modules/GameController'
 import { TouchController } from './modules/TouchController'
 import { DebugManager } from './modules/DebugManager'
+import { PlanPanel } from './modules/PlanPanel'
+import { MobileHud } from './modules/MobileHud'
 import type { FlightPlanData, FlightPlanPhase } from './modules/types'
 
 // サンプルデータの定義
@@ -115,28 +98,36 @@ trajectory_003,軌跡点3,trajectory_point,auto,139.7454,35.6584,100,50,2024-01-
 trajectory_004,軌跡点4,trajectory_point,auto,139.7456,35.6586,125,75,2024-01-15T09:58:00Z,25,6,135,move,4,4,82,-48,1.8,23,57,2.5,165,trajectory_001,operator_001,DJI_Mavic_3,SN001,自動飛行中
 trajectory_005,軌跡点5,trajectory_point,auto,139.7458,35.6588,150,100,2024-01-15T09:59:00Z,30,4,180,land,5,5,79,-50,2,22,55,3,160,trajectory_001,operator_001,DJI_Mavic_3,SN001,自動飛行終了`
 
+// 同一メッセージのトースト洪水を防ぐデバウンス（5秒窓で同じエラーは1回だけ表示）
+const recentErrorToasts = new Map<string, number>()
+function shouldShowErrorToast(key: string): boolean {
+	const now = Date.now()
+	const last = recentErrorToasts.get(key) ?? 0
+	if (now - last < 5000) return false
+	recentErrorToasts.set(key, now)
+	return true
+}
+
 // グローバルエラーハンドラー（画面を真っ黒にしない改良版）
 window.addEventListener('error', e => {
 	console.error('グローバルエラー:', e.error || e.message)
 
-	// エラーをログに記録するが、画面は表示し続ける
-	e.preventDefault() // デフォルトのエラー表示を防ぐ
-
-	// 画面下部に警告トーストを表示
-	showErrorToast('エラーが発生しました', e.error?.message || e.message || '不明なエラー', 'error')
+	// エラーはログに残すが画面は表示し続ける（デフォルト表示は抑制しない）
+	const errorMessage = e.error?.message || e.message || '不明なエラー'
+	if (shouldShowErrorToast(`error:${errorMessage}`)) {
+		showErrorToast('エラーが発生しました', errorMessage, 'error')
+	}
 })
 
 window.addEventListener('unhandledrejection', e => {
 	console.error('未処理のPromise拒否:', e.reason)
 
-	// エラーをログに記録するが、画面は表示し続ける
-	e.preventDefault() // デフォルトのエラー表示を防ぐ
-
 	const errorMessage =
 		e.reason instanceof Error ? e.reason.message : String(e.reason || '不明なエラー')
 
-	// 画面下部に警告トーストを表示
-	showErrorToast('非同期エラーが発生しました', errorMessage, 'error')
+	if (shouldShowErrorToast(`rejection:${errorMessage}`)) {
+		showErrorToast('非同期エラーが発生しました', errorMessage, 'error')
+	}
 })
 
 // エラートースト表示関数
@@ -289,14 +280,14 @@ const map = new mapgl.Map({
 	refreshExpiredTiles: false, // パフォーマンス向上
 	fadeDuration: CONFIG.fadeDuration, // モバイルはアニメーション無効化
 	trackResize: true, // ウィンドウリサイズ追跡
-	// モバイル用追加最適化
+	// モバイル用追加最適化（値は DeviceProfile に一元化）
 	...(IS_MOBILE && {
-		maxTileCacheSize: 50, // タイルキャッシュを削減
-		renderWorldCopies: false, // 世界地図の複製無効化
-		crossSourceCollisions: false, // 衝突判定無効化（パフォーマンス向上）
-		pixelRatio: CONFIG.pixelRatio, // 高解像度ディスプレイでも最大2倍まで
-		collectResourceTiming: false, // パフォーマンス計測無効化
-		antialias: false, // アンチエイリアス無効化（パフォーマンス向上）
+		maxTileCacheSize: CONFIG.maxTileCacheSize,
+		renderWorldCopies: CONFIG.renderWorldCopies,
+		crossSourceCollisions: CONFIG.crossSourceCollisions,
+		pixelRatio: CONFIG.pixelRatio,
+		collectResourceTiming: CONFIG.collectResourceTiming,
+		antialias: CONFIG.antialias,
 	}),
 	style: {
 		version: 8,
@@ -357,20 +348,39 @@ const map = new mapgl.Map({
 	},
 })
 
-// マップエラーハンドリング
+// マップエラーハンドリング（唯一の map error ハンドラ）
+// タイルエラーは短時間に多発するため、3秒窓で集約して1トーストにまとめる
+const TILE_ERROR_PATTERN = /Failed to fetch|AJAXError|tile/i
+let tileErrorCount = 0
+let tileErrorToastTimer: ReturnType<typeof setTimeout> | null = null
+
 map.on('error', e => {
 	console.error('マップエラー:', e)
 	const errorMessage = e.error?.message || 'マップのロードに失敗しました'
 
-	// タイルフェッチエラーは警告レベルで表示（アプリは使用可能）
-	if (errorMessage.includes('Failed to fetch')) {
-		showErrorToast('タイル読み込みエラー', 'コンソールで詳細を確認してください', 'warning')
+	// タイルフェッチ/読み込みエラーは警告レベルで集約表示（アプリは使用可能）
+	if (TILE_ERROR_PATTERN.test(errorMessage)) {
+		tileErrorCount++
 		updateStatus('警告: タイル読み込みエラー')
-	} else {
-		// その他の重大なエラーはエラーレベルで表示
-		showErrorToast('エラーが発生しました', errorMessage, 'error')
-		updateStatus(`エラー: ${errorMessage}`)
+		if (tileErrorToastTimer === null) {
+			tileErrorToastTimer = setTimeout(() => {
+				showErrorToast(
+					'タイル読み込みエラー',
+					`${tileErrorCount}件のタイルを読み込めませんでした（地図は利用可能です）`,
+					'warning'
+				)
+				tileErrorCount = 0
+				tileErrorToastTimer = null
+			}, 3000)
+		}
+		return
 	}
+
+	// その他の重大なエラーはデバウンスしてエラーレベルで表示
+	if (shouldShowErrorToast(`map:${errorMessage}`)) {
+		showErrorToast('エラーが発生しました', errorMessage, 'error')
+	}
+	updateStatus(`エラー: ${errorMessage}`)
 })
 
 console.log('マップ初期化完了 - loadイベント待機中...')
@@ -422,11 +432,72 @@ interface FlightLogEntry {
 let flightLog: FlightLogEntry[] = []
 let flightPlanActive = false
 let currentFlightPhase = 0
+// フェーズ遷移タイマーのID（保持しないと pause/停止でキャンセルできず、
+// 再開のたびに複数のタイマーループが並走してカメラ・ドローンが暴れる）
+let flightPhaseTimer: ReturnType<typeof setTimeout> | null = null
+
+const clearFlightPhaseTimer = () => {
+	if (flightPhaseTimer !== null) {
+		clearTimeout(flightPhaseTimer)
+		flightPhaseTimer = null
+	}
+}
+
+// ドローンのランダムウォークシミュレーションを停止する（フライトプラン・手動操作と
+// 座標を奪い合わないよう、開始側から明示的に呼べるように関数化）
+function stopDroneSimulation(reason?: string): void {
+	if (droneSimulationInterval === null) return
+	clearInterval(droneSimulationInterval)
+	droneSimulationInterval = null
+	const btn = document.getElementById('startSimulation')
+	if (btn) btn.textContent = 'シミュレーション開始'
+	if (reason) updateStatus(`シミュレーション停止（${reason}）`)
+}
+
+// プラン切替時に実行中のフライトを安全に停止する。
+// change ハンドラは async のため、fetch 後の配列差し替え直前にも再度呼び、
+// await 中に開始されたフライトを取りこぼさない（TOCTOU 対策）。
+const stopActiveFlightForSwitch = () => {
+	if (flightPlanActive) {
+		clearFlightPhaseTimer()
+		flightPlanActive = false
+		updateFlightLogDisplay()
+		addFlightLog('システム', 'フライトプラン', 'プラン切替のため飛行を停止しました', 'warning')
+		// pause/complete と同様、モバイルでは手動コントロールを戻す
+		if (isMobileDevice() && touchController) {
+			touchController.enable()
+			touchControlActive = true
+		}
+	}
+	currentFlightPhase = 0
+}
 
 // 動的フライトプラン管理
 let currentFlightPlan: FlightPlanPhase[] = []
 let currentFlightPlanName = ''
 let currentFlightPlanDescription = ''
+
+// ===== 新UI: PC用プランパネル / モバイル用ゲームHUD =====
+let planPanel: PlanPanel | null = null
+let mobileHud: MobileHud | null = null
+
+/** プランパネルへ現在のプランを反映する（プラン読込/切替時に呼ぶ） */
+const syncPlanPanel = () => {
+	planPanel?.setPlan(currentFlightPlanName, currentFlightPlan)
+}
+
+/** モバイルHUDへフライト実行状態を反映する */
+const syncHudFlightState = () => {
+	mobileHud?.setFlightState({
+		active: flightPlanActive,
+		phaseIndex:
+			currentFlightPlan.length > 0
+				? Math.min(currentFlightPhase, currentFlightPlan.length - 1)
+				: null,
+		totalPhases: currentFlightPlan.length,
+		planName: currentFlightPlanName,
+	})
+}
 
 // デフォルトのフライトプラン定義（東京タワー）
 const defaultFlightPlan: FlightPlanPhase[] = [
@@ -1501,10 +1572,14 @@ const enableMapInteraction = () => {
 }
 
 // オブジェクト移動機能
+// 実際にドラッグで移動したかを記録し、単なるクリックや削除/Escapeでの後始末では
+// 「移動しました」トーストを出さないようにする
+let dragMoved = false
 const startDragObject = (lngLat: mapgl.LngLat) => {
 	if (!selectedObject) return false
 
 	isDragging = true
+	dragMoved = false
 	dragStartPos = [lngLat.lng, lngLat.lat]
 	map.getCanvas().style.cursor = 'grabbing'
 
@@ -1533,22 +1608,36 @@ const dragObject = (lngLat: mapgl.LngLat) => {
 	// オブジェクトの基準座標を更新
 	selectedObject.longitude += deltaLng
 	selectedObject.latitude += deltaLat
+	dragMoved = true
 
 	dragStartPos = [lngLat.lng, lngLat.lat]
 	updateDisplay()
 	updateSelectedObjectDisplay()
 }
 
-const endDragObject = () => {
-	if (isDragging && selectedObject) {
-		isDragging = false
-		dragStartPos = null
-		map.getCanvas().style.cursor = editMode ? 'crosshair' : ''
+// notify=true はドラッグ確定（mouseup）経路のみ。削除/Escape/編集終了などの
+// 後始末経路は notify=false で呼び、誤った「移動しました」トーストを出さない
+const endDragObject = (notify = false) => {
+	const wasDragging = isDragging
+	const movedObject = selectedObject
+	const moved = dragMoved
+	isDragging = false
+	dragMoved = false
+	dragStartPos = null
+	map.getCanvas().style.cursor = editMode ? 'crosshair' : ''
 
-		// マップ操作を再有効化
-		enableMapInteraction()
+	// ドラッグ状態に関わらず必ずマップ操作を復帰させる
+	// （ドラッグ中の選択解除・削除で操作が無効のまま固まるのを防ぐ。冪等）
+	enableMapInteraction()
 
-		showToast(`「${selectedObject.name}」を移動しました`, 'success')
+	if (notify && wasDragging && moved && movedObject) {
+		// 移動先の地表標高を取り込み直し、対地高度(AGL)を再計算する（海抜は保持）
+		refreshObjectElevation(movedObject, 'asl')
+		updateSelectedObjectDisplay()
+		showToast(
+			`「${movedObject.name}」を移動しました（${formatElevation(elevationOf(movedObject))}）`,
+			'success'
+		)
 	}
 }
 
@@ -1563,6 +1652,8 @@ const deleteSelectedObject = () => {
 	const confirmed = confirm(`「${objectName}」を削除しますか？`)
 
 	if (confirmed) {
+		// ドラッグ中に削除されてもマップ操作が無効のまま残らないよう後始末
+		endDragObject()
 		loadedObjects = loadedObjects.filter(obj => obj.id !== selectedObject!.id)
 		deselectObject()
 		updateDisplay()
@@ -1570,21 +1661,56 @@ const deleteSelectedObject = () => {
 	}
 }
 
+// ===== 3D標高（標高/海抜/対地）CRUD ヘルパー =====
+// altitude を海抜(ASL)とみなし、地表標高(標高)を GSI DEM から取得して
+// 対地高度(AGL)を導く。不変条件 asl = ground + agl を常に保つ。
+
+/** オブジェクトの高度を ElevationTriple として解決する */
+const elevationOf = (obj: DroneObject): ElevationTriple => {
+	const ground = obj.groundElevation ?? queryGroundElevation(map, obj.longitude, obj.latitude) ?? 0
+	const agl = obj.relativeAltitude ?? obj.altitude - ground
+	return makeElevation(ground, { agl })
+}
+
+/** 3値をオブジェクトへ書き戻す（altitude=海抜, 標高, 対地を同期） */
+const applyElevation = (obj: DroneObject, t: ElevationTriple): void => {
+	obj.altitude = t.asl
+	obj.groundElevation = t.ground
+	obj.relativeAltitude = t.agl
+}
+
+/**
+ * オブジェクトの標高を現在座標の GSI DEM から取り込み直し、3値を整合させる。
+ *  - keep='asl'（既定）: 海抜を保持し対地を再計算（ドラッグしても表示高さ不変）
+ *  - keep='agl': 対地を保持し海抜を再計算（DJI風の地形追従）
+ * terrain 無効/未読込のときは何もしない。
+ */
+const refreshObjectElevation = (obj: DroneObject, keep: 'asl' | 'agl' = 'asl'): void => {
+	const ground = queryGroundElevation(map, obj.longitude, obj.latitude)
+	if (ground === null) return
+	applyElevation(obj, setGround(elevationOf(obj), ground, keep))
+}
+
 // オブジェクト追加
 const addObjectAtLocation = (lngLat: mapgl.LngLat) => {
+	// 手動配置は「地表から150〜250m上空(対地/AGL)」として海抜を算出する
+	const ground = queryGroundElevation(map, lngLat.lng, lngLat.lat) ?? 0
+	const elev = makeElevation(ground, { agl: 150 + Math.random() * 100 })
 	const newObject: DroneObject = {
 		id: `manual_${Date.now()}`,
 		name: `点検ポイント_${loadedObjects.filter(obj => obj.type === 'manual').length + 1}`,
 		longitude: lngLat.lng,
 		latitude: lngLat.lat,
-		altitude: 150 + Math.random() * 100,
+		altitude: elev.asl,
+		groundElevation: elev.ground,
+		relativeAltitude: elev.agl,
 		type: 'manual',
 		source: 'manual_draw',
 	}
 
 	loadedObjects.push(newObject)
 	updateDisplay()
-	showToast(`点検ポイントを追加: ${newObject.name}`, 'success')
+	showToast(`点検ポイントを追加: ${newObject.name}（${formatElevation(elev)}）`, 'success')
 }
 
 // 2D/3D切り替え
@@ -1605,105 +1731,9 @@ const toggle3D = () => {
 
 // イベントハンドラー設定
 const setupEventHandlers = () => {
-	// ポイントデータ読み込み
-	document.getElementById('loadPoints')?.addEventListener('click', async () => {
-		try {
-			const response = await fetch('./data/mock-3d-data.csv')
-			if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
-			const csvContent = await response.text()
-			const blob = new Blob([csvContent], { type: 'text/csv' })
-			const file = new File([blob], 'sample-points.csv', {
-				type: 'text/csv',
-			})
-
-			await importDataFromFile(file, map, 'points')
-			showToast('ポイントデータを読み込みました', 'success')
-		} catch (error) {
-			console.error('データ読み込みエラー:', error)
-			showToast('データの読み込みに失敗しました', 'error')
-		}
-	})
-
-	// メッシュデータ読み込み
-	document.getElementById('loadMesh')?.addEventListener('click', async () => {
-		try {
-			const response = await fetch('./data/mock-mesh-data.csv')
-			if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-
-			const csvContent = await response.text()
-			const blob = new Blob([csvContent], { type: 'text/csv' })
-			const file = new File([blob], 'sample-mesh.csv', {
-				type: 'text/csv',
-			})
-
-			await importDataFromFile(file, map, 'mesh')
-			showToast('メッシュデータを読み込みました', 'success')
-		} catch (error) {
-			console.error('データ読み込みエラー:', error)
-			showToast('データの読み込みに失敗しました', 'error')
-		}
-	})
-
-	// 建物点検データ読み込み
-	document.getElementById('loadBuilding')?.addEventListener('click', async () => {
-		try {
-			console.log('建物点検データ読み込み開始')
-
-			const [pointsResponse, meshResponse] = await Promise.all([
-				fetch('./data/mock-building-inspection-points.csv'),
-				fetch('./data/mock-building-inspection-mesh.csv'),
-			])
-
-			console.log('レスポンス確認:', {
-				points: {
-					ok: pointsResponse.ok,
-					status: pointsResponse.status,
-				},
-				mesh: { ok: meshResponse.ok, status: meshResponse.status },
-			})
-
-			if (!pointsResponse.ok || !meshResponse.ok) {
-				throw new Error(
-					`建物点検データの読み込みに失敗しました: HTTP error! status: points=${pointsResponse.status}, mesh=${meshResponse.status}`
-				)
-			}
-
-			const [pointsContent, meshContent] = await Promise.all([
-				pointsResponse.text(),
-				meshResponse.text(),
-			])
-
-			console.log('CSV内容確認:', {
-				pointsLength: pointsContent.length,
-				meshLength: meshContent.length,
-				pointsPreview: pointsContent.substring(0, 200),
-				meshPreview: meshContent.substring(0, 200),
-			})
-
-			const pointsBlob = new Blob([pointsContent], {
-				type: 'text/csv',
-			})
-			const pointsFile = new File([pointsBlob], 'building-points.csv', {
-				type: 'text/csv',
-			})
-			await importDataFromFile(pointsFile, map, 'building-inspection')
-
-			const meshBlob = new Blob([meshContent], { type: 'text/csv' })
-			const meshFile = new File([meshBlob], 'building-mesh.csv', {
-				type: 'text/csv',
-			})
-			await importDataFromFile(meshFile, map, 'building-inspection-mesh')
-
-			showToast('建物点検データを読み込みました', 'success')
-		} catch (error) {
-			console.error('建物点検データ読み込みエラー:', error)
-			showToast(
-				`建物点検データの読み込みに失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`,
-				'error'
-			)
-		}
-	})
+	// NOTE: #loadPoints / #loadMesh / #loadBuilding のハンドラは、対応するボタンが
+	// index.html に存在せず無警告で死んでいたため削除した（サンプルデータ読み込みは
+	// 「ドローン点検データ読み込み」ボタンで代替される）。
 
 	// ドローン点検データ読み込み
 	document.getElementById('loadDroneData')?.addEventListener('click', () => {
@@ -1721,10 +1751,17 @@ const setupEventHandlers = () => {
 
 	// 飛行シミュレーション
 	document.getElementById('startSimulation')?.addEventListener('click', () => {
+		const simButton = document.getElementById('startSimulation')
+
 		if (droneSimulationInterval) {
-			clearInterval(droneSimulationInterval)
-			droneSimulationInterval = null
+			stopDroneSimulation()
 			updateStatus('シミュレーション停止')
+			return
+		}
+
+		// フライトプラン実行中はシミュレーションを開始しない（座標の奪い合いを防ぐ）
+		if (flightPlanActive) {
+			showToast('フライトプラン実行中はシミュレーションを開始できません', 'warning')
 			return
 		}
 
@@ -1734,6 +1771,7 @@ const setupEventHandlers = () => {
 		}
 
 		updateStatus('ドローンシミュレーション開始')
+		if (simButton) simButton.textContent = 'シミュレーション停止'
 		droneSimulationInterval = setInterval(() => {
 			loadedObjects.forEach(obj => {
 				if (obj.type === 'drone') {
@@ -1815,6 +1853,8 @@ const setupEventHandlers = () => {
 			if (polygonButton) polygonButton.textContent = '多角形作成'
 			resetPolygonDrawing()
 		} else {
+			// 編集モードを抜けるときはドラッグ状態を後始末してマップ操作を復帰
+			endDragObject()
 			deselectObject()
 		}
 
@@ -2204,78 +2244,9 @@ const setupEventHandlers = () => {
 		input.click()
 	})
 
-	// フライトミッションインポート
-	document.getElementById('importMission')?.addEventListener('click', () => {
-		const input = document.createElement('input')
-		input.type = 'file'
-		input.accept = '.json'
-		input.onchange = async e => {
-			const file = (e.target as HTMLInputElement).files?.[0]
-			if (file) {
-				try {
-					updateStatus('フライトミッション読み込み中...')
-					const content = await file.text()
-					const mission = parseFlightMissionJSON(content)
-
-					if (mission && mission.waypoints && mission.waypoints.length > 0) {
-						// ミッションの各ウェイポイントをDroneObjectとして追加
-						const waypointObjects: DroneObject[] = mission.waypoints.map((waypoint, index) => ({
-							id: `mission_waypoint_${index + 1}`,
-							name: `ミッション_${mission.name}_WP${index + 1}`,
-							longitude: waypoint.position.longitude,
-							latitude: waypoint.position.latitude,
-							altitude: waypoint.position.altitude,
-							type: 'flight',
-							source: `mission_${file.name}`,
-						}))
-
-						loadedObjects.push(...waypointObjects)
-						updateDisplay()
-						updateStatus(
-							`フライトミッション読み込み完了: ${mission.waypoints.length}個のウェイポイント`
-						)
-						showToast(
-							`ミッション「${mission.name}」から${mission.waypoints.length}個のウェイポイントをインポートしました`,
-							'success'
-						)
-						addFlightLog(
-							'データ管理',
-							'ミッションインポート',
-							`${mission.name}: ${mission.waypoints.length}個のウェイポイント`,
-							'success'
-						)
-
-						// 地図をミッション開始地点に移動
-						const firstWaypoint = mission.waypoints[0]
-						map.flyTo({
-							center: [firstWaypoint.position.longitude, firstWaypoint.position.latitude],
-							zoom: 16,
-							duration: 2000,
-						})
-					} else {
-						showToast('フライトミッションファイルからデータを読み込めませんでした', 'warning')
-						addFlightLog(
-							'データ管理',
-							'ミッションインポート',
-							'ファイルの読み込みに失敗',
-							'warning'
-						)
-					}
-				} catch (error) {
-					console.error('フライトミッションインポートエラー:', error)
-					showToast('フライトミッションファイルの読み込みに失敗しました', 'error')
-					addFlightLog(
-						'データ管理',
-						'ミッションインポートエラー',
-						`${file.name}の読み込みに失敗`,
-						'error'
-					)
-					updateStatus('フライトミッションインポートエラー')
-				}
-			}
-		}
-		input.click()
-	})
+	// NOTE: #importMission のハンドラは対応するボタンが index.html に存在せず
+	// 無警告で死んでいたため削除した（#importFlightData がJSON/CSV/GeoJSONの
+	// インポートを担う）。
 
 	// サンプルフライトデータ読み込み
 	document.getElementById('loadSampleFlightData')?.addEventListener('click', async () => {
@@ -2648,6 +2619,11 @@ const startFlightPlan = () => {
 		return
 	}
 
+	// 前回の遷移タイマーが残っていれば必ず破棄（多重ループ・二倍速の防止）
+	clearFlightPhaseTimer()
+	// ランダムウォークシミュレーションと座標を奪い合わないよう停止
+	stopDroneSimulation('フライトプラン開始')
+
 	// フライトプラン実行中はコントロールを無効化
 	if (isMobileDevice() && touchControlActive) {
 		touchController.disable()
@@ -2656,13 +2632,26 @@ const startFlightPlan = () => {
 	}
 	if (gameControlActive) {
 		gameController.disable()
+		gameControlActive = false
 		addFlightLog('システム', 'コントロール無効化', 'ゲームコントロールを無効化しました', 'info')
 	}
 
-	flightPlanActive = true
-	currentFlightPhase = 0
+	// 完了後・未開始なら先頭から、一時停止中なら現在フェーズから再開する
+	if (currentFlightPhase >= currentFlightPlan.length || currentFlightPhase < 0) {
+		currentFlightPhase = 0
+	}
+	const isFreshStart = currentFlightPhase === 0
 
-	addFlightLog('システム', 'フライトプラン開始', `${currentFlightPlanName}を開始します`, 'success')
+	flightPlanActive = true
+
+	addFlightLog(
+		'システム',
+		'フライトプラン開始',
+		isFreshStart
+			? `${currentFlightPlanName}を開始します`
+			: `フェーズ${currentFlightPhase + 1}から再開します`,
+		'success'
+	)
 	updateFlightLogDisplay() // ステータスバーを更新
 
 	// デバッグモード更新
@@ -2672,25 +2661,28 @@ const startFlightPlan = () => {
 		debugManager.logEvent('FLIGHT', `Started: ${currentFlightPlanName}`)
 	}
 
-	// ドローンオブジェクトを作成または更新
+	// ドローンオブジェクトを作成または更新（先頭開始時のみ開始位置へ配置）
+	const startPhase = currentFlightPlan[currentFlightPhase]
 	let drone = loadedObjects.find(obj => obj.type === 'drone')
 	if (!drone) {
 		const droneObject: DroneObject = {
 			id: 'inspection-drone-1',
 			name: `${currentFlightPlanName}ドローン`,
-			longitude: currentFlightPlan[0].position[0],
-			latitude: currentFlightPlan[0].position[1],
+			longitude: startPhase.position[0],
+			latitude: startPhase.position[1],
 			altitude: 0,
 			type: 'drone',
 			source: 'flight-plan',
 		}
 		loadedObjects.push(droneObject)
 	} else {
-		// 既存のドローンの名前と位置を更新
+		// 既存のドローンの名前を更新。位置は再開時に前フェーズへ巻き戻さない
 		drone.name = `${currentFlightPlanName}ドローン`
-		drone.longitude = currentFlightPlan[0].position[0]
-		drone.latitude = currentFlightPlan[0].position[1]
-		drone.altitude = 0
+		if (isFreshStart) {
+			drone.longitude = currentFlightPlan[0].position[0]
+			drone.latitude = currentFlightPlan[0].position[1]
+			drone.altitude = 0
+		}
 	}
 	updateDisplay()
 
@@ -2767,8 +2759,23 @@ const executeFlightPhase = () => {
 
 	updateDisplay()
 
-	// 次のフェーズへ
-	setTimeout(() => {
+	// 新UIへ実行状態を反映（PC: タイムライン/行ハイライト、モバイル: HUD）
+	// 反映中に例外が出てもこの後の遷移タイマー設定に影響させない
+	// （フライトループがフェーズ途中で凍結するのを防ぐ）
+	try {
+		refreshObjectElevation(drone, 'asl')
+		planPanel?.setActivePhase(currentFlightPhase)
+		syncHudFlightState()
+		mobileHud?.setTelemetry(elevationOf(drone), bearing)
+	} catch (e) {
+		console.error('UI反映中のエラー（フライトは継続します）:', e)
+	}
+
+	// 次のフェーズへ（タイマーIDを保持し、pause/停止でキャンセルできるようにする）
+	flightPhaseTimer = setTimeout(() => {
+		flightPhaseTimer = null
+		// pause 後にキューされたコールバックが発火しても無害化する二重ガード
+		if (!flightPlanActive) return
 		currentFlightPhase++
 		updateFlightLogDisplay() // フェーズ変更時にログ表示を更新
 		executeFlightPhase()
@@ -2799,6 +2806,8 @@ const pauseFlightPlan = () => {
 	}
 
 	flightPlanActive = false
+	// 予約済みの遷移タイマーをキャンセル（これがないと pause 後もフェーズが進む）
+	clearFlightPhaseTimer()
 
 	// フライトプラン一時停止時は手動コントロールを再有効化
 	if (isMobileDevice() && touchController) {
@@ -2820,10 +2829,15 @@ const pauseFlightPlan = () => {
 		debugManager.setFlightStatus('PAUSED')
 		debugManager.logEvent('PAUSE', `Paused at phase ${currentFlightPhase + 1}`)
 	}
+
+	syncHudFlightState()
 }
 
 const completeFlightPlan = () => {
 	flightPlanActive = false
+	// 遷移タイマーを後始末し、次回は先頭から開始できるようフェーズをリセット
+	clearFlightPhaseTimer()
+	currentFlightPhase = 0
 
 	// フライトプラン完了時は手動コントロールを再有効化
 	if (isMobileDevice() && touchController) {
@@ -2846,6 +2860,10 @@ const completeFlightPlan = () => {
 		debugManager.setFlightStatus('COMPLETED')
 		debugManager.logEvent('COMPLETE', `Finished: ${currentFlightPlanName}`)
 	}
+
+	// 新UI: ハイライト解除・HUDを待機状態へ
+	planPanel?.setActivePhase(null)
+	syncHudFlightState()
 }
 
 const exportFlightPlan = () => {
@@ -2903,6 +2921,8 @@ const importFlightPlan = () => {
 
 					// フライトプランの可視化を更新
 					updateFlightPlanVisualization(planData.phases)
+					syncPlanPanel()
+					syncHudFlightState()
 
 					addFlightLog(
 						'システム',
@@ -3000,11 +3020,11 @@ map.on('mousemove', e => {
 	}
 })
 
-// マウスアップイベント（ドラッグ終了）
+// マウスアップイベント（ドラッグ終了 = 移動確定）
 map.on('mouseup', e => {
 	if (editMode && isDragging) {
 		e.preventDefault()
-		endDragObject()
+		endDragObject(true)
 	}
 })
 
@@ -3018,6 +3038,8 @@ document.addEventListener('keydown', e => {
 	}
 	if (e.key === 'Escape') {
 		if (editMode) {
+			// ドラッグ中なら先に後始末してマップ操作を復帰させる
+			endDragObject()
 			deselectObject()
 		}
 	}
@@ -3060,19 +3082,72 @@ window.addEventListener('orientationchange', () => {
 	}, 300)
 })
 
-// マップエラーハンドリング
-map.on('error', e => {
-	console.error('MapLibre GL error:', e)
-	// iOS Safariでよく起こるタイル読み込みエラーは無視
-	if (e.error && e.error.message && e.error.message.includes('tile')) {
-		console.warn('Tile loading error (non-critical):', e.error.message)
-		return
-	}
-	// 致命的なエラーの場合は通知
-	if (e.error && e.error.message) {
-		console.error('Critical map error:', e.error.message)
-	}
+// ページ離脱時にコントローラのグローバルリスナーとタイマーを解放（リーク防止）
+window.addEventListener('pagehide', () => {
+	gameController?.destroy()
+	stopDroneSimulation()
+	clearFlightPhaseTimer()
 })
+
+// ===== 新UI（PC: プランエディタ / モバイル: ゲームHUD）の初期化 =====
+// map の 'load' は回線不良やタイル取得失敗で発火しないことがある
+// （単一障害点）。UI 自体はタイルに依存しないため、'load' から呼ぶのに
+// 加えてフォールバックタイマーでも初期化し、地図が完全に読み込めなくても
+// プラン編集・開始/停止操作を可能にする。冪等（2回目以降は no-op）。
+let newUiInitialized = false
+const initNewUi = () => {
+	if (newUiInitialized) return
+	newUiInitialized = true
+
+	if (!isMobileDevice()) {
+		// DJI Flight Hub 風エディタを既存フライトプランパネル内にマウント
+		const planHost = document.getElementById('flightPlanExport')
+		if (planHost) {
+			planPanel = new PlanPanel(planHost, {
+				getGround: (lng, lat) => queryGroundElevation(map, lng, lat),
+				onChange: phases => {
+					// 実行中の編集は安全のため飛行を停止してから反映する
+					stopActiveFlightForSwitch()
+					currentFlightPlan = phases
+					updateFlightPlanVisualization(phases)
+					// フォールバック初期化時は flightController が未生成のことがある
+					flightController?.setFlightPlan({
+						name: currentFlightPlanName,
+						description: currentFlightPlanDescription,
+						created: new Date().toISOString(),
+						totalDuration: phases.reduce((s, p) => s + p.duration, 0),
+						phases,
+					})
+					syncHudFlightState()
+				},
+				onFlyTo: (_i, p) => {
+					map.flyTo({
+						center: [p.position[0], p.position[1]],
+						zoom: p.zoom ?? 17,
+						pitch: p.pitch ?? 60,
+						duration: 800,
+					})
+				},
+			})
+			syncPlanPanel()
+		}
+	} else {
+		// ゲーム風HUD（テレメトリ + 開始/一時停止）
+		mobileHud = new MobileHud(document.body, {
+			onStartPause: () => {
+				if (flightPlanActive) {
+					pauseFlightPlan()
+				} else {
+					startFlightPlan()
+				}
+			},
+		})
+		syncHudFlightState()
+	}
+}
+
+// 'load' 未発火時のフォールバック（回線不良・タイルブロック環境）
+setTimeout(initNewUi, 5000)
 
 // 地図の読み込み完了
 map.on('load', () => {
@@ -3157,6 +3232,9 @@ map.on('load', () => {
 		flightController.setFlightPlan(defaultPlan)
 		updateFlightPlanVisualization(defaultPlan.phases)
 
+		// 新UI初期化（PC=プランエディタ / モバイル=ゲームHUD）
+		initNewUi()
+
 		addFlightLog(
 			'システム',
 			'拡張機能',
@@ -3197,6 +3275,10 @@ map.on('load', () => {
 		if (flightPlanSelect) {
 			flightPlanSelect.addEventListener('change', async e => {
 				const planId = (e.target as HTMLSelectElement).value
+
+				// 実行中のフライトを安全に停止してから切り替える
+				// （配列長が変わって範囲外アクセス・多重ループになるのを防ぐ）
+				stopActiveFlightForSwitch()
 
 				if (planId === 'custom') {
 					// カスタムフライトプランのインポート
@@ -3239,6 +3321,8 @@ map.on('load', () => {
 
 						flightController.setFlightPlan(defaultPlan)
 						updateFlightPlanVisualization(defaultPlan.phases)
+						syncPlanPanel()
+						syncHudFlightState()
 						showToast('東京タワー点検フライトプランを読み込みました', 'success')
 
 						// カメラを東京タワーに移動
@@ -3262,6 +3346,9 @@ map.on('load', () => {
 						}
 						const planData: FlightPlanData = await response.json()
 
+						// await 中にフライトが開始されていた場合に備えて再度停止する（TOCTOU対策）
+						stopActiveFlightForSwitch()
+
 						// グローバル変数を更新
 						currentFlightPlan = planData.phases
 						currentFlightPlanName = planData.name
@@ -3276,6 +3363,8 @@ map.on('load', () => {
 
 						flightController.setFlightPlan(planData)
 						updateFlightPlanVisualization(planData.phases)
+						syncPlanPanel()
+						syncHudFlightState()
 						showToast(`${planData.name}を読み込みました`, 'success')
 
 						// カメラを開始位置に移動
@@ -3307,6 +3396,12 @@ map.on('load', () => {
 					showToast('ゲームコントローラーが初期化されていません', 'error')
 					return
 				}
+
+				// 手動操作の前に自動系を停止（フライトプラン・シミュレーションとの競合防止）
+				if (flightPlanActive) {
+					pauseFlightPlan()
+				}
+				stopDroneSimulation('手動操作開始')
 
 				gameController.enable()
 				gameControlActive = true
@@ -3381,7 +3476,7 @@ map.on('load', () => {
 	const infoPanel = document.getElementById('infoPanel') as HTMLElement
 	if (infoPanelToggle && infoPanel) {
 		// localStorageから状態を復元（デフォルトはvisible）
-		const savedInfoPanelState = localStorage.getItem('infoPanelVisible')
+		const savedInfoPanelState = safeStorage.get('infoPanelVisible')
 		if (savedInfoPanelState === 'false') {
 			infoPanel.classList.remove('visible')
 			infoPanelToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -3395,7 +3490,7 @@ map.on('load', () => {
 			infoPanel.classList.toggle('visible')
 
 			// localStorageに状態を保存
-			localStorage.setItem('infoPanelVisible', (!isVisible).toString())
+			safeStorage.set('infoPanelVisible', (!isVisible).toString())
 
 			// SVGアイコンを切り替え
 			if (isVisible) {
@@ -3416,7 +3511,7 @@ map.on('load', () => {
 	const flightPlanExport = document.getElementById('flightPlanExport') as HTMLElement
 	if (flightPlanToggle && flightPlanExport) {
 		// localStorageから状態を復元（デフォルトはvisible）
-		const savedFlightPlanState = localStorage.getItem('flightPlanVisible')
+		const savedFlightPlanState = safeStorage.get('flightPlanVisible')
 		if (savedFlightPlanState === 'false') {
 			flightPlanExport.classList.remove('visible')
 			flightPlanToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -3429,7 +3524,7 @@ map.on('load', () => {
 			flightPlanExport.classList.toggle('visible')
 
 			// localStorageに状態を保存
-			localStorage.setItem('flightPlanVisible', (!isVisible).toString())
+			safeStorage.set('flightPlanVisible', (!isVisible).toString())
 
 			// SVGアイコンを切り替え
 			if (isVisible) {
@@ -3450,7 +3545,7 @@ map.on('load', () => {
 
 	if (controlsToggle && controls) {
 		// localStorageから状態を復元（デフォルトは非表示）
-		const savedControlsState = localStorage.getItem('controlsVisible')
+		const savedControlsState = safeStorage.get('controlsVisible')
 		if (savedControlsState === 'true') {
 			controls.classList.add('visible')
 			controlsToggle.innerHTML = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">
@@ -3463,7 +3558,7 @@ map.on('load', () => {
 			controls.classList.toggle('visible')
 
 			// localStorageに状態を保存
-			localStorage.setItem('controlsVisible', (!isVisible).toString())
+			safeStorage.set('controlsVisible', (!isVisible).toString())
 
 			// アイコンを切り替え
 			if (isVisible) {
@@ -3574,22 +3669,8 @@ map.on('load', () => {
 }) // map.on('load')の終了
 
 /**
- * モバイルデバイスかどうかを判定
+ * モバイルデバイスかどうかを判定（DeviceProfile に一元化）
  */
 function isMobileDevice(): boolean {
-	// タッチサポートチェック
-	const hasTouchScreen =
-		'ontouchstart' in window ||
-		navigator.maxTouchPoints > 0 ||
-		(navigator as any).msMaxTouchPoints > 0
-
-	// ユーザーエージェントチェック
-	const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-		navigator.userAgent
-	)
-
-	// 画面サイズチェック
-	const isSmallScreen = window.innerWidth <= 768
-
-	return (hasTouchScreen && isMobileUA) || (hasTouchScreen && isSmallScreen)
+	return deviceProfile.kind === 'mobile'
 }

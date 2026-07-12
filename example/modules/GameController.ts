@@ -14,6 +14,13 @@ export class GameController {
 	private gamepadIndex: number | null = null
 	private updateInterval: number | null = null
 	private readonly updateRate = 1000 / 60 // 60 FPS
+	private enabled = false
+
+	// removeEventListener できるよう、安定した参照を保持する
+	private readonly boundKeyDown = (e: KeyboardEvent) => this.handleKeyDown(e)
+	private readonly boundKeyUp = (e: KeyboardEvent) => this.handleKeyUp(e)
+	private readonly boundGamepadConnected = (e: GamepadEvent) => this.handleGamepadConnected(e)
+	private readonly boundGamepadDisconnected = (e: GamepadEvent) => this.handleGamepadDisconnected(e)
 
 	// 操作設定
 	private readonly controls = {
@@ -60,18 +67,24 @@ export class GameController {
 	 */
 	private setupEventListeners(): void {
 		// キーボードイベント
-		document.addEventListener('keydown', this.handleKeyDown.bind(this))
-		document.addEventListener('keyup', this.handleKeyUp.bind(this))
+		document.addEventListener('keydown', this.boundKeyDown)
+		document.addEventListener('keyup', this.boundKeyUp)
 
 		// ゲームパッド接続イベント
-		window.addEventListener('gamepadconnected', this.handleGamepadConnected.bind(this))
-		window.addEventListener('gamepaddisconnected', this.handleGamepadDisconnected.bind(this))
+		window.addEventListener('gamepadconnected', this.boundGamepadConnected)
+		window.addEventListener('gamepaddisconnected', this.boundGamepadDisconnected)
 	}
 
 	/**
 	 * キーダウンイベントハンドラー
 	 */
 	private handleKeyDown(event: KeyboardEvent): void {
+		// 無効時はキーを奪わない（preventDefault しない）
+		if (!this.enabled) return
+		// テキスト入力中は操作キーを奪わない
+		const target = event.target as HTMLElement | null
+		if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
+
 		const key = event.key.toLowerCase()
 
 		if (this.controls.forward.includes(key) || this.controls.forward.includes(event.key)) {
@@ -116,6 +129,8 @@ export class GameController {
 	 * キーアップイベントハンドラー
 	 */
 	private handleKeyUp(event: KeyboardEvent): void {
+		if (!this.enabled) return
+
 		const key = event.key.toLowerCase()
 
 		if (this.controls.forward.includes(key) || this.controls.forward.includes(event.key)) {
@@ -218,6 +233,8 @@ export class GameController {
 	 * コントロールを有効化
 	 */
 	enable(): void {
+		this.enabled = true
+
 		if (this.updateInterval !== null) {
 			return
 		}
@@ -233,6 +250,8 @@ export class GameController {
 	 * コントロールを無効化
 	 */
 	disable(): void {
+		this.enabled = false
+
 		if (this.updateInterval !== null) {
 			clearInterval(this.updateInterval)
 			this.updateInterval = null
@@ -252,6 +271,18 @@ export class GameController {
 		}
 
 		console.log('ゲームコントローラー無効化')
+	}
+
+	/**
+	 * 破棄: 登録した document/window リスナーを完全に解除する
+	 * （呼ばないと keydown/keyup リスナーがページ寿命まで残りリークする）
+	 */
+	destroy(): void {
+		this.disable()
+		document.removeEventListener('keydown', this.boundKeyDown)
+		document.removeEventListener('keyup', this.boundKeyUp)
+		window.removeEventListener('gamepadconnected', this.boundGamepadConnected)
+		window.removeEventListener('gamepaddisconnected', this.boundGamepadDisconnected)
 	}
 
 	/**

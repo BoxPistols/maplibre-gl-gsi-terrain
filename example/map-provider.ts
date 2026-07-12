@@ -5,6 +5,7 @@
 
 import type maplibregl from 'maplibre-gl'
 import type mapboxgl from 'mapbox-gl'
+import { safeStorage } from './modules/safe-storage'
 
 export type MapProvider = 'maplibre' | 'mapbox'
 
@@ -78,8 +79,8 @@ export const AVAILABLE_PROVIDERS: { value: MapProvider; label: string; descripti
  * ローカルストレージから設定を読み込み
  */
 export function loadProviderConfig(): MapProviderConfig {
-	const savedProvider = localStorage.getItem('mapProvider') as MapProvider | null
-	const savedToken = localStorage.getItem('mapboxAccessToken')
+	const savedProvider = safeStorage.get('mapProvider') as MapProvider | null
+	const savedToken = safeStorage.get('mapboxAccessToken')
 
 	return {
 		provider: savedProvider || 'maplibre',
@@ -91,11 +92,11 @@ export function loadProviderConfig(): MapProviderConfig {
  * ローカルストレージに設定を保存
  */
 export function saveProviderConfig(config: MapProviderConfig): void {
-	localStorage.setItem('mapProvider', config.provider)
+	safeStorage.set('mapProvider', config.provider)
 	if (config.mapboxAccessToken) {
-		localStorage.setItem('mapboxAccessToken', config.mapboxAccessToken)
+		safeStorage.set('mapboxAccessToken', config.mapboxAccessToken)
 	} else {
-		localStorage.removeItem('mapboxAccessToken')
+		safeStorage.remove('mapboxAccessToken')
 	}
 	console.log('マッププロバイダー設定を保存しました:', config.provider)
 }

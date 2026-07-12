@@ -1,0 +1,401 @@
+/**
+ * アプリUIスタイル（tokens.css のトークンを使用）
+ *
+ * - PC: DJI Flight Hub 2 風のフライトプランエディタ（.plan-*）
+ * - モバイル: 3Dゲーム風HUD（.mobile-hud/.hud-*）とジョイスティック最適化
+ *
+ * デバイス分岐は device-profile.ts が付与する <html data-device> を使う。
+ */
+
+/* ============================================================
+   PC: フライトプランパネル（DJI Flight Hub 2 風）
+   ============================================================ */
+
+/* 既存パネルの器をモダン化（デスクトップのみ） */
+:root[data-device='desktop'] .flight-plan-export {
+	width: 360px;
+	max-height: calc(100vh - 120px);
+	overflow-y: auto;
+	background: var(--surface-1);
+	-webkit-backdrop-filter: blur(var(--surface-blur));
+	backdrop-filter: blur(var(--surface-blur));
+	border: 1px solid var(--surface-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-2);
+	color: var(--text-1);
+	font-family: var(--font-ui);
+}
+
+/* 折りたたみ時は幅(360px + padding/border ≈ 394px)を完全に画面外へ退避させる
+   （既定の -280px だと 80px、-390px でも約4px はみ出すため余裕をもって -420px）。
+   :not(.visible) 限定なので .visible 時の right:0 は維持される */
+:root[data-device='desktop'] .flight-plan-export:not(.visible) {
+	right: -420px;
+}
+
+.plan-panel {
+	margin-top: var(--space-3);
+	border-top: 1px solid var(--surface-border);
+	padding-top: var(--space-3);
+	font-family: var(--font-ui);
+	color: var(--text-1);
+}
+
+/* モバイルではプランエディタを出さない（HUD+モーダルに委譲） */
+:root[data-device='mobile'] .plan-panel {
+	display: none;
+}
+
+.plan-header {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin-bottom: var(--space-2);
+}
+
+.plan-header-title {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-2);
+}
+
+.plan-stats {
+	font-size: var(--font-min);
+	color: var(--text-2);
+	font-variant-numeric: tabular-nums;
+}
+
+/* タイムライン: 幅 ∝ 所要時間。実行中フェーズを強調 */
+.plan-timeline {
+	display: flex;
+	gap: 2px;
+	height: 8px;
+	margin-bottom: var(--space-2);
+}
+
+.plan-seg {
+	flex-basis: 0;
+	min-width: 4px;
+	border-radius: 3px;
+	background: color-mix(in srgb, var(--c-accent) 30%, transparent);
+	transition: background var(--motion) var(--ease);
+}
+
+.plan-seg.done {
+	background: color-mix(in srgb, var(--c-success) 55%, transparent);
+}
+
+.plan-seg.active {
+	background: var(--c-accent);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--c-accent) 70%, transparent);
+}
+
+.plan-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	max-height: 44vh;
+	overflow-y: auto;
+	padding-right: 2px;
+}
+
+.plan-row {
+	background: var(--surface-2);
+	border: 1px solid var(--surface-border);
+	border-radius: var(--radius-sm);
+	padding: var(--space-2);
+	cursor: pointer;
+	transition:
+		border-color var(--motion-fast) var(--ease),
+		background var(--motion-fast) var(--ease);
+}
+
+.plan-row:hover {
+	border-color: color-mix(in srgb, var(--c-accent) 50%, transparent);
+}
+
+.plan-row.active {
+	border-color: var(--c-accent);
+	background: color-mix(in srgb, var(--c-accent) 12%, var(--surface-2));
+}
+
+.plan-row-head {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin-bottom: var(--space-1);
+}
+
+.plan-row-index {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--c-accent);
+	color: var(--text-on-accent);
+	font-size: 10px;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.plan-row-name {
+	flex: 1;
+	font-size: 12px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.plan-row-actions {
+	display: inline-flex;
+	gap: 2px;
+}
+
+.plan-btn {
+	min-width: 24px;
+	min-height: 24px;
+	padding: 2px 6px;
+	border: 1px solid var(--surface-border);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text-2);
+	font-size: 11px;
+	cursor: pointer;
+	transition: all var(--motion-fast) var(--ease);
+}
+
+.plan-btn:hover {
+	background: color-mix(in srgb, var(--c-accent) 15%, transparent);
+	color: var(--text-1);
+}
+
+.plan-btn-danger:hover {
+	background: color-mix(in srgb, var(--c-danger) 18%, transparent);
+	color: var(--c-danger);
+}
+
+.plan-btn-add {
+	width: 100%;
+	min-height: 30px;
+	margin-top: var(--space-2);
+	font-weight: 600;
+	color: var(--c-accent);
+	border: 1px dashed color-mix(in srgb, var(--c-accent) 45%, transparent);
+}
+
+.plan-row-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--space-1) var(--space-2);
+}
+
+.plan-field {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	font-size: 10px;
+}
+
+.plan-field-label {
+	color: var(--text-2);
+	font-size: 9px;
+	letter-spacing: 0.02em;
+}
+
+.plan-input {
+	width: 100%;
+	padding: 3px 4px;
+	border: 1px solid var(--surface-border);
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--surface-1) 60%, transparent);
+	color: var(--text-1);
+	font-family: var(--font-mono);
+	font-size: var(--font-min);
+	font-variant-numeric: tabular-nums;
+}
+
+.plan-input-agl {
+	border-color: color-mix(in srgb, var(--c-alt) 45%, transparent);
+}
+
+.plan-input-asl {
+	border-color: color-mix(in srgb, var(--c-info) 45%, transparent);
+}
+
+.plan-ground {
+	padding: 3px 4px;
+	color: var(--c-ground);
+	font-size: var(--font-min);
+}
+
+/* ============================================================
+   モバイル: 3Dゲーム風 HUD
+   ============================================================ */
+
+.mobile-hud {
+	position: fixed;
+	inset: 0;
+	pointer-events: none; /* HUD自体は地図操作を遮らない */
+	z-index: var(--z-fixed);
+	font-family: var(--font-ui);
+	display: none;
+}
+
+:root[data-device='mobile'] .mobile-hud {
+	display: block;
+}
+
+/* 上部テレメトリ: ノッチを避けて中央に並ぶゲーム風ステータス */
+.hud-telemetry {
+	position: absolute;
+	top: calc(var(--space-2) + var(--inset-top));
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	gap: var(--space-2);
+}
+
+.hud-chip {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 64px;
+	padding: 4px 10px;
+	border-radius: var(--radius-sm);
+	background: rgba(10, 14, 20, 0.72);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	-webkit-backdrop-filter: blur(6px);
+	backdrop-filter: blur(6px);
+	color: #fff;
+}
+
+.hud-chip-label {
+	font-size: 9px;
+	letter-spacing: 0.08em;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.hud-chip-value {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--c-alt);
+	will-change: contents;
+}
+
+/* 下部バー: Safe Area(ホームバー)の上に浮かぶ */
+.hud-bar {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	bottom: calc(var(--space-3) + var(--inset-bottom));
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-2) var(--space-3);
+	border-radius: 999px;
+	background: rgba(10, 14, 20, 0.78);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	-webkit-backdrop-filter: blur(8px);
+	backdrop-filter: blur(8px);
+	pointer-events: auto;
+}
+
+.hud-info {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	max-width: 40vw;
+}
+
+.hud-plan {
+	font-size: 12px;
+	font-weight: 600;
+	color: #fff;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.hud-phase {
+	font-size: 10px;
+	color: var(--c-alt);
+	letter-spacing: 0.06em;
+}
+
+.hud-start {
+	min-width: 112px;
+	min-height: var(--tap);
+	padding: 0 var(--space-4);
+	border: none;
+	border-radius: 999px;
+	background: var(--c-accent);
+	color: var(--text-on-accent);
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background var(--motion-fast) var(--ease);
+}
+
+.hud-start.flying {
+	background: var(--c-warning);
+	color: #1b1b1b;
+}
+
+.hud-start:active {
+	filter: brightness(0.9);
+}
+
+/* ============================================================
+   モバイル最適化: ジョイスティック / 固定ボタンの Safe Area
+   ============================================================ */
+
+/* ジョイスティック: HUDバーと重ならないよう持ち上げ、Safe Area対応 */
+:root[data-device='mobile'] .virtual-joystick {
+	bottom: calc(96px + var(--inset-bottom));
+	width: 120px;
+	height: 120px;
+	will-change: transform; /* 全要素ハックの代わりに必要な要素だけ昇格 */
+}
+
+:root[data-device='mobile'] .virtual-joystick.left {
+	left: calc(20px + var(--inset-left));
+}
+
+:root[data-device='mobile'] .virtual-joystick.right {
+	right: calc(20px + var(--inset-right));
+}
+
+/* ノブは48px以上を保証（狭幅での40px縮小を打ち消す） */
+:root[data-device='mobile'] .joystick-knob {
+	width: 48px !important;
+	height: 48px !important;
+	will-change: transform;
+}
+
+/* 画面端の固定トグルへ Safe Area を適用 */
+:root[data-device='mobile'] .controls-toggle {
+	top: calc(10px + var(--inset-top));
+	left: calc(10px + var(--inset-left));
+}
+
+:root[data-device='mobile'] .mobile-flight-plan-toggle {
+	top: calc(10px + var(--inset-top));
+	right: calc(10px + var(--inset-right));
+}
+
+:root[data-device='mobile'] .mobile-home-button {
+	top: calc(74px + var(--inset-top));
+	right: calc(10px + var(--inset-right));
+}
+
+/* モバイルはゲーム風HUDに集約するため、旧フッター(リアルタイムログ)は
+   非表示にする（HUDバーとボタンが重なるため）。ログはPC表示と
+   デバッグオーバーレイで確認できる */
+:root[data-device='mobile'] .footer {
+	display: none;
+}
