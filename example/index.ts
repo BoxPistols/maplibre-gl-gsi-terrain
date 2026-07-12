@@ -2760,10 +2760,16 @@ const executeFlightPhase = () => {
 	updateDisplay()
 
 	// 新UIへ実行状態を反映（PC: タイムライン/行ハイライト、モバイル: HUD）
-	refreshObjectElevation(drone, 'asl')
-	planPanel?.setActivePhase(currentFlightPhase)
-	syncHudFlightState()
-	mobileHud?.setTelemetry(elevationOf(drone), bearing)
+	// 反映中に例外が出てもこの後の遷移タイマー設定に影響させない
+	// （フライトループがフェーズ途中で凍結するのを防ぐ）
+	try {
+		refreshObjectElevation(drone, 'asl')
+		planPanel?.setActivePhase(currentFlightPhase)
+		syncHudFlightState()
+		mobileHud?.setTelemetry(elevationOf(drone), bearing)
+	} catch (e) {
+		console.error('UI反映中のエラー（フライトは継続します）:', e)
+	}
 
 	// 次のフェーズへ（タイマーIDを保持し、pause/停止でキャンセルできるようにする）
 	flightPhaseTimer = setTimeout(() => {

@@ -147,10 +147,21 @@ export class PlanPanel {
 		return [...this.phases]
 	}
 
-	private commit(next: FlightPlanPhase[]): void {
+	/** 構造変更（追加・削除・並べ替え）: 全再描画してから通知 */
+	private commitStructural(next: FlightPlanPhase[]): void {
 		this.phases = next
 		this.render()
 		this.opts.onChange([...next])
+	}
+
+	/**
+	 * 値編集: 行を作り直さず、派生表示（標高/対地/海抜・統計・タイムライン）だけ
+	 * 更新する。行を再構築しないため入力フォーカスが失われず、連続編集できる。
+	 */
+	private applyEdit(index: number, next: FlightPlanPhase[]): void {
+		this.phases = next
+		this.opts.onChange([...next])
+		this.refreshDerived(index)
 	}
 
 	private groundAt(lng: number, lat: number): number {
@@ -171,28 +182,63 @@ export class PlanPanel {
 			phase: `WP${this.phases.length + 1}`,
 			position: [base.position[0] + 0.0006, base.position[1] + 0.0004, base.position[2]],
 		}
-		this.commit(addWaypoint(this.phases, wp))
+		this.commitStructural(addWaypoint(this.phases, wp))
 	}
 
 	private render(): void {
-		// 統計
+		this.renderStatsAndTimeline(true)
+		// 一覧（全行を作り直す）
+		this.list.textContent = ''
+		this.phases.forEach((p, i) => this.list.appendChild(this.buildRow(p, i)))
+	}
+
+	/** 統計ヘッダとタイムラインを更新。rebuild=false のときは既存segを流用（フォーカス保持時） */
+	private renderStatsAndTimeline(rebuild: boolean): void {
 		const stats = planStats(this.phases)
 		this.headerStats.textContent = `${this.planName} ・ ${stats.waypointCount} WP ・ ${(stats.totalDurationMs / 1000).toFixed(0)}s ・ ${(stats.totalDistanceM / 1000).toFixed(2)}km`
 
-		// タイムライン（幅 ∝ duration）
-		this.timeline.textContent = ''
 		const total = Math.max(1, stats.totalDurationMs)
-		this.phases.forEach((p, i) => {
-			const seg = el('div', 'plan-seg')
-			seg.style.flexGrow = String(Math.max(1, safeNumber(p.duration)) / total)
-			seg.title = `${i + 1}. ${p.phase}（${(p.duration / 1000).toFixed(1)}s）`
-			if (this.activeIndex === i) seg.classList.add('active')
-			this.timeline.appendChild(seg)
-		})
+		const segs = this.timeline.querySelectorAll('.plan-seg')
+		if (rebuild || segs.length !== this.phases.length) {
+			this.timeline.textContent = ''
+			this.phases.forEach((p, i) => {
+				const seg = el('div', 'plan-seg')
+				seg.style.flexGrow = String(Math.max(1, safeNumber(p.duration)) / total)
+				seg.title = `${i + 1}. ${p.phase}（${(p.duration / 1000).toFixed(1)}s）`
+				if (this.activeIndex === i) seg.classList.add('active')
+				this.timeline.appendChild(seg)
+			})
+		} else {
+			this.phases.forEach((p, i) => {
+				const seg = segs[i] as HTMLElement
+				seg.style.flexGrow = String(Math.max(1, safeNumber(p.duration)) / total)
+				seg.title = `${i + 1}. ${p.phase}（${(p.duration / 1000).toFixed(1)}s）`
+			})
+		}
+	}
 
-		// 一覧
-		this.list.textContent = ''
-		this.phases.forEach((p, i) => this.list.appendChild(this.buildRow(p, i)))
+	/** 値編集後、行 index の派生表示（標高/対地/海抜, 経緯度, 時間）を再構築せず更新する */
+	private refreshDerived(index: number): void {
+		const row = this.list.querySelector(`[data-testid="plan-row-${index}"]`)
+		const p = this.phases[index]
+		if (row && p) {
+			const ground = this.groundAt(p.position[0], p.position[1])
+			const elev = waypointElevation(p, ground)
+			const active = document.activeElement
+			const set = (sel: string, val: string) => {
+				const inp = row.querySelector(sel) as HTMLInputElement | null
+				// 編集中の入力欄は上書きしない（タイプ中の値を消さない）
+				if (inp && inp !== active) inp.value = val
+			}
+			set('.plan-input-lng', String(p.position[0]))
+			set('.plan-input-lat', String(p.position[1]))
+			set('.plan-input-agl', String(Math.round(elev.agl * 10) / 10))
+			set('.plan-input-asl', String(Math.round(elev.asl * 10) / 10))
+			set('.plan-input-dur', String(p.duration / 1000))
+			const g = row.querySelector('.plan-ground')
+			if (g) g.textContent = elev.ground.toFixed(1)
+		}
+		this.renderStatsAndTimeline(false)
 	}
 
 	private buildRow(p: FlightPlanPhase, i: number): HTMLElement {
@@ -210,12 +256,12 @@ export class PlanPanel {
 		head.appendChild(el('span', 'plan-row-name', p.phase))
 		const actions = el('span', 'plan-row-actions')
 		actions.append(
-			iconButton('↑', '上へ移動', () => this.commit(moveWaypoint(this.phases, i, i - 1))),
-			iconButton('↓', '下へ移動', () => this.commit(moveWaypoint(this.phases, i, i + 1))),
+			iconButton('↑', '上へ移動', () => this.commitStructural(moveWaypoint(this.phases, i, i - 1))),
+			iconButton('↓', '下へ移動', () => this.commitStructural(moveWaypoint(this.phases, i, i + 1))),
 			iconButton(
 				'✕',
 				'このウェイポイントを削除',
-				() => this.commit(removeWaypoint(this.phases, i)),
+				() => this.commitStructural(removeWaypoint(this.phases, i)),
 				'plan-btn plan-btn-danger'
 			)
 		)
@@ -231,24 +277,30 @@ export class PlanPanel {
 			return wrap
 		}
 
+		// 各 onCommit は closure の p ではなく常に this.phases[i]（最新状態）を読む。
+		// これにより連続編集で兄弟座標を巻き戻さない（データ破壊防止）。
 		grid.appendChild(
 			field(
 				'経度',
-				numInput('plan-input', p.position[0], 0.0001, `WP${i + 1} 経度`, v =>
-					this.commit(
-						updateWaypoint(this.phases, i, { position: [v, p.position[1], p.position[2]] })
+				numInput('plan-input plan-input-lng', p.position[0], 0.0001, `WP${i + 1} 経度`, v => {
+					const cur = this.phases[i]
+					this.applyEdit(
+						i,
+						updateWaypoint(this.phases, i, { position: [v, cur.position[1], cur.position[2]] })
 					)
-				)
+				})
 			)
 		)
 		grid.appendChild(
 			field(
 				'緯度',
-				numInput('plan-input', p.position[1], 0.0001, `WP${i + 1} 緯度`, v =>
-					this.commit(
-						updateWaypoint(this.phases, i, { position: [p.position[0], v, p.position[2]] })
+				numInput('plan-input plan-input-lat', p.position[1], 0.0001, `WP${i + 1} 緯度`, v => {
+					const cur = this.phases[i]
+					this.applyEdit(
+						i,
+						updateWaypoint(this.phases, i, { position: [cur.position[0], v, cur.position[2]] })
 					)
-				)
+				})
 			)
 		)
 		grid.appendChild(
@@ -259,15 +311,18 @@ export class PlanPanel {
 					Math.round(elev.agl * 10) / 10,
 					1,
 					`WP${i + 1} 対地高度`,
-					v =>
-						this.commit(
+					v => {
+						const cur = this.phases[i]
+						this.applyEdit(
+							i,
 							setWaypointAltitude(
 								this.phases,
 								i,
 								{ agl: v },
-								this.groundAt(p.position[0], p.position[1])
+								this.groundAt(cur.position[0], cur.position[1])
 							)
 						)
+					}
 				)
 			)
 		)
@@ -279,23 +334,26 @@ export class PlanPanel {
 					Math.round(elev.asl * 10) / 10,
 					1,
 					`WP${i + 1} 海抜高度`,
-					v =>
-						this.commit(
+					v => {
+						const cur = this.phases[i]
+						this.applyEdit(
+							i,
 							setWaypointAltitude(
 								this.phases,
 								i,
 								{ asl: v },
-								this.groundAt(p.position[0], p.position[1])
+								this.groundAt(cur.position[0], cur.position[1])
 							)
 						)
+					}
 				)
 			)
 		)
 		grid.appendChild(
 			field(
 				'時間 [s]',
-				numInput('plan-input', p.duration / 1000, 0.5, `WP${i + 1} 所要時間`, v =>
-					this.commit(updateWaypoint(this.phases, i, { duration: v * 1000 }))
+				numInput('plan-input plan-input-dur', p.duration / 1000, 0.5, `WP${i + 1} 所要時間`, v =>
+					this.applyEdit(i, updateWaypoint(this.phases, i, { duration: v * 1000 }))
 				)
 			)
 		)

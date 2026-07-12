@@ -71,6 +71,43 @@ describe('PlanPanel 編集（CRUD）', () => {
 		expect((onChange.mock.calls[0][0] as FlightPlanPhase[])[0].position[2]).toBe(500)
 	})
 
+	test('経度→緯度を連続編集しても互いを巻き戻さない（データ破壊防止）', () => {
+		const { container, panel, onChange } = mount(() => 100)
+		panel.setPlan('p', plan())
+		const lng = container.querySelector(
+			'[data-testid="plan-row-0"] .plan-input-lng'
+		) as HTMLInputElement
+		lng.value = '140.5'
+		lng.dispatchEvent(new Event('change'))
+		// 行は再構築されない（同じ input 要素のまま）ので取り直さず緯度を編集
+		const lat = container.querySelector(
+			'[data-testid="plan-row-0"] .plan-input-lat'
+		) as HTMLInputElement
+		lat.value = '36.2'
+		lat.dispatchEvent(new Event('change'))
+
+		const last = onChange.mock.calls[onChange.mock.calls.length - 1][0] as FlightPlanPhase[]
+		expect(last[0].position[0]).toBe(140.5) // 経度が緯度編集で巻き戻っていない
+		expect(last[0].position[1]).toBe(36.2)
+	})
+
+	test('AGL編集後、同じ行のASL表示が再構築なしで更新される（フォーカス保持）', () => {
+		const { container, panel } = mount(() => 100)
+		panel.setPlan('p', plan())
+		const aglInput = container.querySelector(
+			'[data-testid="plan-row-0"] .plan-input-agl'
+		) as HTMLInputElement
+		// 同一要素を保持（再構築されないこと）を確認するため参照を取っておく
+		aglInput.value = '80'
+		aglInput.dispatchEvent(new Event('change'))
+		const asl = container.querySelector(
+			'[data-testid="plan-row-0"] .plan-input-asl'
+		) as HTMLInputElement
+		expect(asl.value).toBe('180') // ground100 + agl80
+		// 行の input 要素が作り直されていない（同一参照）
+		expect(container.querySelector('[data-testid="plan-row-0"] .plan-input-agl')).toBe(aglInput)
+	})
+
 	test('不正入力（空文字）は無視され onChange は呼ばれない', () => {
 		const { container, panel, onChange } = mount()
 		panel.setPlan('p', plan())
