@@ -3,16 +3,8 @@ import typescriptParser from '@typescript-eslint/parser'
 
 export default [
 	{
-		files: ['src/**/*.{ts,tsx,js,jsx}', 'example/**/*.{ts,tsx,js,jsx}'],
-		ignores: [
-			'node_modules/**',
-			'dist/**',
-			'demo/assets/**',
-			'**/*.d.ts',
-			'*.md',
-			'docs/**/*.md',
-			'README.md',
-		],
+		files: ['src/**/*.{ts,tsx,js,jsx}'],
+		ignores: ['node_modules/**', 'dist/**', '**/*.d.ts', '*.md', 'docs/**/*.md', 'README.md'],
 		plugins: {
 			'@typescript-eslint': typescriptPlugin,
 		},

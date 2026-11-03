@@ -1,11 +1,11 @@
 ---
-description: Build the library and example
+description: Build the library
 ---
 
-Build the library and example application:
+Build the library:
 
 ```bash
-pnpm build && pnpm build:example
+pnpm build
 ```
 
 If the build fails, analyze the errors and suggest fixes.

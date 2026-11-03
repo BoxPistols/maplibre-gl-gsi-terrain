@@ -75,19 +75,18 @@ Or use `pnpm ci:check` to run all checks at once.
 ## Project Structure
 
 - `src/` - Library source code
-- `example/` - Demo application
-- `demo/` - Built demo output (for Vercel deployment)
 - `dist/` - Built library output
+
+The 3D flight simulator that used to live in `example/` was moved to
+https://github.com/BoxPistols/gsi-terrain-flight-simulator and consumes the
+library from npm. Do not add application code here.
 
 ## Available Commands
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start development server |
 | `pnpm build` | Build library |
-| `pnpm build:example` | Build demo application |
 | `pnpm test:ci` | Run unit tests |
-| `pnpm test:all` | Run all tests (unit, modules, e2e) |
 | `pnpm lint` | Run linting |
 | `pnpm fix` | Auto-fix formatting and linting |
 | `pnpm type-check` | Run TypeScript type checking |
@@ -95,7 +94,5 @@ Or use `pnpm ci:check` to run all checks at once.
 
 ## Configuration Files
 
-- `vercel.json` - Vercel deployment configuration (uses pnpm)
 - `package.json` - Project configuration (all scripts must use pnpm)
 - `vite.config.ts` - Library build configuration
-- `vite.config.example.ts` - Demo build configuration
