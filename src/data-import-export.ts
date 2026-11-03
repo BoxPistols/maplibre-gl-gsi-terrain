@@ -1,3 +1,4 @@
+// このファイルは地形ライブラリではなくフライトシミュレーター側のコードなので、example/LICENSE（All rights reserved）が適用される
 import maplibregl from 'maplibre-gl'
 
 // 統一されたフライトデータモデル

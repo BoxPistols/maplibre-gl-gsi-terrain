@@ -1,0 +1,58 @@
+Copyright (c) 2025-2026 Ito Atsushi (BoxPistols). All rights reserved.
+
+This file covers the 3D flight simulator that Ito Atsushi (BoxPistols) added
+to this repository. It applies only to these paths:
+
+  example/
+  data/
+  docs/
+  tests/e2e/
+  src/data-import-export.ts
+  vite.config.example.ts
+  scripts/generate-icons.mjs
+
+It does NOT apply to the terrain library code derived from
+mug-jp/maplibre-gl-gsi-terrain (src/terrain.ts, src/worker.ts and the other
+files not listed above). See the license section (ライセンス) of README.md.
+
+These paths are published on GitHub so that the source code can be viewed and
+referenced. Viewing the source on GitHub, as permitted by the GitHub Terms of
+Service, is allowed.
+
+No license is granted to use, copy, modify, merge, publish, distribute,
+sublicense, sell, or create derivative works of this software, in whole or in
+part, without prior written permission from the copyright holder.
+
+Third-party components and data remain under their own licenses and terms.
+
+Contact: https://asagiri-design.carrd.co/
+
+---
+
+Copyright (c) 2025-2026 Ito Atsushi (BoxPistols). All rights reserved.
+
+このファイルは、Ito Atsushi（BoxPistols）がこのリポジトリに追加した3Dフライト
+シミュレーターに適用します。対象は次のパスだけです。
+
+  example/
+  data/
+  docs/
+  tests/e2e/
+  src/data-import-export.ts
+  vite.config.example.ts
+  scripts/generate-icons.mjs
+
+mug-jp/maplibre-gl-gsi-terrain 由来の地形ライブラリのコード（src/terrain.ts、
+src/worker.ts など上に挙げていないファイル）には適用しません。README.md の
+「ライセンス」節を参照してください。
+
+上記のパスは、ソースコードを閲覧・参照できるように GitHub で公開しています。
+GitHub 利用規約の範囲内で、GitHub 上のソースコードを閲覧することは自由です。
+
+著作権者の事前の書面による許可なく、本ソフトウェアの全部または一部を利用・複製・
+改変・結合・公開・配布・再許諾・販売すること、および派生物を作成することは
+許諾していません。
+
+第三者のコンポーネントとデータは、それぞれのライセンス・利用条件に従います。
+
+連絡先: https://asagiri-design.carrd.co/

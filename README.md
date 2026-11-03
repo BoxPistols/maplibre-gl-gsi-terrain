@@ -4,7 +4,6 @@
 
 ![](./screenshot.png)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![MapLibre GL](https://img.shields.io/badge/MapLibre%20GL-5.13-green)](https://maplibre.org/)
 
@@ -345,7 +344,14 @@ npx vercel
 
 ## ライセンス
 
-このプロジェクトは MIT ライセンスの下で公開されています。
+このリポジトリは、パスによって条件が分かれます。
+
+| パス | 内容 | 条件 |
+|---|---|---|
+| `example/`、`data/`、`docs/`、`tests/e2e/`、`src/data-import-export.ts`、`vite.config.example.ts`、`scripts/generate-icons.mjs` | Ito Atsushi（BoxPistols）が追加した3Dフライトシミュレーター | All rights reserved（全文は [example/LICENSE](./example/LICENSE)）。GitHub 上での閲覧・参照は自由ですが、事前の書面による許可のない利用・複製・改変・再配布・転用・商用転載は禁止します。問い合わせは https://asagiri-design.carrd.co/ から |
+| 上記以外（`src/terrain.ts`、`src/worker.ts` などの地形ライブラリ部分と設定ファイル） | [mug-jp/maplibre-gl-gsi-terrain](https://github.com/mug-jp/maplibre-gl-gsi-terrain)（Kanahiro Iguchi ほか）由来のコードと、このリポジトリでの変更 | 上流由来のコードは上流の作者の条件に従います。このリポジトリでの変更部分は、これまでどおり MIT として扱います |
+
+第三者のコード・データ（MapLibre GL JS、地理院タイルなど）は、それぞれのライセンス・利用条件に従います。
 
 ## 貢献
 
